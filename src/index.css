@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  
+  --color-apple-accent: #00C853;
+  --color-apple-gray: #F5F5F5;
+  --color-apple-dark: #121212;
+  --color-apple-border: #E0E0E0;
+  --color-apple-bg: #FFFFFF;
+  --color-apple-sub: #757575;
+}
+
+@layer base {
+  body {
+    @apply bg-apple-bg text-apple-dark antialiased selection:bg-apple-accent/20;
+  }
+}
+
+.apple-nav {
+  @apply sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-xl border-b border-apple-border/30 transition-all duration-300;
+}
+
+.apple-card {
+  @apply bg-white rounded-[1.5rem] border border-transparent shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] transition-all duration-500 overflow-hidden;
+}
+
+.apple-button {
+  @apply bg-apple-accent text-white px-6 py-2.5 rounded-full font-medium hover:bg-[#059669] transition-colors disabled:opacity-50 active:scale-95 transition-transform;
+}
+
+.apple-button-secondary {
+  @apply text-apple-accent font-medium hover:underline transition-all flex items-center gap-1;
+}
+
+.section-title {
+  @apply text-[2.5rem] md:text-[3.5rem] font-semibold tracking-tight leading-[1.1] mb-8;
+}
+
+.apple-input {
+  @apply w-full bg-apple-gray border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-apple-accent/30 transition-all outline-none;
+}
+
+.glass-card {
+  @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-sm;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
