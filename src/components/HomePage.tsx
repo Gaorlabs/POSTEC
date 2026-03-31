@@ -1010,38 +1010,45 @@ export default function HomePage() {
       </AnimatePresence>
 
       {/* Footer */}
-      <footer className="bg-apple-gray py-16 border-t border-apple-border">
+      <footer className="bg-apple-dark text-white py-20">
         <div className="max-w-[1600px] mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-16">
             <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                <Package size={20} />
-                <span className="font-semibold text-lg">POSTEC</span>
+              <div className="mb-6">
+                <Logo className="text-white" />
               </div>
-              <p className="text-zinc-500 text-sm max-w-sm">
+              <p className="text-zinc-400 text-sm max-w-sm leading-relaxed">
                 Líderes en soluciones tecnológicas para puntos de venta en todo el Perú. 
                 Ofrecemos equipos de alta calidad con garantía y soporte especializado.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold text-sm mb-4">Categorías</h4>
-              <ul className="space-y-2 text-zinc-500 text-sm">
+              <h4 className="font-semibold text-sm mb-6 uppercase tracking-widest text-zinc-400">Categorías</h4>
+              <ul className="space-y-3 text-zinc-300 text-sm">
                 {categories.slice(1).map(c => (
-                  <li key={c}><button onClick={() => setCategory(c)} className="hover:text-apple-dark transition-colors">{c}</button></li>
+                  <li key={c}>
+                    <button onClick={() => { setCategory(c); scrollToProducts(); }} className="hover:text-apple-accent transition-colors">
+                      {c}
+                    </button>
+                  </li>
                 ))}
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-sm mb-4">Contacto</h4>
-              <ul className="space-y-2 text-zinc-500 text-sm">
-                <li>Lima, Perú</li>
-                <li>WhatsApp: +51 {import.meta.env.VITE_WHATSAPP_NUMBER}</li>
-                <li>Soporte 24/7</li>
+              <h4 className="font-semibold text-sm mb-6 uppercase tracking-widest text-zinc-400">Contacto</h4>
+              <ul className="space-y-3 text-zinc-300 text-sm">
+                <li className="flex items-center gap-2">Lima, Perú</li>
+                <li className="flex items-center gap-2">WhatsApp: +51 {import.meta.env.VITE_WHATSAPP_NUMBER}</li>
+                <li className="flex items-center gap-2">Soporte 24/7</li>
               </ul>
             </div>
           </div>
-          <div className="pt-8 border-t border-apple-border text-zinc-400 text-[11px]">
-            <p>Copyright © 2026 POSTEC Store. Todos los derechos reservados.</p>
+          <div className="pt-10 border-t border-zinc-800 text-zinc-500 text-[12px] flex justify-between items-center">
+            <p>© 2026 POSTEC Store. Todos los derechos reservados.</p>
+            <div className="flex gap-6">
+              <a href="#" className="hover:text-white transition-colors">Privacidad</a>
+              <a href="#" className="hover:text-white transition-colors">Términos</a>
+            </div>
           </div>
         </div>
       </footer>
