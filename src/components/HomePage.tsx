@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Logo } from './Logo';
-import { ShoppingCart, X, Plus, Minus, Send, Package, Search, ChevronRight, ChevronLeft, Globe, Zap, ShieldCheck, ArrowRight, Printer, Banknote, Fingerprint, Barcode, Monitor, Laptop, ScrollText, Store, LayoutGrid, CreditCard, Cpu } from 'lucide-react';
+import { ShoppingCart, X, Plus, Minus, Send, Package, Search, ChevronRight, ChevronLeft, Globe, Zap, ShieldCheck, ArrowRight, Printer, Banknote, Fingerprint, Barcode, Monitor, Laptop, ScrollText, Store, LayoutGrid, CreditCard, Cpu, Menu } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { Product, OrderItem } from '../types';
 import { buildWhatsAppMessage } from '../lib/whatsapp';
@@ -20,6 +20,7 @@ export default function HomePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<number | null>(null);
   const [currentTab, setCurrentTab] = useState<'Tienda' | 'Soporte' | 'Controladores'>('Tienda');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedIndustry, setSelectedIndustry] = useState('Restaurante');
   const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
@@ -217,7 +218,7 @@ export default function HomePage() {
         <div className="max-w-[1600px] mx-auto px-6 h-full flex items-center justify-between">
           <div 
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => setCurrentTab('Tienda')}
+            onClick={() => { setCurrentTab('Tienda'); setIsMobileMenuOpen(false); }}
           >
             <Logo />
           </div>
@@ -245,6 +246,29 @@ export default function HomePage() {
               {currentTab === 'Controladores' && <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-apple-accent" />}
             </button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <div className="md:hidden">
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2">
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+
+          {/* Mobile Menu Overlay */}
+          <AnimatePresence>
+            {isMobileMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="absolute top-16 left-0 right-0 bg-white border-b border-apple-border p-6 md:hidden z-50 flex flex-col gap-4 text-lg font-semibold"
+              >
+                <button onClick={() => { setCurrentTab('Tienda'); setIsMobileMenuOpen(false); }} className="text-left py-2">Tienda</button>
+                <button onClick={() => { setCurrentTab('Soporte'); setIsMobileMenuOpen(false); }} className="text-left py-2">Soporte</button>
+                <button onClick={() => { setCurrentTab('Controladores'); setIsMobileMenuOpen(false); }} className="text-left py-2">Controladores</button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="flex items-center gap-6">
             <button className="opacity-80 hover:opacity-100 transition-opacity">
