@@ -64,10 +64,10 @@ export default function HomePage() {
 
   const slides = [
     {
-      title: "PC o Computadora.",
+      title: "PC O LAPTOP.",
       subtitle: "Potencia y rendimiento para tu negocio.",
       image: "https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?auto=format&fit=crop&q=80&w=1920",
-      category: "PC o Computadora",
+      category: "PC O LAPTOP",
       color: "from-black"
     },
     {
@@ -100,7 +100,7 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  const categories = ['Todas', 'Impresoras Térmicas', 'Gavetas de Dinero', 'Control de Acceso', 'Lector de Código de Barras', 'Monitores Touch', 'PC o Computadora', 'Suministros', 'Terminal Punto de Venta'];
+  const categories = ['Todas', 'Impresoras Térmicas', 'Gavetas de Dinero', 'Control de Acceso', 'Lector de Código de Barras', 'Monitores Touch', 'PC O LAPTOP', 'Suministros', 'Terminal Punto de Venta'];
 
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
@@ -110,7 +110,7 @@ export default function HomePage() {
       case 'Control de Acceso': return <Fingerprint size={22} strokeWidth={1.5} />;
       case 'Lector de Código de Barras': return <Barcode size={22} strokeWidth={1.5} />;
       case 'Monitores Touch': return <Monitor size={22} strokeWidth={1.5} />;
-      case 'PC o Computadora': return <Laptop size={22} strokeWidth={1.5} />;
+      case 'PC O LAPTOP': return <Laptop size={22} strokeWidth={1.5} />;
       case 'Suministros': return <ScrollText size={22} strokeWidth={1.5} />;
       case 'Terminal Punto de Venta': return <Store size={22} strokeWidth={1.5} />;
       default: return <Package size={22} strokeWidth={1.5} />;
@@ -393,7 +393,7 @@ export default function HomePage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-[3rem] md:text-[4.5rem] font-semibold tracking-tight leading-[1.1] mb-4"
                   >
-                    Tienda. <span className="text-apple-sub">La mejor forma de comprar los productos que amas.</span>
+                    Impulsamos tu negocio. <span className="text-apple-sub">Tu aliado estratégico en soluciones tecnológicas.</span>
                   </motion.h1>
                 </div>
 
@@ -571,7 +571,7 @@ export default function HomePage() {
                         PCs configuradas para software de gestión, garantizando estabilidad 24/7.
                       </p>
                       <button 
-                        onClick={() => { setCategory('PC o Computadora'); scrollToProducts(); }}
+                        onClick={() => { setCategory('PC O LAPTOP'); scrollToProducts(); }}
                         className="text-apple-accent font-semibold text-sm hover:underline"
                       >
                         Ver computadoras →
@@ -704,7 +704,7 @@ export default function HomePage() {
                 )}
               </section>
 
-              {/* Why POSTEC Section */}
+              {/* Why Pos-Tec Section */}
               <section className="py-12 border-t border-apple-border/10">
                 <div className="max-w-7xl mx-auto px-6">
                   <h2 className="text-[1.5rem] md:text-[2rem] font-semibold text-center mb-10 tracking-tight">
@@ -774,7 +774,7 @@ export default function HomePage() {
               className="py-24"
             >
               <div className="text-center mb-16">
-                <h1 className="text-[2.5rem] md:text-[3.5rem] font-semibold tracking-tight mb-4">Soporte POSTEC.</h1>
+                <h1 className="text-[2.5rem] md:text-[3.5rem] font-semibold tracking-tight mb-4">Soporte Pos-Tec.</h1>
                 <p className="text-xl text-apple-sub max-w-2xl mx-auto">Estamos aquí para ayudarte con cualquier duda o problema técnico.</p>
               </div>
 
@@ -782,7 +782,7 @@ export default function HomePage() {
                 <div className="apple-card p-8 bg-zinc-50 flex flex-col justify-between h-[400px] border-none">
                   <div>
                     <h2 className="text-2xl font-semibold mb-3">Chat en vivo</h2>
-                    <p className="text-lg text-apple-sub">Habla con un experto de POSTEC en tiempo real.</p>
+                    <p className="text-lg text-apple-sub">Habla con un experto de Pos-Tec en tiempo real.</p>
                   </div>
                   <div className="flex justify-center py-8">
                     <div className="w-20 h-20 bg-apple-accent rounded-full flex items-center justify-center text-white shadow-lg shadow-apple-accent/20">
@@ -826,7 +826,7 @@ export default function HomePage() {
             >
               <div className="text-center mb-12">
                 <h1 className="text-[2.5rem] md:text-[3.5rem] font-semibold tracking-tight mb-4">Controladores.</h1>
-                <p className="text-xl text-apple-sub max-w-2xl mx-auto">Descarga el software más reciente para tus dispositivos POSTEC.</p>
+                <p className="text-xl text-apple-sub max-w-2xl mx-auto">Descarga el software más reciente para tus dispositivos Pos-Tec.</p>
               </div>
 
               <div className="max-w-6xl mx-auto">
@@ -1089,7 +1089,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="pt-10 border-t border-zinc-800 text-zinc-500 text-[12px] flex justify-between items-center">
-            <p>© 2026 POSTEC Store. Todos los derechos reservados.</p>
+            <p>© 2026 Pos-Tec Store. Todos los derechos reservados.</p>
             <div className="flex gap-6">
               <a href="#" className="hover:text-white transition-colors">Privacidad</a>
               <a href="#" className="hover:text-white transition-colors">Términos</a>

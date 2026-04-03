@@ -8,7 +8,7 @@ export const Logo = ({ className = "" }: { className?: string }) => {
         <ScanBarcode size={24} className="text-apple-accent" />
       </div>
       <span className={`font-black tracking-tighter text-3xl ${className.includes('text-white') ? 'text-white' : 'text-apple-dark'}`}>
-        POST<span className="text-apple-accent">EC</span>
+        Pos<span className="text-apple-accent">-Tec</span>
       </span>
     </div>
   );

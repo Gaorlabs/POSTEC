@@ -116,7 +116,7 @@ export default function AdminPanel() {
             <Package size={20} className="text-apple-dark" />
             <h1 className="font-semibold text-base tracking-tight">Panel de Administración</h1>
             <span className="bg-apple-gray text-apple-sub text-[9px] uppercase tracking-widest font-bold px-2 py-0.5 rounded border border-apple-border/30">
-              POSTEC
+              Pos-Tec
             </span>
           </div>
           <button 
@@ -384,7 +384,7 @@ export default function AdminPanel() {
                         <option value="Control de Acceso">Control de Acceso</option>
                         <option value="Lector de Código de Barras">Lector de Código de Barras</option>
                         <option value="Monitores Touch">Monitores Touch</option>
-                        <option value="PC o Computadora">PC o Computadora</option>
+                        <option value="PC O LAPTOP">PC O LAPTOP</option>
                         <option value="Suministros">Suministros</option>
                         <option value="Terminal Punto de Venta">Terminal Punto de Venta</option>
                         <option value="Otros">Otros</option>
