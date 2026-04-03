@@ -66,4 +66,24 @@ ALTER TABLE interactions ENABLE ROW LEVEL SECURITY;
 
 -- Políticas
 CREATE POLICY "Permitir gestión de clientes" ON customers FOR ALL USING (true);
-CREATE POLICY "Permitir gestión de interacciones" ON interactions FOR ALL USING (true);
+
+-- Tabla de configuración
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Habilitar RLS
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Permitir lectura pública de configuración" ON settings FOR SELECT USING (true);
+CREATE POLICY "Permitir gestión de configuración" ON settings FOR ALL USING (true);
+
+-- Insertar configuración inicial
+INSERT INTO settings (key, value)
+VALUES ('general', '{"whatsapp": "", "facebook": "", "instagram": "", "tiktok": "", "logo_url": "", "slides": []}')
+ON CONFLICT (key) DO NOTHING;
+
+-- Notificar recarga de esquema
+NOTIFY pgrst, 'reload schema';
+

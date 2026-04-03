@@ -62,7 +62,7 @@ export default function HomePage() {
     }
   };
 
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<any>({ slides: [], logo_url: '' });
 
   const defaultSlides = [
     {
