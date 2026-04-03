@@ -85,7 +85,25 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">URL de Imagen</label>
+                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Características</label>
+                <textarea 
+                  value={product.features || ''}
+                  onChange={e => setProduct({...product, features: e.target.value})}
+                  className="apple-input text-lg py-4 min-h-[100px] resize-none"
+                  placeholder="Características del producto..."
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">URLs de Imágenes Adicionales (separadas por coma)</label>
+                <textarea 
+                  value={product.image_urls?.join(', ') || ''}
+                  onChange={e => setProduct({...product, image_urls: e.target.value.split(',').map(s => s.trim())})}
+                  className="apple-input text-lg py-4 min-h-[100px] resize-none"
+                  placeholder="https://..., https://..."
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">URL de Imagen Principal</label>
                 <input 
                   type="url" 
                   value={product.image_url || ''}

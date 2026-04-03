@@ -2,6 +2,7 @@ export interface Product {
   id: number;
   name: string;
   description: string;
+  features?: string;
   price: number;
   original_price?: number;
   discount?: number;
@@ -9,6 +10,7 @@ export interface Product {
   stock?: number;
   category: string;
   image_url: string | null;
+  image_urls?: string[];
   created_at?: string;
 }
 

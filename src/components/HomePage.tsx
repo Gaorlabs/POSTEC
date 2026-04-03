@@ -1228,13 +1228,20 @@ export default function HomePage() {
                       }}
                       className="flex-grow bg-[#4A148C] text-white py-3 rounded-lg font-semibold hover:bg-[#311B92] transition-colors"
                     >
-                      ADD TO CART
+                      AÑADIR AL CARRITO
                     </button>
                   </div>
                   
                   <button className="w-full bg-[#FFEB3B] text-black py-3 rounded-lg font-semibold hover:bg-[#FDD835] transition-colors mb-8">
-                    BUY NOW
+                    COMPRAR AHORA
                   </button>
+
+                  {selectedProduct.features && (
+                    <div className="mb-8">
+                      <h3 className="text-lg font-semibold mb-2">Características</h3>
+                      <p className="text-apple-sub leading-relaxed whitespace-pre-line">{selectedProduct.features}</p>
+                    </div>
+                  )}
 
                   <div className="text-sm text-apple-sub">
                     <p>SKU: {selectedProduct.id + 5000}</p>
@@ -1242,6 +1249,17 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
+              
+              {selectedProduct.image_urls && selectedProduct.image_urls.length > 0 && (
+                <div className="mt-12">
+                  <h3 className="text-lg font-semibold mb-4">Más fotos</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {selectedProduct.image_urls.map((url, i) => (
+                      <img key={i} src={url} alt={`${selectedProduct.name} ${i}`} className="rounded-xl border border-apple-border/20" referrerPolicy="no-referrer" />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
