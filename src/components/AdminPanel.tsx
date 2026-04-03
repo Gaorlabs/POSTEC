@@ -4,6 +4,8 @@ import { Product, Order, Customer, Interaction } from '../types';
 import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail } from 'lucide-react';
 import { buildWhatsAppMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
+import ProductModal from './ProductModal';
+import OrderModal from './OrderModal';
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'crm' | 'settings'>('products');
@@ -14,9 +16,11 @@ export default function AdminPanel() {
   
   // Product Modal State
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [editingOrder, setEditingOrder] = useState<Partial<Order> | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Partial<Customer> | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
@@ -61,6 +65,11 @@ export default function AdminPanel() {
   async function fetchOrders() {
     const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
     if (!error) setOrders(data || []);
+  }
+
+  async function fetchCustomers() {
+    const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+    if (!error) setCustomers(data || []);
   }
 
   async function fetchInteractions(customerId: string) {
@@ -116,6 +125,25 @@ export default function AdminPanel() {
     } catch (error) {
       console.error('Error saving product:', error);
       alert('Error al guardar el producto');
+    }
+  };
+
+  const handleSaveOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOrder) return;
+
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .insert([{ ...editingOrder, status: 'pendiente' }]);
+      if (error) throw error;
+      
+      setIsOrderModalOpen(false);
+      setEditingOrder(null);
+      fetchOrders();
+    } catch (error) {
+      console.error('Error saving order:', error);
+      alert('Error al guardar el pedido');
     }
   };
 
@@ -320,12 +348,23 @@ export default function AdminPanel() {
                 <h2 className="text-[2.5rem] font-semibold tracking-tight leading-tight">Registro de Pedidos</h2>
                 <p className="text-apple-sub text-lg mt-2">Gestiona las ventas y envíos.</p>
               </div>
-              <button 
-                onClick={fetchOrders}
-                className="p-4 hover:bg-apple-gray rounded-full text-apple-sub transition-all"
-              >
-                <RefreshCw size={22} />
-              </button>
+              <div className="flex gap-4">
+                <button 
+                  onClick={fetchOrders}
+                  className="p-4 hover:bg-apple-gray rounded-full text-apple-sub transition-all"
+                >
+                  <RefreshCw size={22} />
+                </button>
+                <button 
+                  onClick={() => {
+                    setEditingOrder({ customer_name: '', customer_whatsapp: '', total: 0 });
+                    setIsOrderModalOpen(true);
+                  }}
+                  className="apple-button flex items-center gap-2 shadow-lg shadow-apple-accent/20"
+                >
+                  <Plus size={20} /> Nuevo Pedido
+                </button>
+              </div>
             </div>
 
             <div className="apple-card border-none bg-white shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
@@ -477,6 +516,7 @@ export default function AdminPanel() {
                 whatsapp: formData.get('whatsapp'),
                 facebook: formData.get('facebook'),
                 instagram: formData.get('instagram'),
+                tiktok: formData.get('tiktok'),
                 slides: (formData.get('slides') as string).split(',').map(s => s.trim()),
               };
               
@@ -500,6 +540,10 @@ export default function AdminPanel() {
                 <input name="instagram" type="url" className="apple-input text-lg py-4" placeholder="https://instagram.com/..." />
               </div>
               <div className="space-y-2">
+                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">TikTok URL</label>
+                <input name="tiktok" type="url" className="apple-input text-lg py-4" placeholder="https://tiktok.com/..." />
+              </div>
+              <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Fotos del Carrusel (URLs separadas por coma)</label>
                 <textarea name="slides" className="apple-input text-lg py-4 min-h-[100px]" placeholder="https://..., https://..." />
               </div>
@@ -510,6 +554,24 @@ export default function AdminPanel() {
           </motion.div>
         )}
       </main>
+
+      {/* Order Modal */}
+      <OrderModal 
+        isOpen={isOrderModalOpen} 
+        onClose={() => setIsOrderModalOpen(false)} 
+        order={editingOrder} 
+        setOrder={setEditingOrder} 
+        onSave={handleSaveOrder} 
+      />
+
+      {/* Product Modal */}
+      <ProductModal 
+        isOpen={isProductModalOpen} 
+        onClose={() => setIsProductModalOpen(false)} 
+        product={editingProduct} 
+        setProduct={setEditingProduct} 
+        onSave={handleSaveProduct} 
+      />
 
       {/* Interaction Modal */}
       <AnimatePresence>
