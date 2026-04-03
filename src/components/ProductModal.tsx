@@ -50,9 +50,9 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
         const currentUrls = product.image_urls || [];
         setProduct({ ...product, image_urls: [...currentUrls, publicUrl] });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading image:', error);
-      alert('Error al subir la imagen');
+      alert(`Error al subir la imagen: ${error.message || 'Error desconocido'}. Asegúrate de que los buckets "products" y "product-photos" existan en Supabase Storage y tengan políticas de acceso público.`);
     } finally {
       setUploading(false);
     }
@@ -132,8 +132,11 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
                     required
                     type="number" 
                     step="0.01"
-                    value={product.price || 0}
-                    onChange={e => setProduct({...product, price: parseFloat(e.target.value)})}
+                    value={product.price || ''}
+                    onChange={e => {
+                      const val = parseFloat(e.target.value);
+                      setProduct({...product, price: isNaN(val) ? 0 : val});
+                    }}
                     className="apple-input text-base md:text-lg py-3 md:py-4"
                     placeholder="0.00"
                   />

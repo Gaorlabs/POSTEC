@@ -165,23 +165,31 @@ export default function AdminPanel() {
     if (!editingProduct) return;
 
     try {
-      if (editingProduct.id) {
+      // Clean up the object before sending to Supabase
+      const { id, created_at, ...updateData } = editingProduct as any;
+      
+      if (id) {
         const { error } = await supabase
           .from('products')
-          .update(editingProduct)
-          .eq('id', editingProduct.id);
+          .update(updateData)
+          .eq('id', id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('products')
-          .insert([editingProduct]);
+          .insert([updateData]);
         if (error) throw error;
       }
       setIsProductModalOpen(false);
       setEditingProduct(null);
-    } catch (error) {
+      fetchProducts();
+    } catch (error: any) {
       console.error('Error saving product:', error);
-      alert('Error al guardar el producto');
+      let message = error.message || 'Error desconocido';
+      if (message.includes('column') && message.includes('does not exist')) {
+        message = "Faltan columnas en la base de datos. Por favor, ejecuta el script SQL proporcionado en el editor de Supabase para añadir 'sku', 'colors', 'features' e 'image_urls'.";
+      }
+      alert(`Error al guardar el producto: ${message}`);
     }
   };
 
@@ -190,17 +198,19 @@ export default function AdminPanel() {
     if (!editingOrder) return;
 
     try {
+      const { id, created_at, ...updateData } = editingOrder as any;
+      
       const { error } = await supabase
         .from('orders')
-        .insert([{ ...editingOrder, status: 'pendiente' }]);
+        .insert([{ ...updateData, status: 'pendiente' }]);
       if (error) throw error;
       
       setIsOrderModalOpen(false);
       setEditingOrder(null);
       fetchOrders();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving order:', error);
-      alert('Error al guardar el pedido');
+      alert(`Error al guardar el pedido: ${error.message || 'Error desconocido'}`);
     }
   };
 
@@ -209,23 +219,26 @@ export default function AdminPanel() {
     if (!editingCustomer) return;
 
     try {
-      if (editingCustomer.id) {
+      const { id, created_at, ...updateData } = editingCustomer as any;
+      
+      if (id) {
         const { error } = await supabase
           .from('customers')
-          .update(editingCustomer)
-          .eq('id', editingCustomer.id);
+          .update(updateData)
+          .eq('id', id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('customers')
-          .insert([editingCustomer]);
+          .insert([updateData]);
         if (error) throw error;
       }
       setIsCustomerModalOpen(false);
       setEditingCustomer(null);
-    } catch (error) {
+      fetchCustomers();
+    } catch (error: any) {
       console.error('Error saving customer:', error);
-      alert('Error al guardar el cliente');
+      alert(`Error al guardar el cliente: ${error.message || 'Error desconocido'}`);
     }
   };
 
