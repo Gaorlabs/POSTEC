@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './components/HomePage';
 import AdminPanel from './components/AdminPanel';
 import { AlertTriangle } from 'lucide-react';
@@ -6,13 +7,9 @@ import { supabase } from './lib/supabaseClient';
 import { seedProducts } from './lib/seedData';
 
 export default function App() {
-  const [isAdmin, setIsAdmin] = useState(false);
   const [hasConfig, setHasConfig] = useState(true);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setIsAdmin(params.get('admin') === 'true');
-    
     const url = import.meta.env.VITE_SUPABASE_URL;
     const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
     setHasConfig(!!(url && key));
@@ -45,14 +42,19 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen">
-      {!hasConfig && (
-        <div className="bg-orange-600 text-white px-4 py-3 flex items-center justify-center gap-3 text-sm font-bold sticky top-0 z-[100] shadow-lg">
-          <AlertTriangle size={20} />
-          <span>Configuración de Supabase pendiente. Por favor, añade las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.</span>
-        </div>
-      )}
-      {isAdmin ? <AdminPanel /> : <HomePage />}
-    </div>
+    <BrowserRouter>
+      <div className="min-h-screen">
+        {!hasConfig && (
+          <div className="bg-orange-600 text-white px-4 py-3 flex items-center justify-center gap-3 text-sm font-bold sticky top-0 z-[100] shadow-lg">
+            <AlertTriangle size={20} />
+            <span>Configuración de Supabase pendiente. Por favor, añade las variables de entorno VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.</span>
+          </div>
+        )}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/admin" element={<AdminPanel />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
 }
