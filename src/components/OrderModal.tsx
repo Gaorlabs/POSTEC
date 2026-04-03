@@ -43,23 +43,23 @@ export default function OrderModal({ isOpen, onClose, order, setOrder, onSave, p
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="relative glass-card rounded-[2.5rem] w-full max-w-xl overflow-hidden shadow-2xl"
+          className="relative glass-card rounded-3xl md:rounded-[2.5rem] w-full max-w-xl overflow-hidden shadow-2xl"
         >
-          <div className="p-10 border-b border-apple-border/10 flex items-center justify-between">
-            <h3 className="text-3xl font-semibold tracking-tight">Nuevo Pedido</h3>
-            <button onClick={onClose} className="p-3 hover:bg-apple-gray rounded-full transition-colors">
-              <X size={24} />
+          <div className="p-6 md:p-10 border-b border-apple-border/10 flex items-center justify-between">
+            <h3 className="text-xl md:text-3xl font-semibold tracking-tight">Nuevo Pedido</h3>
+            <button onClick={onClose} className="p-2 md:p-3 hover:bg-apple-gray rounded-full transition-colors">
+              <X size={20} className="md:w-6 md:h-6" />
             </button>
           </div>
-          <form onSubmit={onSave} className="p-10 space-y-8">
+          <form onSubmit={onSave} className="p-6 md:p-10 space-y-6 md:space-y-8">
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Producto</label>
+                <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Producto</label>
                 <select 
                   required
                   value={selectedProductId}
                   onChange={e => handleProductChange(Number(e.target.value))}
-                  className="apple-input text-lg py-4 w-full"
+                  className="apple-input text-base md:text-lg py-3 md:py-4 w-full"
                 >
                   <option value="">Selecciona un producto</option>
                   {products.map(p => (
@@ -68,52 +68,52 @@ export default function OrderModal({ isOpen, onClose, order, setOrder, onSave, p
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Nombre del Cliente</label>
+                <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Nombre del Cliente</label>
                 <input 
                   required
                   type="text" 
                   value={order.customer_name || ''}
                   onChange={e => setOrder({...order, customer_name: e.target.value})}
-                  className="apple-input text-lg py-4"
+                  className="apple-input text-base md:text-lg py-3 md:py-4"
                   placeholder="Ej. Juan Pérez"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">WhatsApp</label>
+                <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">WhatsApp</label>
                 <input 
                   required
                   type="text" 
                   value={order.customer_whatsapp || ''}
                   onChange={e => setOrder({...order, customer_whatsapp: e.target.value})}
-                  className="apple-input text-lg py-4"
+                  className="apple-input text-base md:text-lg py-3 md:py-4"
                   placeholder="+51..."
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Total</label>
+                <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Total</label>
                 <input 
                   required
                   type="number" 
                   step="0.01"
                   value={order.total || 0}
                   onChange={e => setOrder({...order, total: parseFloat(e.target.value)})}
-                  className="apple-input text-lg py-4"
+                  className="apple-input text-base md:text-lg py-3 md:py-4"
                   placeholder="0.00"
                 />
               </div>
             </div>
 
-            <div className="flex gap-4 pt-4">
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4 pt-4">
               <button 
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-8 py-4 rounded-2xl font-semibold text-lg bg-apple-gray hover:bg-zinc-200 transition-colors"
+                className="order-2 md:order-1 flex-1 px-8 py-3 md:py-4 rounded-xl md:rounded-2xl font-semibold text-base md:text-lg bg-apple-gray hover:bg-zinc-200 transition-colors"
               >
                 Cancelar
               </button>
               <button 
                 type="submit"
-                className="flex-1 apple-button py-4 text-lg rounded-2xl shadow-lg shadow-apple-accent/20"
+                className="order-1 md:order-2 flex-1 apple-button py-3 md:py-4 text-base md:text-lg rounded-xl md:rounded-2xl shadow-lg shadow-apple-accent/20"
               >
                 Crear Pedido
               </button>

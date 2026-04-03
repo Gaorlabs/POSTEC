@@ -246,34 +246,34 @@ export default function AdminPanel() {
     <div className="min-h-screen bg-apple-bg text-apple-dark font-sans selection:bg-apple-accent/10">
       {/* Admin Header */}
       <header className="apple-nav">
-        <div className="max-w-[1600px] mx-auto px-6 h-12 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Package size={20} className="text-apple-dark" />
-            <h1 className="font-semibold text-base tracking-tight">Panel de Administración</h1>
-            <span className="bg-apple-gray text-apple-sub text-[9px] uppercase tracking-widest font-bold px-2 py-0.5 rounded border border-apple-border/30">
+        <div className="max-w-[1600px] mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2 md:gap-3">
+            <Package size={20} className="text-apple-dark shrink-0" />
+            <h1 className="font-semibold text-sm md:text-base tracking-tight truncate max-w-[150px] md:max-w-none">Panel Admin</h1>
+            <span className="hidden sm:inline-block bg-apple-gray text-apple-sub text-[9px] uppercase tracking-widest font-bold px-2 py-0.5 rounded border border-apple-border/30">
               Pos-Tec
             </span>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 md:gap-6">
             <button 
               onClick={() => window.location.href = '/'}
-              className="flex items-center gap-1.5 text-[12px] text-apple-sub font-medium hover:text-apple-accent group"
+              className="flex items-center gap-1.5 text-[11px] md:text-[12px] text-apple-sub font-medium hover:text-apple-accent group"
             >
-              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Volver a la Tienda
+              <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> <span className="hidden sm:inline">Tienda</span>
             </button>
             <button 
               onClick={handleLogout}
-              className="flex items-center gap-1.5 text-[12px] text-red-500 font-medium hover:underline"
+              className="flex items-center gap-1.5 text-[11px] md:text-[12px] text-red-500 font-medium hover:underline"
             >
-              Cerrar Sesión
+              Cerrar <span className="hidden sm:inline">Sesión</span>
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-[1600px] mx-auto px-6 py-16">
+      <main className="max-w-[1600px] mx-auto px-4 md:px-6 py-8 md:py-16">
         {/* Tabs */}
-        <div className="flex gap-10 mb-16 border-b border-apple-border/20">
+        <div className="flex gap-6 md:gap-10 mb-8 md:mb-16 border-b border-apple-border/20 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
           {[
             { id: 'products', label: 'Productos', icon: Package },
             { id: 'orders', label: 'Pedidos', icon: ShoppingBag },
@@ -301,24 +301,25 @@ export default function AdminPanel() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-10"
           >
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
               <div>
-                <h2 className="text-[2.5rem] font-semibold tracking-tight leading-tight">Gestión de Productos</h2>
-                <p className="text-apple-sub text-lg mt-2">Administra el inventario de tu tienda.</p>
+                <h2 className="text-2xl md:text-[2.5rem] font-semibold tracking-tight leading-tight">Gestión de Productos</h2>
+                <p className="text-apple-sub text-base md:text-lg mt-1 md:mt-2">Administra el inventario de tu tienda.</p>
               </div>
               <button 
                 onClick={() => {
                   setEditingProduct({ name: '', description: '', price: 0, category: 'Otros', image_url: '' });
                   setIsProductModalOpen(true);
                 }}
-                className="apple-button flex items-center gap-2 shadow-lg shadow-apple-accent/20"
+                className="apple-button w-full md:w-auto flex items-center justify-center gap-2 shadow-lg shadow-apple-accent/20"
               >
                 <Plus size={20} /> Nuevo Producto
               </button>
             </div>
 
-            <div className="apple-card border-none bg-white shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
-              <div className="overflow-x-auto">
+            <div className="apple-card border-none bg-white shadow-[0_4px_24px_rgba(0,0,0,0.04)] overflow-hidden">
+              {/* Desktop View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-apple-gray/50 text-apple-sub text-[10px] uppercase tracking-widest font-bold border-b border-apple-border/10">
@@ -372,6 +373,46 @@ export default function AdminPanel() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile View */}
+              <div className="md:hidden divide-y divide-apple-border/10">
+                {products.map(product => (
+                  <div key={product.id} className="p-4 flex flex-col gap-4">
+                    <div className="flex gap-4">
+                      <div className="w-20 h-20 bg-apple-gray rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center border border-apple-border/10">
+                        <img src={product.image_url || `https://picsum.photos/seed/${product.id}/100/100`} alt="" className="max-h-14 object-contain" />
+                      </div>
+                      <div className="flex-grow min-w-0">
+                        <div className="font-semibold text-base text-apple-dark truncate">{product.name}</div>
+                        <div className="text-xs text-apple-sub line-clamp-2 mt-1">{product.description}</div>
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="text-sm font-bold text-apple-dark">S/.{product.price.toFixed(2)}</span>
+                          <span className="bg-apple-gray text-apple-sub text-[8px] font-bold px-2 py-1 rounded uppercase tracking-widest border border-apple-border/20">
+                            {product.category}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => {
+                          setEditingProduct(product);
+                          setIsProductModalOpen(true);
+                        }}
+                        className="flex-1 py-2.5 bg-apple-gray text-apple-dark rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
+                      >
+                        <Edit2 size={14} /> Editar
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteProduct(product.id)}
+                        className="flex-1 py-2.5 bg-red-50 text-red-500 rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
+                      >
+                        <Trash2 size={14} /> Eliminar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         ) : activeTab === 'orders' ? (
@@ -380,15 +421,15 @@ export default function AdminPanel() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-10"
           >
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
               <div>
-                <h2 className="text-[2.5rem] font-semibold tracking-tight leading-tight">Registro de Pedidos</h2>
-                <p className="text-apple-sub text-lg mt-2">Gestiona las ventas y envíos.</p>
+                <h2 className="text-2xl md:text-[2.5rem] font-semibold tracking-tight leading-tight">Registro de Pedidos</h2>
+                <p className="text-apple-sub text-base md:text-lg mt-1 md:mt-2">Gestiona las ventas y envíos.</p>
               </div>
-              <div className="flex gap-4">
+              <div className="flex gap-4 w-full md:w-auto">
                 <button 
                   onClick={fetchOrders}
-                  className="p-4 hover:bg-apple-gray rounded-full text-apple-sub transition-all"
+                  className="p-4 hover:bg-apple-gray rounded-full text-apple-sub transition-all hidden md:block"
                 >
                   <RefreshCw size={22} />
                 </button>
@@ -397,15 +438,16 @@ export default function AdminPanel() {
                     setEditingOrder({ customer_name: '', customer_whatsapp: '', total: 0 });
                     setIsOrderModalOpen(true);
                   }}
-                  className="apple-button flex items-center gap-2 shadow-lg shadow-apple-accent/20"
+                  className="apple-button flex-grow md:flex-grow-0 flex items-center justify-center gap-2 shadow-lg shadow-apple-accent/20"
                 >
                   <Plus size={20} /> Nuevo Pedido
                 </button>
               </div>
             </div>
 
-            <div className="apple-card border-none bg-white shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
-              <div className="overflow-x-auto">
+            <div className="apple-card border-none bg-white shadow-[0_4px_24px_rgba(0,0,0,0.04)] overflow-hidden">
+              {/* Desktop View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-apple-gray/50 text-apple-sub text-[10px] uppercase tracking-widest font-bold border-b border-apple-border/10">
@@ -459,6 +501,48 @@ export default function AdminPanel() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile View */}
+              <div className="md:hidden divide-y divide-apple-border/10">
+                {orders.map(order => (
+                  <div key={order.id} className="p-4 flex flex-col gap-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-semibold text-apple-accent text-sm">#{order.id}</div>
+                        <div className="text-[10px] text-apple-sub font-medium">{new Date(order.created_at).toLocaleDateString()}</div>
+                      </div>
+                      <select 
+                        value={order.status}
+                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                        className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border focus:outline-none transition-all appearance-none cursor-pointer ${
+                          order.status === 'pendiente' ? 'bg-yellow-50 border-yellow-200 text-yellow-600' :
+                          order.status === 'pagado' ? 'bg-green-50 border-green-200 text-green-600' :
+                          order.status === 'enviado' ? 'bg-blue-50 border-blue-200 text-blue-600' :
+                          'bg-red-50 border-red-200 text-red-600'
+                        }`}
+                      >
+                        <option value="pendiente">Pendiente</option>
+                        <option value="pagado">Pagado</option>
+                        <option value="enviado">Enviado</option>
+                        <option value="cancelado">Cancelado</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-apple-dark text-base">{order.customer_name}</div>
+                      <div className="text-xs text-apple-sub font-medium">{order.customer_whatsapp}</div>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-lg font-bold text-apple-dark">S/.{order.total.toFixed(2)}</span>
+                      <button 
+                        onClick={() => resendWhatsApp(order)}
+                        className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-xl text-xs font-semibold"
+                      >
+                        <ExternalLink size={14} /> WhatsApp
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         ) : activeTab === 'crm' ? (
@@ -467,24 +551,25 @@ export default function AdminPanel() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-10"
           >
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
               <div>
-                <h2 className="text-[2.5rem] font-semibold tracking-tight leading-tight">CRM de Clientes</h2>
-                <p className="text-apple-sub text-lg mt-2">Gestiona tus relaciones con los clientes.</p>
+                <h2 className="text-2xl md:text-[2.5rem] font-semibold tracking-tight leading-tight">CRM de Clientes</h2>
+                <p className="text-apple-sub text-base md:text-lg mt-1 md:mt-2">Gestiona tus relaciones con los clientes.</p>
               </div>
               <button 
                 onClick={() => {
                   setEditingCustomer({ name: '', whatsapp: '', email: '', notes: '' });
                   setIsCustomerModalOpen(true);
                 }}
-                className="apple-button flex items-center gap-2 shadow-lg shadow-apple-accent/20"
+                className="apple-button w-full md:w-auto flex items-center justify-center gap-2 shadow-lg shadow-apple-accent/20"
               >
                 <Plus size={20} /> Nuevo Cliente
               </button>
             </div>
 
-            <div className="apple-card border-none bg-white shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
-              <div className="overflow-x-auto">
+            <div className="apple-card border-none bg-white shadow-[0_4px_24px_rgba(0,0,0,0.04)] overflow-hidden">
+              {/* Desktop View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-apple-gray/50 text-apple-sub text-[10px] uppercase tracking-widest font-bold border-b border-apple-border/10">
@@ -537,6 +622,51 @@ export default function AdminPanel() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile View */}
+              <div className="md:hidden divide-y divide-apple-border/10">
+                {customers.map(customer => (
+                  <div key={customer.id} className="p-4 flex flex-col gap-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-semibold text-apple-dark text-base">{customer.name}</div>
+                        <div className="text-xs text-apple-sub font-medium">{customer.email}</div>
+                      </div>
+                      <div className="text-[10px] text-apple-sub font-bold uppercase tracking-widest">
+                        {new Date(customer.last_interaction).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="text-sm font-medium text-apple-sub">{customer.whatsapp}</div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          fetchInteractions(customer.id);
+                          setIsInteractionModalOpen(true);
+                        }}
+                        className="flex-1 py-2.5 bg-apple-gray text-apple-dark rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
+                      >
+                        <MessageCircle size={14} /> Historial
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setEditingCustomer(customer);
+                          setIsCustomerModalOpen(true);
+                        }}
+                        className="flex-1 py-2.5 bg-apple-gray text-apple-dark rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
+                      >
+                        <Edit2 size={14} /> Editar
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteCustomer(customer.id)}
+                        className="p-2.5 bg-red-50 text-red-500 rounded-xl"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </motion.div>
         ) : (
@@ -545,7 +675,7 @@ export default function AdminPanel() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-2xl mx-auto"
           >
-            <h2 className="text-3xl font-semibold mb-8">Configuración de la Tienda</h2>
+            <h2 className="text-2xl md:text-3xl font-semibold mb-6 md:mb-8 text-center md:text-left">Configuración de la Tienda</h2>
             <form onSubmit={async (e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
@@ -567,7 +697,7 @@ export default function AdminPanel() {
                 alert('Configuración guardada correctamente');
                 setSettings(newSettings);
               }
-            }} className="apple-card p-8 space-y-6">
+            }} className="apple-card p-6 md:p-8 space-y-6">
               <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Logo de la Tienda</label>
                 <div className="flex gap-4">

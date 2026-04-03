@@ -65,80 +65,80 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="relative glass-card rounded-[2.5rem] w-full max-w-xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+          className="relative glass-card rounded-3xl md:rounded-[2.5rem] w-full max-w-xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
         >
-          <div className="p-10 border-b border-apple-border/10 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
-            <h3 className="text-3xl font-semibold tracking-tight">{product.id ? 'Editar Producto' : 'Nuevo Producto'}</h3>
-            <button onClick={onClose} className="p-3 hover:bg-apple-gray rounded-full transition-colors">
-              <X size={24} />
+          <div className="p-6 md:p-10 border-b border-apple-border/10 flex items-center justify-between sticky top-0 bg-white/80 backdrop-blur-md z-10">
+            <h3 className="text-xl md:text-3xl font-semibold tracking-tight">{product.id ? 'Editar Producto' : 'Nuevo Producto'}</h3>
+            <button onClick={onClose} className="p-2 md:p-3 hover:bg-apple-gray rounded-full transition-colors">
+              <X size={20} className="md:w-6 md:h-6" />
             </button>
           </div>
-          <form onSubmit={onSave} className="p-10 space-y-8">
+          <form onSubmit={onSave} className="p-6 md:p-10 space-y-6 md:space-y-8">
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Nombre</label>
+                <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Nombre</label>
                 <input 
                   required
                   type="text" 
                   value={product.name || ''}
                   onChange={e => setProduct({...product, name: e.target.value})}
-                  className="apple-input text-lg py-4"
+                  className="apple-input text-base md:text-lg py-3 md:py-4"
                   placeholder="Ej. Producto Increíble"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Descripción</label>
+                <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Descripción</label>
                 <textarea 
                   required
                   value={product.description || ''}
                   onChange={e => setProduct({...product, description: e.target.value})}
-                  className="apple-input text-lg py-4 min-h-[100px] resize-none"
+                  className="apple-input text-base md:text-lg py-3 md:py-4 min-h-[80px] md:min-h-[100px] resize-none"
                   placeholder="Descripción del producto..."
                 />
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-2">
-                  <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">SKU</label>
+                  <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">SKU</label>
                   <input 
                     type="text" 
                     value={product.sku || ''}
                     onChange={e => setProduct({...product, sku: e.target.value})}
-                    className="apple-input text-lg py-4"
+                    className="apple-input text-base md:text-lg py-3 md:py-4"
                     placeholder="Ej. POS-5027"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Colores (separados por coma)</label>
+                  <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Colores</label>
                   <input 
                     type="text" 
                     value={product.colors?.join(', ') || ''}
                     onChange={e => setProduct({...product, colors: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '')})}
-                    className="apple-input text-lg py-4"
+                    className="apple-input text-base md:text-lg py-3 md:py-4"
                     placeholder="Ej. Negro, Blanco, Gris"
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-2">
-                  <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Precio</label>
+                  <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Precio</label>
                   <input 
                     required
                     type="number" 
                     step="0.01"
                     value={product.price || 0}
                     onChange={e => setProduct({...product, price: parseFloat(e.target.value)})}
-                    className="apple-input text-lg py-4"
+                    className="apple-input text-base md:text-lg py-3 md:py-4"
                     placeholder="0.00"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Categoría</label>
+                  <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Categoría</label>
                   <input 
                     required
                     type="text" 
                     value={product.category || ''}
                     onChange={e => setProduct({...product, category: e.target.value})}
-                    className="apple-input text-lg py-4"
+                    className="apple-input text-base md:text-lg py-3 md:py-4"
                     placeholder="Ej. Otros"
                   />
                 </div>
@@ -206,18 +206,18 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
               </div>
             </div>
 
-            <div className="flex gap-4 pt-4 sticky bottom-0 bg-white py-4 border-t border-apple-border/10">
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4 pt-4 sticky bottom-0 bg-white py-4 border-t border-apple-border/10">
               <button 
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-8 py-4 rounded-2xl font-semibold text-lg bg-apple-gray hover:bg-zinc-200 transition-colors"
+                className="order-2 md:order-1 flex-1 px-8 py-3 md:py-4 rounded-xl md:rounded-2xl font-semibold text-base md:text-lg bg-apple-gray hover:bg-zinc-200 transition-colors"
               >
                 Cancelar
               </button>
               <button 
                 type="submit"
                 disabled={uploading}
-                className="flex-1 apple-button py-4 text-lg rounded-2xl shadow-lg shadow-apple-accent/20 disabled:opacity-50"
+                className="order-1 md:order-2 flex-1 apple-button py-3 md:py-4 text-base md:text-lg rounded-xl md:rounded-2xl shadow-lg shadow-apple-accent/20 disabled:opacity-50"
               >
                 {product.id ? 'Guardar Cambios' : 'Crear Producto'}
               </button>

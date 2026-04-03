@@ -1,0 +1,17 @@
+{
+  "name": "Pos-Tec Admin",
+  "short_name": "Pos-Tec Admin",
+  "description": "Panel de Administración de Pos-Tec Store",
+  "start_url": "/admin",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#121212",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/906/906343.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

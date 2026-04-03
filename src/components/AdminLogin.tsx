@@ -51,11 +51,11 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
           </div>
         </div>
 
-        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-10 shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white/20">
-          <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-white/20">
+          <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
             <div className="space-y-4">
               <div className="flex items-center justify-between px-1">
-                <label className="text-[13px] font-bold uppercase tracking-widest text-[#86868B]">Contraseña de Acceso</label>
+                <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-[#86868B]">Contraseña de Acceso</label>
                 <ShieldCheck size={16} className="text-apple-accent opacity-50" />
               </div>
               
@@ -69,7 +69,7 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className={`w-full bg-[#F5F5F7] border-2 rounded-2xl px-6 py-4 text-xl outline-none transition-all placeholder:text-zinc-300 ${
+                  className={`w-full bg-[#F5F5F7] border-2 rounded-2xl px-6 py-3 md:py-4 text-lg md:text-xl outline-none transition-all placeholder:text-zinc-300 ${
                     error ? 'border-red-500/50 bg-red-50/30' : 'border-transparent focus:bg-white focus:border-apple-accent/30'
                   }`}
                   autoFocus
