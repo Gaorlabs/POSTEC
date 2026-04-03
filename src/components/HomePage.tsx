@@ -62,7 +62,9 @@ export default function HomePage() {
     }
   };
 
-  const slides = [
+  const [settings, setSettings] = useState<any>(null);
+
+  const defaultSlides = [
     {
       title: "PC O LAPTOP.",
       subtitle: "Potencia y rendimiento para tu negocio.",
@@ -93,12 +95,22 @@ export default function HomePage() {
     }
   ];
 
+  const slides = settings?.slides?.length > 0 
+    ? settings.slides.map((url: string, i: number) => ({
+        title: i === 0 ? "Nuevos Ingresos" : "Tecnología de Punta",
+        subtitle: "Descubre lo mejor para tu negocio.",
+        image: url,
+        category: "Todas",
+        color: "from-black"
+      }))
+    : defaultSlides;
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   const categories = ['Todas', 'Impresoras Térmicas', 'Gavetas de Dinero', 'Control de Acceso', 'Lector de Código de Barras', 'Monitores Touch', 'PC O LAPTOP', 'Suministros', 'Terminal Punto de Venta'];
 
@@ -119,7 +131,17 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchProducts();
+    fetchSettings();
   }, []);
+
+  async function fetchSettings() {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'general')
+      .single();
+    if (!error && data) setSettings(data.value);
+  }
 
   async function fetchProducts() {
     try {
@@ -220,7 +242,7 @@ export default function HomePage() {
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => { setCurrentTab('Tienda'); setIsMobileMenuOpen(false); }}
           >
-            <Logo />
+            <Logo src={settings?.logo_url} />
           </div>
           
           <div className="hidden md:flex items-center gap-10 text-[15px] font-semibold text-apple-dark">
@@ -1060,7 +1082,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div className="col-span-1">
               <div className="mb-4">
-                <Logo className="text-white" />
+                <Logo className="text-white" src={settings?.logo_url} />
               </div>
               <p className="text-zinc-400 text-xs max-w-sm leading-relaxed">
                 Líderes en soluciones tecnológicas para puntos de venta en todo el Perú. 

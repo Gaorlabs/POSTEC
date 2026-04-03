@@ -517,7 +517,8 @@ export default function AdminPanel() {
                 facebook: formData.get('facebook'),
                 instagram: formData.get('instagram'),
                 tiktok: formData.get('tiktok'),
-                slides: (formData.get('slides') as string).split(',').map(s => s.trim()),
+                logo_url: formData.get('logo_url'),
+                slides: (formData.get('slides') as string).split(',').map(s => s.trim()).filter(s => s !== ''),
               };
               
               const { error } = await supabase
@@ -527,6 +528,30 @@ export default function AdminPanel() {
               if (error) alert('Error al guardar configuración');
               else alert('Configuración guardada correctamente');
             }} className="apple-card p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Logo de la Tienda</label>
+                <div className="flex gap-4">
+                  <input name="logo_url" type="url" className="apple-input text-lg py-4 flex-grow" placeholder="https://..." defaultValue={products[0]?.image_url ? '' : ''} />
+                  <label className="cursor-pointer bg-apple-gray hover:bg-zinc-200 p-4 rounded-xl transition-colors flex items-center justify-center min-w-[60px]">
+                    <Upload size={20} />
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const fileName = `${Math.random()}.${file.name.split('.').pop()}`;
+                        const { data, error } = await supabase.storage.from('logos').upload(fileName, file);
+                        if (error) return alert('Error al subir logo');
+                        const { data: { publicUrl } } = supabase.storage.from('logos').getPublicUrl(fileName);
+                        const input = (e.target.closest('div')?.querySelector('input[name="logo_url"]') as HTMLInputElement);
+                        if (input) input.value = publicUrl;
+                      }} 
+                    />
+                  </label>
+                </div>
+              </div>
               <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Número de WhatsApp</label>
                 <input name="whatsapp" type="text" className="apple-input text-lg py-4" placeholder="+51..." />
@@ -545,10 +570,33 @@ export default function AdminPanel() {
               </div>
               <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Fotos del Carrusel (URLs separadas por coma)</label>
-                <textarea name="slides" className="apple-input text-lg py-4 min-h-[100px]" placeholder="https://..., https://..." />
+                <div className="flex gap-4">
+                  <textarea name="slides" className="apple-input text-lg py-4 min-h-[100px] flex-grow" placeholder="https://..., https://..." />
+                  <label className="cursor-pointer bg-apple-gray hover:bg-zinc-200 p-4 rounded-xl transition-colors flex items-center justify-center min-w-[60px] h-[100px]">
+                    <Upload size={20} />
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const fileName = `${Math.random()}.${file.name.split('.').pop()}`;
+                        const { data, error } = await supabase.storage.from('hero-slides').upload(fileName, file);
+                        if (error) return alert('Error al subir imagen');
+                        const { data: { publicUrl } } = supabase.storage.from('hero-slides').getPublicUrl(fileName);
+                        const textarea = (e.target.closest('div')?.querySelector('textarea[name="slides"]') as HTMLTextAreaElement);
+                        if (textarea) {
+                          const current = textarea.value.trim();
+                          textarea.value = current ? `${current}, ${publicUrl}` : publicUrl;
+                        }
+                      }} 
+                    />
+                  </label>
+                </div>
               </div>
               <button type="submit" className="apple-button w-full py-4 text-lg rounded-2xl shadow-lg shadow-apple-accent/20">
-                Guardar Cambios
+                Guardar Configuración
               </button>
             </form>
           </motion.div>

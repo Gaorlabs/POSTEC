@@ -1,7 +1,15 @@
 import React from 'react';
 import { ScanBarcode } from 'lucide-react';
 
-export const Logo = ({ className = "" }: { className?: string }) => {
+export const Logo = ({ className = "", src }: { className?: string, src?: string }) => {
+  if (src) {
+    return (
+      <div className={`flex items-center gap-2 ${className}`}>
+        <img src={src} alt="Logo" className="h-10 w-auto object-contain" referrerPolicy="no-referrer" />
+      </div>
+    );
+  }
+
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <div className="bg-apple-dark p-2 rounded-xl shadow-lg">
