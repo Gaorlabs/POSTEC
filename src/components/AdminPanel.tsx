@@ -562,6 +562,7 @@ export default function AdminPanel() {
         order={editingOrder} 
         setOrder={setEditingOrder} 
         onSave={handleSaveOrder} 
+        products={products}
       />
 
       {/* Product Modal */}

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
-import { Order } from '../types';
+import { Order, Product } from '../types';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -9,10 +9,25 @@ interface OrderModalProps {
   order: Partial<Order> | null;
   setOrder: (order: Partial<Order>) => void;
   onSave: (e: React.FormEvent) => void;
+  products: Product[];
 }
 
-export default function OrderModal({ isOpen, onClose, order, setOrder, onSave }: OrderModalProps) {
+export default function OrderModal({ isOpen, onClose, order, setOrder, onSave, products }: OrderModalProps) {
+  const [selectedProductId, setSelectedProductId] = useState<number | ''>('');
+
   if (!isOpen || !order) return null;
+
+  const handleProductChange = (productId: number) => {
+    setSelectedProductId(productId);
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setOrder({
+        ...order,
+        items: [{ id: product.id, name: product.name, price: product.price, quantity: 1 }],
+        total: product.price
+      });
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -38,6 +53,20 @@ export default function OrderModal({ isOpen, onClose, order, setOrder, onSave }:
           </div>
           <form onSubmit={onSave} className="p-10 space-y-8">
             <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Producto</label>
+                <select 
+                  required
+                  value={selectedProductId}
+                  onChange={e => handleProductChange(Number(e.target.value))}
+                  className="apple-input text-lg py-4 w-full"
+                >
+                  <option value="">Selecciona un producto</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} - S/.{p.price.toFixed(2)}</option>
+                  ))}
+                </select>
+              </div>
               <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Nombre del Cliente</label>
                 <input 
