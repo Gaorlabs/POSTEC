@@ -1208,9 +1208,39 @@ export default function HomePage() {
                       referrerPolicy="no-referrer"
                     />
                   </div>
-                  <div className="grid grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="bg-apple-gray rounded-xl aspect-square border border-apple-border/20" />
+                  <div className="grid grid-cols-5 gap-2">
+                    {/* Main Image Thumbnail */}
+                    <div 
+                      className={`bg-apple-gray rounded-lg aspect-square border cursor-pointer overflow-hidden ${!selectedProduct.image_url || selectedProduct.image_url === selectedProduct.image_url ? 'border-apple-accent' : 'border-apple-border/20'}`}
+                      onClick={() => {
+                        // In a real app, we might change the main image view, 
+                        // but for now, we'll just keep it simple.
+                      }}
+                    >
+                      <img 
+                        src={selectedProduct.image_url || `https://picsum.photos/seed/${selectedProduct.id}/200/200`} 
+                        alt="Thumb" 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    {/* Additional Images Thumbnails */}
+                    {selectedProduct.image_urls?.slice(0, 4).map((url, i) => (
+                      <div 
+                        key={i} 
+                        className="bg-apple-gray rounded-lg aspect-square border border-apple-border/20 cursor-pointer overflow-hidden"
+                      >
+                        <img 
+                          src={url} 
+                          alt={`Thumb ${i}`} 
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    ))}
+                    {/* Fill remaining slots if less than 5 total */}
+                    {Array.from({ length: Math.max(0, 4 - (selectedProduct.image_urls?.length || 0)) }).map((_, i) => (
+                      <div key={`empty-${i}`} className="bg-apple-gray/50 rounded-lg aspect-square border border-apple-border/10" />
                     ))}
                   </div>
                 </div>

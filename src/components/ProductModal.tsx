@@ -14,11 +14,18 @@ interface ProductModalProps {
 
 export default function ProductModal({ isOpen, onClose, product, setProduct, onSave }: ProductModalProps) {
   const [uploading, setUploading] = useState(false);
+  const MAX_IMAGES = 5;
 
   if (!isOpen || !product) return null;
 
+  const totalImages = (product.image_url ? 1 : 0) + (product.image_urls?.length || 0);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isMain: boolean = true) => {
     try {
+      if (totalImages >= MAX_IMAGES && (!isMain || !product.image_url)) {
+        alert(`Máximo ${MAX_IMAGES} imágenes permitidas`);
+        return;
+      }
       setUploading(true);
       const file = e.target.files?.[0];
       if (!file) return;
@@ -155,22 +162,49 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Imagen Principal</label>
+                  <div className="flex justify-between items-center ml-1">
+                    <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub">Imagen Principal</label>
+                    <span className="text-[11px] font-medium text-apple-sub">
+                      {totalImages} / {MAX_IMAGES} fotos
+                    </span>
+                  </div>
                   <div className="flex gap-4">
                     <input 
                       type="url" 
                       value={product.image_url || ''}
-                      onChange={e => setProduct({...product, image_url: e.target.value})}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val && !product.image_url && totalImages >= MAX_IMAGES) {
+                          alert(`Máximo ${MAX_IMAGES} imágenes permitidas`);
+                          return;
+                        }
+                        setProduct({...product, image_url: val});
+                      }}
                       className="apple-input text-lg py-4 flex-grow"
-                      placeholder="URL de imagen..."
+                      placeholder="URL de imagen (ej. postimg.cc)..."
                     />
-                    <label className="cursor-pointer bg-apple-gray hover:bg-zinc-200 p-4 rounded-xl transition-colors flex items-center justify-center min-w-[60px]">
+                    <label className={`cursor-pointer p-4 rounded-xl transition-colors flex items-center justify-center min-w-[60px] ${totalImages >= MAX_IMAGES && !product.image_url ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed' : 'bg-apple-gray hover:bg-zinc-200'}`}>
                       {uploading ? <Loader2 className="animate-spin" /> : <Upload />}
-                      <input type="file" className="hidden" accept="image/*" onChange={e => handleFileUpload(e, true)} disabled={uploading} />
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*" 
+                        onChange={e => handleFileUpload(e, true)} 
+                        disabled={uploading || (totalImages >= MAX_IMAGES && !product.image_url)} 
+                      />
                     </label>
                   </div>
                   {product.image_url && (
-                    <img src={product.image_url} alt="Preview" className="h-20 w-20 object-cover rounded-lg border border-apple-border" />
+                    <div className="relative w-20 h-20">
+                      <img src={product.image_url} alt="Preview" className="h-20 w-20 object-cover rounded-lg border border-apple-border" />
+                      <button 
+                        type="button"
+                        onClick={() => setProduct({...product, image_url: ''})}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -179,26 +213,61 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
                   <div className="flex gap-4">
                     <textarea 
                       value={product.image_urls?.join(', ') || ''}
-                      onChange={e => setProduct({...product, image_urls: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '')})}
+                      onChange={e => {
+                        const urls = e.target.value.split(',').map(s => s.trim()).filter(s => s !== '');
+                        const otherCount = product.image_url ? 1 : 0;
+                        if (urls.length + otherCount > MAX_IMAGES) {
+                          alert(`Máximo ${MAX_IMAGES} imágenes permitidas`);
+                          return;
+                        }
+                        setProduct({...product, image_urls: urls});
+                      }}
                       className="apple-input text-lg py-4 min-h-[80px] resize-none flex-grow"
                       placeholder="URLs separadas por coma..."
                     />
-                    <label className="cursor-pointer bg-apple-gray hover:bg-zinc-200 p-4 rounded-xl transition-colors flex items-center justify-center min-w-[60px] h-[80px]">
+                    <label className={`cursor-pointer p-4 rounded-xl transition-colors flex items-center justify-center min-w-[60px] h-[80px] ${totalImages >= MAX_IMAGES ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed' : 'bg-apple-gray hover:bg-zinc-200'}`}>
                       {uploading ? <Loader2 className="animate-spin" /> : <Upload />}
-                      <input type="file" className="hidden" accept="image/*" onChange={e => handleFileUpload(e, false)} disabled={uploading} />
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*" 
+                        onChange={e => handleFileUpload(e, false)} 
+                        disabled={uploading || totalImages >= MAX_IMAGES} 
+                      />
                     </label>
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {product.image_urls?.map((url, i) => (
                       <div key={i} className="relative group">
                         <img src={url} alt={`Preview ${i}`} className="h-16 w-16 object-cover rounded-lg border border-apple-border" />
-                        <button 
-                          type="button"
-                          onClick={() => setProduct({...product, image_urls: product.image_urls?.filter((_, index) => index !== i)})}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X size={12} />
-                        </button>
+                        <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const currentMain = product.image_url;
+                              const currentUrls = [...(product.image_urls || [])];
+                              const newMain = currentUrls[i];
+                              if (currentMain) {
+                                currentUrls[i] = currentMain;
+                              } else {
+                                currentUrls.splice(i, 1);
+                              }
+                              setProduct({...product, image_url: newMain, image_urls: currentUrls});
+                            }}
+                            className="bg-apple-accent text-white rounded-full p-1 shadow-md hover:scale-110 transition-transform"
+                            title="Poner como principal"
+                          >
+                            <Upload size={12} className="rotate-180" />
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => setProduct({...product, image_urls: product.image_urls?.filter((_, index) => index !== i)})}
+                            className="bg-red-500 text-white rounded-full p-1 shadow-md hover:scale-110 transition-transform"
+                            title="Eliminar"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
