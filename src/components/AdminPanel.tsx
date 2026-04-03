@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Product, Order, Customer, Interaction } from '../types';
-import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail, Upload } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail, Upload, Bell, BellOff } from 'lucide-react';
 import { buildWhatsAppMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductModal from './ProductModal';
@@ -27,11 +27,19 @@ export default function AdminPanel() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [settings, setSettings] = useState<any>(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchData();
       fetchSettings();
+      
+      // Request notification permission
+      if ("Notification" in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") setNotificationsEnabled(true);
+        });
+      }
       
       // Real-time subscriptions
       const productsSub = supabase
@@ -41,7 +49,13 @@ export default function AdminPanel() {
 
       const ordersSub = supabase
         .channel('orders-changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
+          playNotificationSound();
+          showNotification(payload.new as Order);
+          fetchOrders();
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, () => fetchOrders())
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'orders' }, () => fetchOrders())
         .subscribe();
 
       const customersSub = supabase
@@ -56,6 +70,20 @@ export default function AdminPanel() {
       };
     }
   }, [isAuthenticated]);
+
+  const playNotificationSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.play().catch(e => console.log('Audio play failed:', e));
+  };
+
+  const showNotification = (order: Order) => {
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification("¡Nuevo Pedido Recibido!", {
+        body: `Cliente: ${order.customer_name}\nTotal: S/ ${order.total.toFixed(2)}`,
+        icon: '/favicon.ico'
+      });
+    }
+  };
 
   const handleLogin = () => {
     setIsAuthenticated(true);
@@ -254,7 +282,28 @@ export default function AdminPanel() {
               Pos-Tec
             </span>
           </div>
-          <div className="flex items-center gap-3 md:gap-6">
+          <div className="flex items-center gap-4 md:gap-8">
+            {/* Notification Status */}
+            <button 
+              onClick={() => {
+                if (Notification.permission !== "granted") {
+                  Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                      setNotificationsEnabled(true);
+                      playNotificationSound();
+                    }
+                  });
+                } else {
+                  playNotificationSound();
+                }
+              }}
+              className={`flex items-center gap-1.5 text-[11px] md:text-[12px] font-medium transition-all ${notificationsEnabled ? 'text-apple-accent' : 'text-zinc-400'}`}
+              title={notificationsEnabled ? "Notificaciones activadas (Click para probar sonido)" : "Activar notificaciones"}
+            >
+              {notificationsEnabled ? <Bell size={14} /> : <BellOff size={14} />}
+              <span className="hidden sm:inline">{notificationsEnabled ? 'Alertas ON' : 'Alertas OFF'}</span>
+            </button>
+
             <button 
               onClick={() => window.location.href = '/'}
               className="flex items-center gap-1.5 text-[11px] md:text-[12px] text-apple-sub font-medium hover:text-apple-accent group"
