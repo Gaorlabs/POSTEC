@@ -6,8 +6,10 @@ import { buildWhatsAppMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductModal from './ProductModal';
 import OrderModal from './OrderModal';
+import AdminLogin from './AdminLogin';
 
 export default function AdminPanel() {
+  const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('admin_auth') === 'true');
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'crm' | 'settings'>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -27,31 +29,47 @@ export default function AdminPanel() {
   const [settings, setSettings] = useState<any>(null);
 
   useEffect(() => {
-    fetchData();
-    fetchSettings();
-    
-    // Real-time subscriptions
-    const productsSub = supabase
-      .channel('products-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchProducts())
-      .subscribe();
+    if (isAuthenticated) {
+      fetchData();
+      fetchSettings();
+      
+      // Real-time subscriptions
+      const productsSub = supabase
+        .channel('products-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchProducts())
+        .subscribe();
 
-    const ordersSub = supabase
-      .channel('orders-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
-      .subscribe();
+      const ordersSub = supabase
+        .channel('orders-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
+        .subscribe();
 
-    const customersSub = supabase
-      .channel('customers-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => fetchCustomers())
-      .subscribe();
+      const customersSub = supabase
+        .channel('customers-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => fetchCustomers())
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(productsSub);
-      supabase.removeChannel(ordersSub);
-      supabase.removeChannel(customersSub);
-    };
-  }, []);
+      return () => {
+        supabase.removeChannel(productsSub);
+        supabase.removeChannel(ordersSub);
+        supabase.removeChannel(customersSub);
+      };
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    localStorage.setItem('admin_auth', 'true');
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('admin_auth');
+  };
+
+  if (!isAuthenticated) {
+    return <AdminLogin onLogin={handleLogin} />;
+  }
 
   async function fetchData() {
     setLoading(true);
@@ -236,12 +254,20 @@ export default function AdminPanel() {
               Pos-Tec
             </span>
           </div>
-          <button 
-            onClick={() => window.location.href = '/'}
-            className="flex items-center gap-1.5 text-[12px] text-apple-accent font-medium hover:underline group"
-          >
-            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Volver a la Tienda
-          </button>
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => window.location.href = '/'}
+              className="flex items-center gap-1.5 text-[12px] text-apple-sub font-medium hover:text-apple-accent group"
+            >
+              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Volver a la Tienda
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-[12px] text-red-500 font-medium hover:underline"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
         </div>
       </header>
 
