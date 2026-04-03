@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Logo } from './Logo';
-import { ShoppingCart, X, Plus, Minus, Send, Package, Search, ChevronRight, ChevronLeft, Globe, Zap, ShieldCheck, ArrowRight, Printer, Banknote, Fingerprint, Barcode, Monitor, Laptop, ScrollText, Store, LayoutGrid, CreditCard, Cpu, Menu } from 'lucide-react';
+import { ShoppingCart, X, Plus, Minus, Send, Package, Search, ChevronRight, ChevronLeft, Globe, Zap, ShieldCheck, ArrowRight, Printer, Banknote, Fingerprint, Barcode, Monitor, Laptop, ScrollText, Store, LayoutGrid, CreditCard, Cpu, Menu, Share2, Link, Facebook, Twitter } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { Product, OrderItem } from '../types';
 import { buildWhatsAppMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function HomePage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<OrderItem[]>([]);
@@ -26,7 +28,29 @@ export default function HomePage() {
   const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const productsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const productId = searchParams.get('product');
+    if (productId && products.length > 0) {
+      const product = products.find(p => p.id === parseInt(productId));
+      if (product) {
+        setSelectedProduct(product);
+        setSelectedImage(product.image_url);
+      }
+    } else if (!productId) {
+      setSelectedProduct(null);
+    }
+  }, [searchParams, products]);
+
+  const handleSelectProduct = (product: Product) => {
+    setSearchParams({ product: product.id.toString() });
+  };
+
+  const handleCloseProduct = () => {
+    setSearchParams({});
+  };
 
   const scrollToProducts = () => {
     productsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -669,7 +693,7 @@ export default function HomePage() {
                               {/* Product Image */}
                               <div 
                                 className="relative h-56 w-full mb-6 flex items-center justify-center cursor-pointer"
-                                onClick={() => setSelectedProduct(product)}
+                                onClick={() => handleSelectProduct(product)}
                               >
                                 <img 
                                   src={product.image_url || `https://picsum.photos/seed/${product.id}/400/400`} 
@@ -686,7 +710,7 @@ export default function HomePage() {
                                 </span>
                                 <h3 
                                   className="text-[15px] font-bold text-[#202124] leading-tight mb-2 line-clamp-2 min-h-[38px] cursor-pointer hover:text-apple-accent transition-colors"
-                                  onClick={() => setSelectedProduct(product)}
+                                  onClick={() => handleSelectProduct(product)}
                                 >
                                   {product.name}
                                 </h3>
@@ -1194,12 +1218,12 @@ export default function HomePage() {
               {/* Navigation Bar */}
               <nav className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2 text-apple-sub text-sm">
-                  <button onClick={() => setSelectedProduct(null)} className="hover:text-apple-dark">Home</button>
+                  <button onClick={handleCloseProduct} className="hover:text-apple-dark">Home</button>
                   <span>/</span>
                   <span className="text-apple-dark font-medium">{selectedProduct.name}</span>
                 </div>
                 <button 
-                  onClick={() => setSelectedProduct(null)}
+                  onClick={handleCloseProduct}
                   className="p-2 hover:bg-apple-gray rounded-full transition-colors"
                 >
                   <X size={24} />
@@ -1300,7 +1324,7 @@ export default function HomePage() {
                     <button 
                       onClick={() => {
                         addToCart(selectedProduct);
-                        setSelectedProduct(null);
+                        handleCloseProduct();
                       }}
                       className="flex-grow bg-apple-accent text-white py-3 rounded-lg font-semibold hover:bg-[#00A844] transition-colors"
                     >
@@ -1321,12 +1345,39 @@ export default function HomePage() {
 
                   <div className="text-sm text-apple-sub pt-6 border-t border-apple-border/10">
                     <p className="mb-4 font-medium">SKU: <span className="text-apple-dark">{selectedProduct.sku || (selectedProduct.id + 5000)}</span></p>
-                    <div className="flex items-center gap-4">
-                      <span className="font-medium">Compartir:</span>
-                      <div className="flex gap-3">
-                        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noopener noreferrer" className="hover:text-apple-accent transition-colors">Facebook</a>
-                        <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(selectedProduct.name)}`} target="_blank" rel="noopener noreferrer" className="hover:text-apple-accent transition-colors">Twitter</a>
-                        <a href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(selectedProduct.image_url || '')}&description=${encodeURIComponent(selectedProduct.name)}`} target="_blank" rel="noopener noreferrer" className="hover:text-apple-accent transition-colors">Pinterest</a>
+                    <div className="flex flex-col gap-4">
+                      <span className="font-bold text-apple-dark uppercase tracking-widest text-[11px]">Compartir este producto</span>
+                      <div className="flex flex-wrap gap-3">
+                        {/* WhatsApp Share */}
+                        <a 
+                          href={`https://wa.me/?text=${encodeURIComponent(`Mira este producto en Pos-Tec Store: ${selectedProduct.name} - ${window.location.origin}${window.location.pathname}?product=${selectedProduct.id}`)}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="flex items-center gap-2 px-4 py-2 bg-[#25D366] text-white rounded-full text-xs font-bold hover:opacity-90 transition-opacity"
+                        >
+                          <Send size={14} fill="currentColor" /> WhatsApp
+                        </a>
+
+                        {/* Copy Link */}
+                        <button 
+                          onClick={() => {
+                            const url = `${window.location.origin}${window.location.pathname}?product=${selectedProduct.id}`;
+                            navigator.clipboard.writeText(url);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-apple-gray text-apple-dark rounded-full text-xs font-bold hover:bg-zinc-200 transition-colors relative"
+                        >
+                          {copied ? (
+                            <span className="text-green-600 flex items-center gap-2">
+                              <X size={14} className="rotate-45" /> ¡Copiado!
+                            </span>
+                          ) : (
+                            <>
+                              <Link size={14} /> Copiar Enlace
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>

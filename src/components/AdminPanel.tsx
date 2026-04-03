@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Product, Order, Customer, Interaction } from '../types';
-import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail, Upload, Bell, BellOff, Search, Filter } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail, Upload, Bell, BellOff, Search, Filter, Share2, Facebook, Instagram, Music, Send, Link, Copy } from 'lucide-react';
 import { buildWhatsAppMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductModal from './ProductModal';
@@ -22,6 +22,8 @@ export default function AdminPanel() {
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [sharingProduct, setSharingProduct] = useState<Product | null>(null);
+  const [copied, setCopied] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Partial<Order> | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Partial<Customer> | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -465,6 +467,13 @@ export default function AdminPanel() {
                           <td className="px-10 py-8 text-right">
                             <div className="flex justify-end gap-3">
                               <button 
+                                onClick={() => setSharingProduct(product)}
+                                className="p-3 hover:bg-apple-gray rounded-full text-apple-sub hover:text-apple-accent transition-all"
+                                title="Compartir en redes"
+                              >
+                                <Share2 size={18} />
+                              </button>
+                              <button 
                                 onClick={() => {
                                   setEditingProduct(product);
                                   setIsProductModalOpen(true);
@@ -515,6 +524,12 @@ export default function AdminPanel() {
                         </div>
                       </div>
                       <div className="flex gap-2">
+                        <button 
+                          onClick={() => setSharingProduct(product)}
+                          className="flex-1 py-2.5 bg-apple-gray text-apple-dark rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
+                        >
+                          <Share2 size={14} /> Compartir
+                        </button>
                         <button 
                           onClick={() => {
                             setEditingProduct(product);
@@ -1059,6 +1074,98 @@ export default function AdminPanel() {
             </motion.div>
           </div>
         )}
+        {/* Sharing Modal */}
+        <AnimatePresence>
+          {sharingProduct && (
+            <div className="fixed inset-0 flex items-center justify-center z-[100] p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/30 backdrop-blur-sm" 
+                onClick={() => setSharingProduct(null)} 
+              />
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                className="relative glass-card rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl p-10 text-center"
+              >
+                <div className="w-20 h-20 bg-apple-accent/10 text-apple-accent rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Share2 size={40} />
+                </div>
+                <h3 className="text-2xl font-semibold mb-2 tracking-tight">Compartir Producto</h3>
+                <p className="text-apple-sub mb-8 font-medium">{sharingProduct.name}</p>
+                
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  {/* WhatsApp */}
+                  <a 
+                    href={`https://wa.me/?text=${encodeURIComponent(`Mira este producto en Pos-Tec Store: ${sharingProduct.name} - ${window.location.origin}/?product=${sharingProduct.id}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-2 p-4 bg-apple-gray rounded-2xl hover:bg-[#25D366]/10 hover:text-[#25D366] transition-all group"
+                  >
+                    <Send size={24} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-xs font-bold uppercase tracking-widest">WhatsApp</span>
+                  </a>
+
+                  {/* Facebook */}
+                  <a 
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${window.location.origin}/?product=${sharingProduct.id}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-2 p-4 bg-apple-gray rounded-2xl hover:bg-[#1877F2]/10 hover:text-[#1877F2] transition-all group"
+                  >
+                    <Facebook size={24} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Facebook</span>
+                  </a>
+
+                  {/* Instagram */}
+                  <a 
+                    href="https://www.instagram.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-2 p-4 bg-apple-gray rounded-2xl hover:bg-[#E4405F]/10 hover:text-[#E4405F] transition-all group"
+                  >
+                    <Instagram size={24} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Instagram</span>
+                  </a>
+
+                  {/* TikTok */}
+                  <a 
+                    href="https://www.tiktok.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-2 p-4 bg-apple-gray rounded-2xl hover:bg-black/10 hover:text-black transition-all group"
+                  >
+                    <Music size={24} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-xs font-bold uppercase tracking-widest">TikTok</span>
+                  </a>
+                </div>
+
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => {
+                      const text = `${sharingProduct.name}\nPrecio: S/.${sharingProduct.price.toFixed(2)}\nEnlace: ${window.location.origin}/?product=${sharingProduct.id}`;
+                      navigator.clipboard.writeText(text);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="w-full py-4 bg-apple-dark text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-black transition-colors"
+                  >
+                    {copied ? <><X size={18} className="rotate-45 text-green-400" /> ¡Copiado!</> : <><Copy size={18} /> Copiar Info y Link</>}
+                  </button>
+                  <button 
+                    onClick={() => setSharingProduct(null)}
+                    className="w-full py-4 bg-apple-gray text-apple-dark rounded-xl font-semibold hover:bg-zinc-200 transition-colors"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </AnimatePresence>
     </div>
   );
