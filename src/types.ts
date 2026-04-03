@@ -1,6 +1,8 @@
 export interface Product {
   id: number;
   name: string;
+  sku?: string;
+  colors?: string[];
   description: string;
   features?: string;
   price: number;

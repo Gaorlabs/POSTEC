@@ -98,6 +98,28 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
+                  <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">SKU</label>
+                  <input 
+                    type="text" 
+                    value={product.sku || ''}
+                    onChange={e => setProduct({...product, sku: e.target.value})}
+                    className="apple-input text-lg py-4"
+                    placeholder="Ej. POS-5027"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Colores (separados por coma)</label>
+                  <input 
+                    type="text" 
+                    value={product.colors?.join(', ') || ''}
+                    onChange={e => setProduct({...product, colors: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '')})}
+                    className="apple-input text-lg py-4"
+                    placeholder="Ej. Negro, Blanco, Gris"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
                   <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Precio</label>
                   <input 
                     required

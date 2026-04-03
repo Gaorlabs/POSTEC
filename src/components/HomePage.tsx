@@ -709,7 +709,7 @@ export default function HomePage() {
                                         e.stopPropagation();
                                         addToCart(product);
                                       }}
-                                      className="flex-grow bg-[#3c4043] hover:bg-[#202124] text-white py-3 rounded-lg flex items-center justify-center gap-2 text-[14px] font-bold transition-all active:scale-[0.98]"
+                                      className="flex-grow bg-apple-accent hover:bg-[#00A844] text-white py-3 rounded-lg flex items-center justify-center gap-2 text-[14px] font-bold transition-all active:scale-[0.98]"
                                     >
                                       <ShoppingCart size={18} />
                                       Agregar
@@ -1228,14 +1228,21 @@ export default function HomePage() {
                     {selectedProduct.description}
                   </div>
 
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium mb-2">Color:</label>
-                    <div className="flex gap-3">
-                      <div className="w-8 h-8 rounded-full bg-black border-2 border-apple-dark" />
-                      <div className="w-8 h-8 rounded-full bg-gray-300" />
-                      <div className="w-8 h-8 rounded-full bg-zinc-800" />
+                  {selectedProduct.colors && selectedProduct.colors.length > 0 && (
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium mb-2">Color:</label>
+                      <div className="flex gap-3">
+                        {selectedProduct.colors.map((color, i) => (
+                          <div 
+                            key={i} 
+                            className="w-8 h-8 rounded-full border border-apple-border shadow-sm" 
+                            style={{ backgroundColor: color.toLowerCase() }}
+                            title={color}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="flex gap-4 mb-8">
                     <div className="flex items-center border border-apple-border rounded-lg">
@@ -1248,13 +1255,13 @@ export default function HomePage() {
                         addToCart(selectedProduct);
                         setSelectedProduct(null);
                       }}
-                      className="flex-grow bg-[#4A148C] text-white py-3 rounded-lg font-semibold hover:bg-[#311B92] transition-colors"
+                      className="flex-grow bg-apple-accent text-white py-3 rounded-lg font-semibold hover:bg-[#00A844] transition-colors"
                     >
                       AÑADIR AL CARRITO
                     </button>
                   </div>
                   
-                  <button className="w-full bg-[#FFEB3B] text-black py-3 rounded-lg font-semibold hover:bg-[#FDD835] transition-colors mb-8">
+                  <button className="w-full bg-apple-dark text-white py-3 rounded-lg font-semibold hover:bg-black transition-colors mb-8">
                     COMPRAR AHORA
                   </button>
 
@@ -1266,7 +1273,7 @@ export default function HomePage() {
                   )}
 
                   <div className="text-sm text-apple-sub">
-                    <p>SKU: {selectedProduct.id + 5000}</p>
+                    <p>SKU: {selectedProduct.sku || (selectedProduct.id + 5000)}</p>
                     <p>Share: Facebook Twitter Pinterest</p>
                   </div>
                 </div>
