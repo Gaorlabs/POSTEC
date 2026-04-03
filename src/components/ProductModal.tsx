@@ -14,7 +14,34 @@ interface ProductModalProps {
 
 export default function ProductModal({ isOpen, onClose, product, setProduct, onSave }: ProductModalProps) {
   const [uploading, setUploading] = useState(false);
+  const [colorsInput, setColorsInput] = React.useState(product?.colors?.join(', ') || '');
+  const [imageUrlsInput, setImageUrlsInput] = React.useState(product?.image_urls?.join(', ') || '');
   const MAX_IMAGES = 5;
+
+  React.useEffect(() => {
+    if (isOpen && product) {
+      const currentColors = colorsInput.split(',').map(s => s.trim()).filter(s => s !== '');
+      if (JSON.stringify(currentColors) !== JSON.stringify(product.colors || [])) {
+        setColorsInput(product.colors?.join(', ') || '');
+      }
+    }
+  }, [product?.colors]);
+
+  React.useEffect(() => {
+    if (isOpen && product) {
+      const currentUrls = imageUrlsInput.split(',').map(s => s.trim()).filter(s => s !== '');
+      if (JSON.stringify(currentUrls) !== JSON.stringify(product.image_urls || [])) {
+        setImageUrlsInput(product.image_urls?.join(', ') || '');
+      }
+    }
+  }, [product?.image_urls]);
+
+  React.useEffect(() => {
+    if (isOpen && product) {
+      setColorsInput(product.colors?.join(', ') || '');
+      setImageUrlsInput(product.image_urls?.join(', ') || '');
+    }
+  }, [isOpen, product?.id]);
 
   if (!isOpen || !product) return null;
 
@@ -129,8 +156,12 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
                 <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Colores</label>
                 <input 
                   type="text" 
-                  value={product.colors?.join(', ') || ''}
-                  onChange={e => setProduct({...product, colors: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '')})}
+                  value={colorsInput}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setColorsInput(val);
+                    setProduct({...product, colors: val.split(',').map(s => s.trim()).filter(s => s !== '')});
+                  }}
                   className="apple-input text-base md:text-lg py-3 md:py-4"
                   placeholder="Ej. Negro, Blanco, Gris"
                 />
@@ -225,9 +256,11 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
                   <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Imágenes Adicionales</label>
                   <div className="flex gap-4">
                     <textarea 
-                      value={product.image_urls?.join(', ') || ''}
+                      value={imageUrlsInput}
                       onChange={e => {
-                        const urls = e.target.value.split(',').map(s => s.trim()).filter(s => s !== '');
+                        const val = e.target.value;
+                        setImageUrlsInput(val);
+                        const urls = val.split(',').map(s => s.trim()).filter(s => s !== '');
                         const otherCount = product.image_url ? 1 : 0;
                         if (urls.length + otherCount > MAX_IMAGES) {
                           alert(`Máximo ${MAX_IMAGES} imágenes permitidas`);
