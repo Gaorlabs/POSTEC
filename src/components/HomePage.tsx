@@ -470,9 +470,12 @@ export default function HomePage() {
                       <p className="text-zinc-300 text-base max-w-md mb-6 line-clamp-2">
                         Elimina las colas y los errores de facturación con terminales touch e impresoras de alta velocidad.
                       </p>
-                      <div className="flex items-center gap-2 text-apple-accent font-semibold text-sm group-hover:gap-4 transition-all">
+                      <button 
+                        onClick={() => { setCategory('Terminal Punto de Venta'); scrollToProducts(); }}
+                        className="flex items-center gap-2 text-apple-accent font-semibold text-sm group-hover:gap-4 transition-all"
+                      >
                         Ver equipos POS <ArrowRight size={18} />
-                      </div>
+                      </button>
                     </div>
                   </motion.div>
 
@@ -496,9 +499,15 @@ export default function HomePage() {
                       </div>
                       <div>
                         <h3 className="text-xl font-semibold text-apple-dark mb-2">Control de Acceso</h3>
-                        <p className="text-apple-sub text-[13px] leading-relaxed font-medium">
+                        <p className="text-apple-sub text-[13px] leading-relaxed font-medium mb-4">
                           Seguridad biométrica de última generación para proteger tus activos.
                         </p>
+                        <button 
+                          onClick={() => { setCategory('Control de Acceso'); scrollToProducts(); }}
+                          className="text-apple-accent font-semibold text-sm hover:underline"
+                        >
+                          Ver equipos de acceso →
+                        </button>
                       </div>
                     </div>
                   </motion.div>
@@ -517,9 +526,15 @@ export default function HomePage() {
                       </div>
                       <div>
                         <h3 className="text-xl font-semibold text-apple-dark mb-2">Logística Ágil</h3>
-                        <p className="text-apple-sub text-[13px] leading-relaxed font-medium">
+                        <p className="text-apple-sub text-[13px] leading-relaxed font-medium mb-4">
                           Lectores industriales diseñados para entornos de alto tráfico.
                         </p>
+                        <button 
+                          onClick={() => { setCategory('Lector de Código de Barras'); scrollToProducts(); }}
+                          className="text-apple-accent font-semibold text-sm hover:underline"
+                        >
+                          Ver lectores →
+                        </button>
                       </div>
                       <img 
                         src="https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?auto=format&fit=crop&q=80&w=600" 
@@ -552,65 +567,21 @@ export default function HomePage() {
                         </div>
                       </div>
                       <h3 className="text-2xl md:text-3xl font-semibold text-white mb-3 tracking-tight">Cómputo de Alto Rendimiento</h3>
-                      <p className="text-zinc-400 text-base max-w-lg font-medium">
+                      <p className="text-zinc-400 text-base max-w-lg font-medium mb-6">
                         PCs configuradas para software de gestión, garantizando estabilidad 24/7.
                       </p>
+                      <button 
+                        onClick={() => { setCategory('PC o Computadora'); scrollToProducts(); }}
+                        className="text-apple-accent font-semibold text-sm hover:underline"
+                      >
+                        Ver computadoras →
+                      </button>
                     </div>
                   </motion.div>
                 </div>
               </section>
 
-              <section className="mb-16 py-12 bg-apple-gray rounded-[2.5rem] overflow-hidden">
-                <div className="max-w-6xl mx-auto px-8">
-                  <div className="flex flex-col lg:flex-row items-center justify-between gap-8 mb-8">
-                    <div className="text-center lg:text-left">
-                      <h2 className="text-2xl md:text-3xl font-semibold tracking-tight">
-                        Elige tu industria. <span className="text-apple-sub">Nosotros ponemos la tecnología.</span>
-                      </h2>
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {['Restaurante', 'Tienda Retail', 'Almacén', 'Oficina'].map((type) => (
-                        <button
-                          key={type}
-                          onClick={() => setSelectedIndustry(type)}
-                          className={`px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-500 ${
-                            selectedIndustry === type 
-                              ? 'bg-apple-dark text-white shadow-lg scale-105' 
-                              : 'bg-white text-apple-dark hover:bg-zinc-200'
-                          }`}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm relative overflow-hidden">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={selectedIndustry}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
-                        className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-apple-border/10"
-                      >
-                        {getIndustrySolution(selectedIndustry).map((item, i) => (
-                          <div key={i} className="px-4 py-4 md:py-0 first:pl-0 last:pr-0 flex items-start gap-4 group">
-                            <div className="w-10 h-10 bg-apple-gray rounded-xl flex items-center justify-center text-apple-accent shrink-0 group-hover:scale-110 transition-transform duration-500">
-                              {React.cloneElement(item.icon as React.ReactElement, { size: 20 })}
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-[15px] mb-1 group-hover:text-apple-accent transition-colors">{item.title}</h4>
-                              <p className="text-apple-sub text-[13px] leading-relaxed line-clamp-2">{item.description}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
-                </div>
-              </section>
+              {/* Industry Section */}
 
               {/* Product Section (Compact Editorial Gallery) */}
               <section ref={productsRef} className="py-24 scroll-mt-24 bg-apple-gray/50">
@@ -734,26 +705,25 @@ export default function HomePage() {
               </section>
 
               {/* Why POSTEC Section */}
-              <section className="py-20 border-t border-apple-border/10">
-                <div className="max-w-7xl mx-auto px-10">
-                  <h2 className="text-[2rem] md:text-[2.75rem] font-semibold text-center mb-16 tracking-tight">
-                    La diferencia está <br />
-                    <span className="text-apple-sub text-[1.5rem] md:text-[2.25rem]">en los detalles.</span>
+              <section className="py-12 border-t border-apple-border/10">
+                <div className="max-w-7xl mx-auto px-6">
+                  <h2 className="text-[1.5rem] md:text-[2rem] font-semibold text-center mb-10 tracking-tight">
+                    La diferencia está en los detalles.
                   </h2>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <motion.div 
                       initial={{ opacity: 0, y: 20 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       className="flex flex-col items-center text-center"
                     >
-                      <div className="w-20 h-20 bg-apple-gray rounded-[2rem] flex items-center justify-center mb-8 shadow-inner">
-                        <ShieldCheck size={36} className="text-apple-accent" />
+                      <div className="w-16 h-16 bg-apple-gray rounded-2xl flex items-center justify-center mb-4 shadow-inner">
+                        <ShieldCheck size={28} className="text-apple-accent" />
                       </div>
-                      <h4 className="text-2xl font-semibold mb-4">Calidad Pro</h4>
-                      <p className="text-apple-sub text-lg leading-relaxed font-medium">
-                        Equipos seleccionados bajo los más altos estándares de durabilidad para el uso comercial intensivo.
+                      <h4 className="text-lg font-semibold mb-2">Calidad Pro</h4>
+                      <p className="text-apple-sub text-sm leading-relaxed font-medium">
+                        Equipos seleccionados bajo los más altos estándares de durabilidad.
                       </p>
                     </motion.div>
 
@@ -764,12 +734,12 @@ export default function HomePage() {
                       transition={{ delay: 0.1 }}
                       className="flex flex-col items-center text-center"
                     >
-                      <div className="w-20 h-20 bg-apple-gray rounded-[2rem] flex items-center justify-center mb-8 shadow-inner">
-                        <Zap size={36} className="text-apple-accent" />
+                      <div className="w-16 h-16 bg-apple-gray rounded-2xl flex items-center justify-center mb-4 shadow-inner">
+                        <Zap size={28} className="text-apple-accent" />
                       </div>
-                      <h4 className="text-2xl font-semibold mb-4">Soporte Vital</h4>
-                      <p className="text-apple-sub text-lg leading-relaxed font-medium">
-                        No te dejamos solo. Nuestro equipo técnico está a un clic de distancia para resolver cualquier eventualidad.
+                      <h4 className="text-lg font-semibold mb-2">Soporte Vital</h4>
+                      <p className="text-apple-sub text-sm leading-relaxed font-medium">
+                        Nuestro equipo técnico está a un clic de distancia.
                       </p>
                     </motion.div>
 
@@ -780,12 +750,12 @@ export default function HomePage() {
                       transition={{ delay: 0.2 }}
                       className="flex flex-col items-center text-center"
                     >
-                      <div className="w-20 h-20 bg-apple-gray rounded-[2rem] flex items-center justify-center mb-8 shadow-inner">
-                        <Globe size={36} className="text-apple-accent" />
+                      <div className="w-16 h-16 bg-apple-gray rounded-2xl flex items-center justify-center mb-4 shadow-inner">
+                        <Globe size={28} className="text-apple-accent" />
                       </div>
-                      <h4 className="text-2xl font-semibold mb-4">Alcance Nacional</h4>
-                      <p className="text-apple-sub text-lg leading-relaxed font-medium">
-                        Logística optimizada para llegar a cada rincón del Perú con la rapidez que tu negocio exige.
+                      <h4 className="text-lg font-semibold mb-2">Alcance Nacional</h4>
+                      <p className="text-apple-sub text-sm leading-relaxed font-medium">
+                        Logística optimizada para llegar a cada rincón del Perú.
                       </p>
                     </motion.div>
                   </div>
@@ -1032,6 +1002,57 @@ export default function HomePage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Industry Section */}
+      <section className="py-12 bg-apple-gray rounded-[2rem] overflow-hidden mb-12 max-w-[1600px] mx-auto px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+            <h2 className="text-xl font-semibold tracking-tight">
+              Elige tu industria. <span className="text-apple-sub">Nosotros ponemos la tecnología.</span>
+            </h2>
+            <div className="flex flex-wrap justify-center gap-2">
+              {['Restaurante', 'Tienda Retail', 'Almacén', 'Oficina'].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setSelectedIndustry(type)}
+                  className={`px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all ${
+                    selectedIndustry === type 
+                      ? 'bg-apple-dark text-white' 
+                      : 'bg-white text-apple-dark hover:bg-zinc-200'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-4 shadow-sm">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedIndustry}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="grid grid-cols-1 md:grid-cols-3 gap-4"
+              >
+                {getIndustrySolution(selectedIndustry).map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 bg-apple-gray/50 rounded-xl">
+                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-apple-accent shrink-0">
+                      {React.cloneElement(item.icon as React.ReactElement, { size: 16 })}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-[13px] mb-0.5">{item.title}</h4>
+                      <p className="text-apple-sub text-[11px] leading-relaxed line-clamp-2">{item.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="bg-apple-dark text-white py-20">
