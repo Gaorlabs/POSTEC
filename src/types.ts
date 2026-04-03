@@ -3,6 +3,7 @@ export interface Product {
   name: string;
   sku?: string;
   colors?: string[];
+  labels?: string[];
   description: string;
   features?: string;
   price: number;
@@ -13,6 +14,13 @@ export interface Product {
   category: string;
   image_url: string | null;
   image_urls?: string[];
+  created_at?: string;
+}
+
+export interface Label {
+  id: number;
+  name: string;
+  color: string;
   created_at?: string;
 }
 

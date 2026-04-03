@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Upload, Loader2 } from 'lucide-react';
-import { Product } from '../types';
+import { Product, Label } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
 interface ProductModalProps {
@@ -10,9 +10,10 @@ interface ProductModalProps {
   product: Partial<Product> | null;
   setProduct: (product: Partial<Product>) => void;
   onSave: (e: React.FormEvent) => void;
+  labelsList: Label[];
 }
 
-export default function ProductModal({ isOpen, onClose, product, setProduct, onSave }: ProductModalProps) {
+export default function ProductModal({ isOpen, onClose, product, setProduct, onSave, labelsList }: ProductModalProps) {
   const [uploading, setUploading] = useState(false);
   const [colorsInput, setColorsInput] = React.useState(product?.colors?.join(', ') || '');
   const [imageUrlsInput, setImageUrlsInput] = React.useState(product?.image_urls?.join(', ') || '');
@@ -129,6 +130,38 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
                   className="apple-input text-base md:text-lg py-3 md:py-4 min-h-[80px] md:min-h-[100px] resize-none"
                   placeholder="Descripción del producto..."
                 />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Etiquetas</label>
+                <div className="flex flex-wrap gap-2 p-4 bg-apple-gray rounded-2xl">
+                  {labelsList.map(label => {
+                    const isSelected = product?.labels?.includes(label.name);
+                    return (
+                      <button
+                        key={label.id}
+                        type="button"
+                        onClick={() => {
+                          const currentLabels = product?.labels || [];
+                          const newLabels = isSelected
+                            ? currentLabels.filter(l => l !== label.name)
+                            : [...currentLabels, label.name];
+                          setProduct({ ...product, labels: newLabels });
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all border ${
+                          isSelected 
+                            ? 'text-white border-transparent' 
+                            : 'bg-white text-apple-sub border-apple-border/20 hover:border-apple-accent'
+                        }`}
+                        style={isSelected ? { backgroundColor: label.color } : {}}
+                      >
+                        {label.name}
+                      </button>
+                    );
+                  })}
+                  {labelsList.length === 0 && (
+                    <p className="text-[11px] text-apple-sub italic">No hay etiquetas creadas. Ve a la pestaña "Etiquetas" en el panel admin.</p>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-2">

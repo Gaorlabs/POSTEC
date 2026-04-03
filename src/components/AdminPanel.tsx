@@ -10,10 +10,11 @@ import AdminLogin from './AdminLogin';
 
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('admin_auth') === 'true');
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'crm' | 'settings'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'crm' | 'settings' | 'labels'>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [labels, setLabels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Product Modal State
@@ -21,7 +22,9 @@ export default function AdminPanel() {
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
+  const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [editingLabel, setEditingLabel] = useState<any | null>(null);
   const [sharingProduct, setSharingProduct] = useState<Product | null>(null);
   const [copied, setCopied] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Partial<Order> | null>(null);
@@ -116,13 +119,18 @@ export default function AdminPanel() {
 
   async function fetchData() {
     setLoading(true);
-    await Promise.all([fetchProducts(), fetchOrders(), fetchCustomers()]);
+    await Promise.all([fetchProducts(), fetchOrders(), fetchCustomers(), fetchLabels()]);
     setLoading(false);
   }
 
   async function fetchProducts() {
     const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
     if (!error) setProducts(data || []);
+  }
+
+  async function fetchLabels() {
+    const { data, error } = await supabase.from('labels').select('*').order('created_at', { ascending: false });
+    if (!error) setLabels(data || []);
   }
 
   async function fetchOrders() {
@@ -257,6 +265,45 @@ export default function AdminPanel() {
     }
   };
 
+  const handleSaveLabel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLabel) return;
+
+    try {
+      const { id, created_at, ...updateData } = editingLabel as any;
+      
+      if (id) {
+        const { error } = await supabase
+          .from('labels')
+          .update(updateData)
+          .eq('id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('labels')
+          .insert([updateData]);
+        if (error) throw error;
+      }
+      setIsLabelModalOpen(false);
+      setEditingLabel(null);
+      fetchLabels();
+    } catch (error: any) {
+      console.error('Error saving label:', error);
+      alert(`Error al guardar la etiqueta: ${error.message || 'Error desconocido'}`);
+    }
+  };
+
+  const handleDeleteLabel = async (id: number) => {
+    if (!confirm('¿Estás seguro de eliminar esta etiqueta?')) return;
+    try {
+      const { error } = await supabase.from('labels').delete().eq('id', id);
+      if (error) throw error;
+      fetchLabels();
+    } catch (error) {
+      console.error('Error deleting label:', error);
+    }
+  };
+
   const handleDeleteProduct = async (id: number) => {
     if (!confirm('¿Estás seguro de eliminar este producto?')) return;
     try {
@@ -355,6 +402,7 @@ export default function AdminPanel() {
             { id: 'products', label: 'Productos', icon: Package },
             { id: 'orders', label: 'Pedidos', icon: ShoppingBag },
             { id: 'crm', label: 'CRM', icon: Users },
+            { id: 'labels', label: 'Etiquetas', icon: Zap },
             { id: 'settings', label: 'Configuración', icon: Settings },
           ].map(tab => (
             <button 
@@ -439,6 +487,7 @@ export default function AdminPanel() {
                     <tr className="bg-apple-gray/50 text-apple-sub text-[10px] uppercase tracking-widest font-bold border-b border-apple-border/10">
                       <th className="px-10 py-5">Producto</th>
                       <th className="px-10 py-5">Categoría</th>
+                      <th className="px-10 py-5">Etiquetas</th>
                       <th className="px-10 py-5">Precio</th>
                       <th className="px-10 py-5 text-right">Acciones</th>
                     </tr>
@@ -462,6 +511,25 @@ export default function AdminPanel() {
                             <span className="bg-apple-gray text-apple-sub text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-widest border border-apple-border/20">
                               {product.category}
                             </span>
+                          </td>
+                          <td className="px-10 py-8">
+                            <div className="flex flex-wrap gap-1 max-w-[150px]">
+                              {product.labels?.map((labelName, idx) => {
+                                const labelData = labels.find(l => l.name === labelName);
+                                return (
+                                  <span 
+                                    key={idx}
+                                    className="text-white text-[9px] font-bold uppercase tracking-tight px-1.5 py-0.5 rounded shadow-sm"
+                                    style={{ backgroundColor: labelData?.color || '#007AFF' }}
+                                  >
+                                    {labelName}
+                                  </span>
+                                );
+                              })}
+                              {(!product.labels || product.labels.length === 0) && (
+                                <span className="text-apple-sub text-[10px] italic">Sin etiquetas</span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-10 py-8 font-semibold text-xl">S/.{product.price.toFixed(2)}</td>
                           <td className="px-10 py-8 text-right">
@@ -517,9 +585,23 @@ export default function AdminPanel() {
                           <div className="text-xs text-apple-sub line-clamp-2 mt-1">{product.description}</div>
                           <div className="mt-2 flex items-center justify-between">
                             <span className="text-sm font-bold text-apple-dark">S/.{product.price.toFixed(2)}</span>
-                            <span className="bg-apple-gray text-apple-sub text-[8px] font-bold px-2 py-1 rounded uppercase tracking-widest border border-apple-border/20">
-                              {product.category}
-                            </span>
+                            <div className="flex flex-wrap gap-1 justify-end">
+                              {product.labels?.slice(0, 2).map((labelName, idx) => {
+                                const labelData = labels.find(l => l.name === labelName);
+                                return (
+                                  <span 
+                                    key={idx}
+                                    className="text-white text-[8px] font-bold uppercase tracking-tight px-1.5 py-0.5 rounded shadow-sm"
+                                    style={{ backgroundColor: labelData?.color || '#007AFF' }}
+                                  >
+                                    {labelName}
+                                  </span>
+                                );
+                              })}
+                              <span className="bg-apple-gray text-apple-sub text-[8px] font-bold px-2 py-1 rounded uppercase tracking-widest border border-apple-border/20">
+                                {product.category}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -810,6 +892,67 @@ export default function AdminPanel() {
               </div>
             </div>
           </motion.div>
+        ) : activeTab === 'labels' ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-10"
+          >
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+              <div>
+                <h2 className="text-2xl md:text-[2.5rem] font-semibold tracking-tight leading-tight">Etiquetas de Productos</h2>
+                <p className="text-apple-sub text-base md:text-lg mt-1 md:mt-2">Crea y gestiona etiquetas como "Oferta", "Nuevo", etc.</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setEditingLabel({ name: '', color: '#007AFF' });
+                  setIsLabelModalOpen(true);
+                }}
+                className="apple-button w-full md:w-auto flex items-center justify-center gap-2 shadow-lg shadow-apple-accent/20"
+              >
+                <Plus size={20} /> Nueva Etiqueta
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {labels.map(label => (
+                <div key={label.id} className="apple-card p-6 flex items-center justify-between group">
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-4 h-4 rounded-full shadow-sm" 
+                      style={{ backgroundColor: label.color }} 
+                    />
+                    <div>
+                      <div className="font-semibold text-lg">{label.name}</div>
+                      <div className="text-xs text-apple-sub font-mono uppercase tracking-widest">{label.color}</div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => {
+                        setEditingLabel(label);
+                        setIsLabelModalOpen(true);
+                      }}
+                      className="p-2 hover:bg-apple-gray rounded-lg text-apple-sub hover:text-apple-accent transition-colors"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteLabel(label.id)}
+                      className="p-2 hover:bg-apple-gray rounded-lg text-apple-sub hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {labels.length === 0 && (
+                <div className="col-span-full py-20 text-center text-apple-sub font-medium bg-apple-gray/30 rounded-[2rem] border-2 border-dashed border-apple-border/20">
+                  No hay etiquetas creadas. Comienza creando una nueva.
+                </div>
+              )}
+            </div>
+          </motion.div>
         ) : (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -931,7 +1074,87 @@ export default function AdminPanel() {
         product={editingProduct} 
         setProduct={setEditingProduct} 
         onSave={handleSaveProduct} 
+        labelsList={labels}
       />
+
+      {/* Label Modal */}
+      <AnimatePresence>
+        {isLabelModalOpen && editingLabel && (
+          <div className="fixed inset-0 flex items-center justify-center z-[110] p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/30 backdrop-blur-sm" 
+              onClick={() => setIsLabelModalOpen(false)} 
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative glass-card rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl"
+            >
+              <div className="p-10 border-b border-apple-border/10 flex items-center justify-between">
+                <h3 className="text-2xl font-semibold tracking-tight">{editingLabel.id ? 'Editar Etiqueta' : 'Nueva Etiqueta'}</h3>
+                <button onClick={() => setIsLabelModalOpen(false)} className="p-3 hover:bg-apple-gray rounded-full transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+              <form onSubmit={handleSaveLabel} className="p-10 space-y-8">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Nombre de la Etiqueta</label>
+                    <input 
+                      required
+                      type="text" 
+                      value={editingLabel.name}
+                      onChange={e => setEditingLabel({...editingLabel, name: e.target.value})}
+                      className="apple-input text-lg py-4"
+                      placeholder="Ej. Oferta, Nuevo, etc."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Color (Hex)</label>
+                    <div className="flex gap-4">
+                      <input 
+                        required
+                        type="color" 
+                        value={editingLabel.color}
+                        onChange={e => setEditingLabel({...editingLabel, color: e.target.value})}
+                        className="w-16 h-16 rounded-xl cursor-pointer border-none bg-transparent"
+                      />
+                      <input 
+                        required
+                        type="text" 
+                        value={editingLabel.color}
+                        onChange={e => setEditingLabel({...editingLabel, color: e.target.value})}
+                        className="apple-input text-lg py-4 font-mono uppercase"
+                        placeholder="#007AFF"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button 
+                    type="button"
+                    onClick={() => setIsLabelModalOpen(false)}
+                    className="flex-1 px-8 py-4 rounded-2xl font-semibold text-lg bg-apple-gray hover:bg-zinc-200 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-1 apple-button py-4 text-lg rounded-2xl shadow-lg shadow-apple-accent/20"
+                  >
+                    {editingLabel.id ? 'Guardar Cambios' : 'Crear Etiqueta'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Interaction Modal */}
       <AnimatePresence>

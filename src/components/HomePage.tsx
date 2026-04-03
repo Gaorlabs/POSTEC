@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
+  const [labels, setLabels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -156,6 +157,7 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchProducts();
+    fetchLabels();
     fetchSettings();
   }, []);
 
@@ -166,6 +168,11 @@ export default function HomePage() {
       setSelectedImage(null);
     }
   }, [selectedProduct]);
+
+  async function fetchLabels() {
+    const { data, error } = await supabase.from('labels').select('*');
+    if (!error) setLabels(data || []);
+  }
 
   async function fetchSettings() {
     const { data, error } = await supabase
@@ -683,7 +690,21 @@ export default function HomePage() {
                               className="bg-white rounded-xl border border-gray-100 p-5 flex flex-col shadow-sm hover:shadow-md transition-shadow relative group"
                             >
                               {/* Top Actions */}
-                              <div className="flex justify-end items-center gap-2 mb-4">
+                              <div className="flex justify-between items-center gap-2 mb-4">
+                                <div className="flex flex-wrap gap-1">
+                                  {product.labels?.map((labelName, idx) => {
+                                    const labelData = labels.find(l => l.name === labelName);
+                                    return (
+                                      <span 
+                                        key={idx}
+                                        className="text-white text-[9px] font-bold uppercase tracking-tight px-1.5 py-0.5 rounded shadow-sm"
+                                        style={{ backgroundColor: labelData?.color || '#007AFF' }}
+                                      >
+                                        {labelName}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
                                 <label className="flex items-center gap-2 cursor-pointer text-[#70757a] text-sm hover:text-apple-accent transition-colors">
                                   <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-apple-accent focus:ring-apple-accent" />
                                   <span>Comparar</span>
@@ -1284,9 +1305,18 @@ export default function HomePage() {
                         {selectedProduct.brand}
                       </span>
                     )}
-                    <span className="bg-apple-accent/10 text-apple-accent text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded">
-                      Nuevo
-                    </span>
+                    {selectedProduct.labels?.map((labelName, idx) => {
+                      const labelData = labels.find(l => l.name === labelName);
+                      return (
+                        <span 
+                          key={idx}
+                          className="text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded"
+                          style={{ backgroundColor: labelData?.color || '#007AFF' }}
+                        >
+                          {labelName}
+                        </span>
+                      );
+                    })}
                   </div>
                   <h1 className="text-4xl font-semibold tracking-tight mb-4">{selectedProduct.name}</h1>
                   <div className="flex items-center gap-4 mb-6">
