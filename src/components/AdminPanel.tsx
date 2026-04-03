@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Product, Order, Customer, Interaction } from '../types';
-import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail, Upload, Bell, BellOff } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail, Upload, Bell, BellOff, Search, Filter } from 'lucide-react';
 import { buildWhatsAppMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductModal from './ProductModal';
@@ -28,6 +28,19 @@ export default function AdminPanel() {
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [settings, setSettings] = useState<any>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  
+  // Product Search and Filter State
+  const [productSearch, setProductSearch] = useState('');
+  const [productCategoryFilter, setProductCategoryFilter] = useState('Todas');
+  const categories = ['Todas', 'Impresoras Térmicas', 'Gavetas de Dinero', 'Control de Acceso', 'Lector de Código de Barras', 'Monitores Touch', 'PC O LAPTOP', 'Suministros', 'Terminal Punto de Venta'];
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(productSearch.toLowerCase()) || 
+                         (product.sku && product.sku.toLowerCase().includes(productSearch.toLowerCase())) ||
+                         (product.brand && product.brand.toLowerCase().includes(productSearch.toLowerCase()));
+    const matchesCategory = productCategoryFilter === 'Todas' || product.category === productCategoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -379,6 +392,43 @@ export default function AdminPanel() {
               </button>
             </div>
 
+            {/* Search and Filter Bar */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-grow relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-apple-sub" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar por nombre, SKU o marca..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  className="apple-input pl-12 py-3 text-sm"
+                />
+              </div>
+              <div className="relative min-w-[200px]">
+                <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-apple-sub" size={18} />
+                <select 
+                  value={productCategoryFilter}
+                  onChange={(e) => setProductCategoryFilter(e.target.value)}
+                  className="apple-input pl-12 py-3 text-sm appearance-none cursor-pointer"
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              {(productSearch || productCategoryFilter !== 'Todas') && (
+                <button 
+                  onClick={() => {
+                    setProductSearch('');
+                    setProductCategoryFilter('Todas');
+                  }}
+                  className="px-6 py-3 text-sm font-medium text-apple-accent hover:bg-apple-accent/5 rounded-xl transition-colors"
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
+
             <div className="apple-card border-none bg-white shadow-[0_4px_24px_rgba(0,0,0,0.04)] overflow-hidden">
               {/* Desktop View */}
               <div className="hidden md:block overflow-x-auto">
@@ -392,88 +442,102 @@ export default function AdminPanel() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-apple-border/5">
-                    {products.map(product => (
-                      <tr key={product.id} className="hover:bg-apple-gray/30 transition-colors group">
-                        <td className="px-10 py-8">
-                          <div className="flex items-center gap-6">
-                            <div className="w-20 h-20 bg-apple-gray rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center border border-apple-border/10">
-                              <img src={product.image_url || `https://picsum.photos/seed/${product.id}/100/100`} alt="" className="max-h-14 object-contain group-hover:scale-110 transition-transform duration-700" />
+                    {filteredProducts.length > 0 ? (
+                      filteredProducts.map(product => (
+                        <tr key={product.id} className="hover:bg-apple-gray/30 transition-colors group">
+                          <td className="px-10 py-8">
+                            <div className="flex items-center gap-6">
+                              <div className="w-20 h-20 bg-apple-gray rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center border border-apple-border/10">
+                                <img src={product.image_url || `https://picsum.photos/seed/${product.id}/100/100`} alt="" className="max-h-14 object-contain group-hover:scale-110 transition-transform duration-700" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-[17px] text-apple-dark mb-1">{product.name}</div>
+                                <div className="text-[13px] text-apple-sub line-clamp-1 max-w-xs font-medium">{product.description}</div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="font-semibold text-[17px] text-apple-dark mb-1">{product.name}</div>
-                              <div className="text-[13px] text-apple-sub line-clamp-1 max-w-xs font-medium">{product.description}</div>
+                          </td>
+                          <td className="px-10 py-8">
+                            <span className="bg-apple-gray text-apple-sub text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-widest border border-apple-border/20">
+                              {product.category}
+                            </span>
+                          </td>
+                          <td className="px-10 py-8 font-semibold text-xl">S/.{product.price.toFixed(2)}</td>
+                          <td className="px-10 py-8 text-right">
+                            <div className="flex justify-end gap-3">
+                              <button 
+                                onClick={() => {
+                                  setEditingProduct(product);
+                                  setIsProductModalOpen(true);
+                                }}
+                                className="p-3 hover:bg-apple-gray rounded-full text-apple-sub hover:text-apple-accent transition-all"
+                              >
+                                <Edit2 size={18} />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteProduct(product.id)}
+                                className="p-3 hover:bg-apple-gray rounded-full text-apple-sub hover:text-red-500 transition-all"
+                              >
+                                <Trash2 size={18} />
+                              </button>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-10 py-8">
-                          <span className="bg-apple-gray text-apple-sub text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-widest border border-apple-border/20">
-                            {product.category}
-                          </span>
-                        </td>
-                        <td className="px-10 py-8 font-semibold text-xl">S/.{product.price.toFixed(2)}</td>
-                        <td className="px-10 py-8 text-right">
-                          <div className="flex justify-end gap-3">
-                            <button 
-                              onClick={() => {
-                                setEditingProduct(product);
-                                setIsProductModalOpen(true);
-                              }}
-                              className="p-3 hover:bg-apple-gray rounded-full text-apple-sub hover:text-apple-accent transition-all"
-                            >
-                              <Edit2 size={18} />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteProduct(product.id)}
-                              className="p-3 hover:bg-apple-gray rounded-full text-apple-sub hover:text-red-500 transition-all"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="px-10 py-20 text-center text-apple-sub font-medium">
+                          No se encontraron productos que coincidan con la búsqueda.
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
 
               {/* Mobile View */}
               <div className="md:hidden divide-y divide-apple-border/10">
-                {products.map(product => (
-                  <div key={product.id} className="p-4 flex flex-col gap-4">
-                    <div className="flex gap-4">
-                      <div className="w-20 h-20 bg-apple-gray rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center border border-apple-border/10">
-                        <img src={product.image_url || `https://picsum.photos/seed/${product.id}/100/100`} alt="" className="max-h-14 object-contain" />
-                      </div>
-                      <div className="flex-grow min-w-0">
-                        <div className="font-semibold text-base text-apple-dark truncate">{product.name}</div>
-                        <div className="text-xs text-apple-sub line-clamp-2 mt-1">{product.description}</div>
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className="text-sm font-bold text-apple-dark">S/.{product.price.toFixed(2)}</span>
-                          <span className="bg-apple-gray text-apple-sub text-[8px] font-bold px-2 py-1 rounded uppercase tracking-widest border border-apple-border/20">
-                            {product.category}
-                          </span>
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.map(product => (
+                    <div key={product.id} className="p-4 flex flex-col gap-4">
+                      <div className="flex gap-4">
+                        <div className="w-20 h-20 bg-apple-gray rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center border border-apple-border/10">
+                          <img src={product.image_url || `https://picsum.photos/seed/${product.id}/100/100`} alt="" className="max-h-14 object-contain" />
+                        </div>
+                        <div className="flex-grow min-w-0">
+                          <div className="font-semibold text-base text-apple-dark truncate">{product.name}</div>
+                          <div className="text-xs text-apple-sub line-clamp-2 mt-1">{product.description}</div>
+                          <div className="mt-2 flex items-center justify-between">
+                            <span className="text-sm font-bold text-apple-dark">S/.{product.price.toFixed(2)}</span>
+                            <span className="bg-apple-gray text-apple-sub text-[8px] font-bold px-2 py-1 rounded uppercase tracking-widest border border-apple-border/20">
+                              {product.category}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => {
+                            setEditingProduct(product);
+                            setIsProductModalOpen(true);
+                          }}
+                          className="flex-1 py-2.5 bg-apple-gray text-apple-dark rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
+                        >
+                          <Edit2 size={14} /> Editar
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="flex-1 py-2.5 bg-red-50 text-red-500 rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
+                        >
+                          <Trash2 size={14} /> Eliminar
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => {
-                          setEditingProduct(product);
-                          setIsProductModalOpen(true);
-                        }}
-                        className="flex-1 py-2.5 bg-apple-gray text-apple-dark rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
-                      >
-                        <Edit2 size={14} /> Editar
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="flex-1 py-2.5 bg-red-50 text-red-500 rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
-                      >
-                        <Trash2 size={14} /> Eliminar
-                      </button>
-                    </div>
+                  ))
+                ) : (
+                  <div className="p-10 text-center text-apple-sub font-medium">
+                    No se encontraron productos.
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </motion.div>
