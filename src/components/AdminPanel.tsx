@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Product, Order } from '../types';
-import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight } from 'lucide-react';
+import { Product, Order, Customer, Interaction } from '../types';
+import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail } from 'lucide-react';
 import { buildWhatsAppMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'crm' | 'settings'>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Product Modal State
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Partial<Customer> | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [interactions, setInteractions] = useState<Interaction[]>([]);
 
   useEffect(() => {
     fetchData();
@@ -29,15 +35,21 @@ export default function AdminPanel() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchOrders())
       .subscribe();
 
+    const customersSub = supabase
+      .channel('customers-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => fetchCustomers())
+      .subscribe();
+
     return () => {
       supabase.removeChannel(productsSub);
       supabase.removeChannel(ordersSub);
+      supabase.removeChannel(customersSub);
     };
   }, []);
 
   async function fetchData() {
     setLoading(true);
-    await Promise.all([fetchProducts(), fetchOrders()]);
+    await Promise.all([fetchProducts(), fetchOrders(), fetchCustomers()]);
     setLoading(false);
   }
 
@@ -50,6 +62,37 @@ export default function AdminPanel() {
     const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
     if (!error) setOrders(data || []);
   }
+
+  async function fetchInteractions(customerId: string) {
+    const { data, error } = await supabase
+      .from('interactions')
+      .select('*')
+      .eq('customer_id', customerId)
+      .order('created_at', { ascending: false });
+    if (!error) setInteractions(data || []);
+  }
+
+  const handleAddInteraction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCustomer) return;
+
+    const formData = new FormData(e.currentTarget);
+    const type = formData.get('type') as Interaction['type'];
+    const content = formData.get('content') as string;
+
+    try {
+      const { error } = await supabase
+        .from('interactions')
+        .insert([{ customer_id: selectedCustomer.id, type, content }]);
+      if (error) throw error;
+      
+      setIsInteractionModalOpen(false);
+      fetchInteractions(selectedCustomer.id);
+    } catch (error) {
+      console.error('Error adding interaction:', error);
+      alert('Error al registrar la interacción');
+    }
+  };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +119,31 @@ export default function AdminPanel() {
     }
   };
 
+  const handleSaveCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCustomer) return;
+
+    try {
+      if (editingCustomer.id) {
+        const { error } = await supabase
+          .from('customers')
+          .update(editingCustomer)
+          .eq('id', editingCustomer.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('customers')
+          .insert([editingCustomer]);
+        if (error) throw error;
+      }
+      setIsCustomerModalOpen(false);
+      setEditingCustomer(null);
+    } catch (error) {
+      console.error('Error saving customer:', error);
+      alert('Error al guardar el cliente');
+    }
+  };
+
   const handleDeleteProduct = async (id: number) => {
     if (!confirm('¿Estás seguro de eliminar este producto?')) return;
     try {
@@ -83,6 +151,16 @@ export default function AdminPanel() {
       if (error) throw error;
     } catch (error) {
       console.error('Error deleting product:', error);
+    }
+  };
+
+  const handleDeleteCustomer = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este cliente?')) return;
+    try {
+      const { error } = await supabase.from('customers').delete().eq('id', id);
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting customer:', error);
     }
   };
 
@@ -131,28 +209,25 @@ export default function AdminPanel() {
       <main className="max-w-[1600px] mx-auto px-6 py-16">
         {/* Tabs */}
         <div className="flex gap-10 mb-16 border-b border-apple-border/20">
-          <button 
-            onClick={() => setActiveTab('products')}
-            className={`pb-4 px-2 text-[13px] font-medium transition-all relative ${
-              activeTab === 'products' ? 'text-apple-dark' : 'text-apple-sub hover:text-apple-dark'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Package size={16} /> Productos
-            </div>
-            {activeTab === 'products' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 w-full h-0.5 bg-apple-dark" />}
-          </button>
-          <button 
-            onClick={() => setActiveTab('orders')}
-            className={`pb-4 px-2 text-[13px] font-medium transition-all relative ${
-              activeTab === 'orders' ? 'text-apple-dark' : 'text-apple-sub hover:text-apple-dark'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <ShoppingBag size={16} /> Pedidos
-            </div>
-            {activeTab === 'orders' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 w-full h-0.5 bg-apple-dark" />}
-          </button>
+          {[
+            { id: 'products', label: 'Productos', icon: Package },
+            { id: 'orders', label: 'Pedidos', icon: ShoppingBag },
+            { id: 'crm', label: 'CRM', icon: Users },
+            { id: 'settings', label: 'Configuración', icon: Settings },
+          ].map(tab => (
+            <button 
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`pb-4 px-2 text-[13px] font-medium transition-all relative ${
+                activeTab === tab.id ? 'text-apple-dark' : 'text-apple-sub hover:text-apple-dark'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <tab.icon size={16} /> {tab.label}
+              </div>
+              {activeTab === tab.id && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 w-full h-0.5 bg-apple-dark" />}
+            </button>
+          ))}
         </div>
 
         {activeTab === 'products' ? (
@@ -234,7 +309,7 @@ export default function AdminPanel() {
               </div>
             </div>
           </motion.div>
-        ) : (
+        ) : activeTab === 'orders' ? (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -310,19 +385,194 @@ export default function AdminPanel() {
               </div>
             </div>
           </motion.div>
+        ) : activeTab === 'crm' ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-10"
+          >
+            <div className="flex justify-between items-end">
+              <div>
+                <h2 className="text-[2.5rem] font-semibold tracking-tight leading-tight">CRM de Clientes</h2>
+                <p className="text-apple-sub text-lg mt-2">Gestiona tus relaciones con los clientes.</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setEditingCustomer({ name: '', whatsapp: '', email: '', notes: '' });
+                  setIsCustomerModalOpen(true);
+                }}
+                className="apple-button flex items-center gap-2 shadow-lg shadow-apple-accent/20"
+              >
+                <Plus size={20} /> Nuevo Cliente
+              </button>
+            </div>
+
+            <div className="apple-card border-none bg-white shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-apple-gray/50 text-apple-sub text-[10px] uppercase tracking-widest font-bold border-b border-apple-border/10">
+                      <th className="px-10 py-5">Cliente</th>
+                      <th className="px-10 py-5">WhatsApp</th>
+                      <th className="px-10 py-5">Última Interacción</th>
+                      <th className="px-10 py-5 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-apple-border/5">
+                    {customers.map(customer => (
+                      <tr key={customer.id} className="hover:bg-apple-gray/30 transition-colors group">
+                        <td className="px-10 py-8">
+                          <div className="font-semibold text-apple-dark text-[17px]">{customer.name}</div>
+                          <div className="text-[13px] text-apple-sub">{customer.email}</div>
+                        </td>
+                        <td className="px-10 py-8 text-[15px] font-medium">{customer.whatsapp}</td>
+                        <td className="px-10 py-8 text-[15px] font-medium">{new Date(customer.last_interaction).toLocaleDateString()}</td>
+                        <td className="px-10 py-8 text-right">
+                          <div className="flex justify-end gap-3">
+                            <button 
+                              onClick={() => {
+                                setSelectedCustomer(customer);
+                                fetchInteractions(customer.id);
+                                setIsInteractionModalOpen(true);
+                              }}
+                              className="p-3 hover:bg-apple-gray rounded-full text-apple-sub hover:text-apple-accent transition-all"
+                            >
+                              <MessageCircle size={18} />
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setEditingCustomer(customer);
+                                setIsCustomerModalOpen(true);
+                              }}
+                              className="p-3 hover:bg-apple-gray rounded-full text-apple-sub hover:text-apple-accent transition-all"
+                            >
+                              <Edit2 size={18} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteCustomer(customer.id)}
+                              className="p-3 hover:bg-apple-gray rounded-full text-apple-sub hover:text-red-500 transition-all"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-2xl mx-auto"
+          >
+            <h2 className="text-3xl font-semibold mb-8">Configuración de la Tienda</h2>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const settings = {
+                whatsapp: formData.get('whatsapp'),
+                facebook: formData.get('facebook'),
+                instagram: formData.get('instagram'),
+                slides: (formData.get('slides') as string).split(',').map(s => s.trim()),
+              };
+              
+              const { error } = await supabase
+                .from('settings')
+                .upsert({ key: 'general', value: settings });
+                
+              if (error) alert('Error al guardar configuración');
+              else alert('Configuración guardada correctamente');
+            }} className="apple-card p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Número de WhatsApp</label>
+                <input name="whatsapp" type="text" className="apple-input text-lg py-4" placeholder="+51..." />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Facebook URL</label>
+                <input name="facebook" type="url" className="apple-input text-lg py-4" placeholder="https://facebook.com/..." />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Instagram URL</label>
+                <input name="instagram" type="url" className="apple-input text-lg py-4" placeholder="https://instagram.com/..." />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Fotos del Carrusel (URLs separadas por coma)</label>
+                <textarea name="slides" className="apple-input text-lg py-4 min-h-[100px]" placeholder="https://..., https://..." />
+              </div>
+              <button type="submit" className="apple-button w-full py-4 text-lg rounded-2xl shadow-lg shadow-apple-accent/20">
+                Guardar Cambios
+              </button>
+            </form>
+          </motion.div>
         )}
       </main>
 
-      {/* Product Modal */}
+      {/* Interaction Modal */}
       <AnimatePresence>
-        {isProductModalOpen && editingProduct && (
+        {isInteractionModalOpen && selectedCustomer && (
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/30 backdrop-blur-sm" 
-              onClick={() => setIsProductModalOpen(false)} 
+              onClick={() => setIsInteractionModalOpen(false)} 
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative glass-card rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl"
+            >
+              <div className="p-10 border-b border-apple-border/10 flex items-center justify-between">
+                <h3 className="text-3xl font-semibold tracking-tight">Historial: {selectedCustomer.name}</h3>
+                <button onClick={() => setIsInteractionModalOpen(false)} className="p-3 hover:bg-apple-gray rounded-full transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="p-10 space-y-8">
+                <form onSubmit={handleAddInteraction} className="space-y-4">
+                  <div className="flex gap-4">
+                    <select name="type" className="apple-input py-3">
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="llamada">Llamada</option>
+                      <option value="email">Email</option>
+                    </select>
+                    <input name="content" required className="apple-input flex-1 py-3" placeholder="Detalle de la interacción..." />
+                    <button type="submit" className="apple-button px-6 py-3 rounded-xl">Agregar</button>
+                  </div>
+                </form>
+                <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                  {interactions.map(interaction => (
+                    <div key={interaction.id} className="p-4 bg-apple-gray rounded-xl">
+                      <div className="flex justify-between text-[12px] font-bold uppercase text-apple-sub mb-2">
+                        <span>{interaction.type}</span>
+                        <span>{new Date(interaction.created_at).toLocaleString()}</span>
+                      </div>
+                      <p className="text-apple-dark">{interaction.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Customer Modal */}
+      <AnimatePresence>
+        {isCustomerModalOpen && editingCustomer && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/30 backdrop-blur-sm" 
+              onClick={() => setIsCustomerModalOpen(false)} 
             />
             <motion.div 
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -331,74 +581,54 @@ export default function AdminPanel() {
               className="relative glass-card rounded-[2.5rem] w-full max-w-xl overflow-hidden shadow-2xl"
             >
               <div className="p-10 border-b border-apple-border/10 flex items-center justify-between">
-                <h3 className="text-3xl font-semibold tracking-tight">{editingProduct.id ? 'Editar Producto' : 'Nuevo Producto'}</h3>
-                <button onClick={() => setIsProductModalOpen(false)} className="p-3 hover:bg-apple-gray rounded-full transition-colors">
+                <h3 className="text-3xl font-semibold tracking-tight">{editingCustomer.id ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
+                <button onClick={() => setIsCustomerModalOpen(false)} className="p-3 hover:bg-apple-gray rounded-full transition-colors">
                   <X size={24} />
                 </button>
               </div>
-              <form onSubmit={handleSaveProduct} className="p-10 space-y-8">
+              <form onSubmit={handleSaveCustomer} className="p-10 space-y-8">
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Nombre</label>
                     <input 
                       required
                       type="text" 
-                      value={editingProduct.name}
-                      onChange={e => setEditingProduct({...editingProduct, name: e.target.value})}
+                      value={editingCustomer.name}
+                      onChange={e => setEditingCustomer({...editingCustomer, name: e.target.value})}
                       className="apple-input text-lg py-4"
-                      placeholder="Ej. Impresora Térmica XP-80"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Descripción</label>
-                    <textarea 
-                      required
-                      value={editingProduct.description}
-                      onChange={e => setEditingProduct({...editingProduct, description: e.target.value})}
-                      className="apple-input text-lg py-4 min-h-[120px] resize-none"
-                      placeholder="Describe las características del producto..."
+                      placeholder="Ej. Juan Pérez"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Precio (S/.)</label>
+                      <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">WhatsApp</label>
                       <input 
                         required
-                        type="number" 
-                        step="0.01"
-                        value={editingProduct.price || ''}
-                        onChange={e => setEditingProduct({...editingProduct, price: parseFloat(e.target.value)})}
+                        type="text" 
+                        value={editingCustomer.whatsapp}
+                        onChange={e => setEditingCustomer({...editingCustomer, whatsapp: e.target.value})}
                         className="apple-input text-lg py-4"
-                        placeholder="0.00"
+                        placeholder="+51..."
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Categoría</label>
-                      <select 
-                        value={editingProduct.category || 'Otros'}
-                        onChange={e => setEditingProduct({...editingProduct, category: e.target.value})}
-                        className="apple-input text-lg py-4 appearance-none cursor-pointer"
-                      >
-                        <option value="Impresoras Térmicas">Impresoras Térmicas</option>
-                        <option value="Gavetas de Dinero">Gavetas de Dinero</option>
-                        <option value="Control de Acceso">Control de Acceso</option>
-                        <option value="Lector de Código de Barras">Lector de Código de Barras</option>
-                        <option value="Monitores Touch">Monitores Touch</option>
-                        <option value="PC O LAPTOP">PC O LAPTOP</option>
-                        <option value="Suministros">Suministros</option>
-                        <option value="Terminal Punto de Venta">Terminal Punto de Venta</option>
-                        <option value="Otros">Otros</option>
-                      </select>
+                      <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Email</label>
+                      <input 
+                        type="email" 
+                        value={editingCustomer.email}
+                        onChange={e => setEditingCustomer({...editingCustomer, email: e.target.value})}
+                        className="apple-input text-lg py-4"
+                        placeholder="juan@ejemplo.com"
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">URL de Imagen</label>
-                    <input 
-                      type="url" 
-                      value={editingProduct.image_url || ''}
-                      onChange={e => setEditingProduct({...editingProduct, image_url: e.target.value})}
-                      className="apple-input text-lg py-4"
-                      placeholder="https://ejemplo.com/imagen.jpg"
+                    <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Notas</label>
+                    <textarea 
+                      value={editingCustomer.notes}
+                      onChange={e => setEditingCustomer({...editingCustomer, notes: e.target.value})}
+                      className="apple-input text-lg py-4 min-h-[120px] resize-none"
+                      placeholder="Notas sobre el cliente..."
                     />
                   </div>
                 </div>
@@ -406,7 +636,7 @@ export default function AdminPanel() {
                 <div className="flex gap-4 pt-4">
                   <button 
                     type="button"
-                    onClick={() => setIsProductModalOpen(false)}
+                    onClick={() => setIsCustomerModalOpen(false)}
                     className="flex-1 px-8 py-4 rounded-2xl font-semibold text-lg bg-apple-gray hover:bg-zinc-200 transition-colors"
                   >
                     Cancelar
@@ -415,7 +645,7 @@ export default function AdminPanel() {
                     type="submit"
                     className="flex-1 apple-button py-4 text-lg rounded-2xl shadow-lg shadow-apple-accent/20"
                   >
-                    {editingProduct.id ? 'Guardar Cambios' : 'Crear Producto'}
+                    {editingCustomer.id ? 'Guardar Cambios' : 'Crear Cliente'}
                   </button>
                 </div>
               </form>

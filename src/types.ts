@@ -29,3 +29,21 @@ export interface Order {
   status: 'pendiente' | 'pagado' | 'enviado' | 'cancelado';
   created_at: string;
 }
+
+export interface Customer {
+  id: string;
+  name: string;
+  whatsapp: string;
+  email: string;
+  last_interaction: string;
+  notes: string;
+  created_at: string;
+}
+
+export interface Interaction {
+  id: string;
+  customer_id: string;
+  type: 'whatsapp' | 'llamada' | 'email';
+  content: string;
+  created_at: string;
+}

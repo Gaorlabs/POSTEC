@@ -1055,42 +1055,40 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-apple-dark text-white py-20">
+      <footer className="bg-apple-dark text-white py-10">
         <div className="max-w-[1600px] mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-16">
-            <div className="col-span-1 md:col-span-2">
-              <div className="mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div className="col-span-1">
+              <div className="mb-4">
                 <Logo className="text-white" />
               </div>
-              <p className="text-zinc-400 text-sm max-w-sm leading-relaxed">
+              <p className="text-zinc-400 text-xs max-w-sm leading-relaxed">
                 Líderes en soluciones tecnológicas para puntos de venta en todo el Perú. 
                 Ofrecemos equipos de alta calidad con garantía y soporte especializado.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold text-sm mb-6 uppercase tracking-widest text-zinc-400">Categorías</h4>
-              <ul className="space-y-3 text-zinc-300 text-sm">
+              <h4 className="font-semibold text-xs mb-4 uppercase tracking-widest text-zinc-400">Categorías</h4>
+              <div className="grid grid-cols-2 gap-2 text-zinc-300 text-xs">
                 {categories.slice(1).map(c => (
-                  <li key={c}>
-                    <button onClick={() => { setCategory(c); scrollToProducts(); }} className="hover:text-apple-accent transition-colors">
-                      {c}
-                    </button>
-                  </li>
+                  <button key={c} onClick={() => { setCategory(c); scrollToProducts(); }} className="hover:text-apple-accent transition-colors text-left">
+                    {c}
+                  </button>
                 ))}
-              </ul>
+              </div>
             </div>
             <div>
-              <h4 className="font-semibold text-sm mb-6 uppercase tracking-widest text-zinc-400">Contacto</h4>
-              <ul className="space-y-3 text-zinc-300 text-sm">
+              <h4 className="font-semibold text-xs mb-4 uppercase tracking-widest text-zinc-400">Contacto</h4>
+              <ul className="space-y-2 text-zinc-300 text-xs">
                 <li className="flex items-center gap-2">Lima, Perú</li>
                 <li className="flex items-center gap-2">WhatsApp: +51 {import.meta.env.VITE_WHATSAPP_NUMBER}</li>
                 <li className="flex items-center gap-2">Soporte 24/7</li>
               </ul>
             </div>
           </div>
-          <div className="pt-10 border-t border-zinc-800 text-zinc-500 text-[12px] flex justify-between items-center">
+          <div className="pt-6 border-t border-zinc-800 text-zinc-500 text-[10px] flex justify-between items-center">
             <p>© 2026 Pos-Tec Store. Todos los derechos reservados.</p>
-            <div className="flex gap-6">
+            <div className="flex gap-4">
               <a href="#" className="hover:text-white transition-colors">Privacidad</a>
               <a href="#" className="hover:text-white transition-colors">Términos</a>
             </div>
