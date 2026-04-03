@@ -115,15 +115,25 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Colores</label>
+                  <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Marca</label>
                   <input 
                     type="text" 
-                    value={product.colors?.join(', ') || ''}
-                    onChange={e => setProduct({...product, colors: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '')})}
+                    value={product.brand || ''}
+                    onChange={e => setProduct({...product, brand: e.target.value})}
                     className="apple-input text-base md:text-lg py-3 md:py-4"
-                    placeholder="Ej. Negro, Blanco, Gris"
+                    placeholder="Ej. POS-STAR"
                   />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Colores</label>
+                <input 
+                  type="text" 
+                  value={product.colors?.join(', ') || ''}
+                  onChange={e => setProduct({...product, colors: e.target.value.split(',').map(s => s.trim()).filter(s => s !== '')})}
+                  className="apple-input text-base md:text-lg py-3 md:py-4"
+                  placeholder="Ej. Negro, Blanco, Gris"
+                />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-2">

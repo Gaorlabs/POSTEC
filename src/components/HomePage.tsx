@@ -25,6 +25,7 @@ export default function HomePage() {
   const [selectedIndustry, setSelectedIndustry] = useState('Restaurante');
   const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const productsRef = useRef<HTMLDivElement>(null);
 
   const scrollToProducts = () => {
@@ -133,6 +134,14 @@ export default function HomePage() {
     fetchProducts();
     fetchSettings();
   }, []);
+
+  useEffect(() => {
+    if (selectedProduct) {
+      setSelectedImage(selectedProduct.image_url);
+    } else {
+      setSelectedImage(null);
+    }
+  }, [selectedProduct]);
 
   async function fetchSettings() {
     const { data, error } = await supabase
@@ -1202,20 +1211,17 @@ export default function HomePage() {
                 <div className="flex flex-col gap-4">
                   <div className="bg-apple-gray rounded-3xl p-8 flex items-center justify-center aspect-square">
                     <img 
-                      src={selectedProduct.image_url || `https://picsum.photos/seed/${selectedProduct.id}/1200/800`}
+                      src={selectedImage || selectedProduct.image_url || `https://picsum.photos/seed/${selectedProduct.id}/1200/800`}
                       alt={selectedProduct.name}
-                      className="max-h-full object-contain"
+                      className="max-h-full object-contain transition-all duration-300"
                       referrerPolicy="no-referrer"
                     />
                   </div>
                   <div className="grid grid-cols-5 gap-2">
                     {/* Main Image Thumbnail */}
                     <div 
-                      className={`bg-apple-gray rounded-lg aspect-square border cursor-pointer overflow-hidden ${!selectedProduct.image_url || selectedProduct.image_url === selectedProduct.image_url ? 'border-apple-accent' : 'border-apple-border/20'}`}
-                      onClick={() => {
-                        // In a real app, we might change the main image view, 
-                        // but for now, we'll just keep it simple.
-                      }}
+                      className={`bg-apple-gray rounded-lg aspect-square border cursor-pointer overflow-hidden ${selectedImage === selectedProduct.image_url ? 'border-apple-accent' : 'border-apple-border/20'}`}
+                      onClick={() => setSelectedImage(selectedProduct.image_url || null)}
                     >
                       <img 
                         src={selectedProduct.image_url || `https://picsum.photos/seed/${selectedProduct.id}/200/200`} 
@@ -1228,7 +1234,8 @@ export default function HomePage() {
                     {selectedProduct.image_urls?.slice(0, 4).map((url, i) => (
                       <div 
                         key={i} 
-                        className="bg-apple-gray rounded-lg aspect-square border border-apple-border/20 cursor-pointer overflow-hidden"
+                        className={`bg-apple-gray rounded-lg aspect-square border cursor-pointer overflow-hidden ${selectedImage === url ? 'border-apple-accent' : 'border-apple-border/20'}`}
+                        onClick={() => setSelectedImage(url)}
                       >
                         <img 
                           src={url} 
@@ -1247,6 +1254,16 @@ export default function HomePage() {
 
                 {/* Info Section */}
                 <div className="flex flex-col">
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {selectedProduct.brand && (
+                      <span className="bg-apple-gray text-apple-dark text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded">
+                        {selectedProduct.brand}
+                      </span>
+                    )}
+                    <span className="bg-apple-accent/10 text-apple-accent text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded">
+                      Nuevo
+                    </span>
+                  </div>
                   <h1 className="text-4xl font-semibold tracking-tight mb-4">{selectedProduct.name}</h1>
                   <div className="flex items-center gap-4 mb-6">
                     <span className="text-2xl font-semibold">S/ {selectedProduct.price.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
@@ -1302,9 +1319,16 @@ export default function HomePage() {
                     </div>
                   )}
 
-                  <div className="text-sm text-apple-sub">
-                    <p>SKU: {selectedProduct.sku || (selectedProduct.id + 5000)}</p>
-                    <p>Share: Facebook Twitter Pinterest</p>
+                  <div className="text-sm text-apple-sub pt-6 border-t border-apple-border/10">
+                    <p className="mb-4 font-medium">SKU: <span className="text-apple-dark">{selectedProduct.sku || (selectedProduct.id + 5000)}</span></p>
+                    <div className="flex items-center gap-4">
+                      <span className="font-medium">Compartir:</span>
+                      <div className="flex gap-3">
+                        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noopener noreferrer" className="hover:text-apple-accent transition-colors">Facebook</a>
+                        <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(selectedProduct.name)}`} target="_blank" rel="noopener noreferrer" className="hover:text-apple-accent transition-colors">Twitter</a>
+                        <a href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(selectedProduct.image_url || '')}&description=${encodeURIComponent(selectedProduct.name)}`} target="_blank" rel="noopener noreferrer" className="hover:text-apple-accent transition-colors">Pinterest</a>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
