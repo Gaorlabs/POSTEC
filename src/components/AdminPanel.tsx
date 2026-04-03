@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Product, Order, Customer, Interaction } from '../types';
-import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail, Upload } from 'lucide-react';
 import { buildWhatsAppMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductModal from './ProductModal';
@@ -24,9 +24,11 @@ export default function AdminPanel() {
   const [editingCustomer, setEditingCustomer] = useState<Partial<Customer> | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const [settings, setSettings] = useState<any>(null);
 
   useEffect(() => {
     fetchData();
+    fetchSettings();
     
     // Real-time subscriptions
     const productsSub = supabase
@@ -79,6 +81,15 @@ export default function AdminPanel() {
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false });
     if (!error) setInteractions(data || []);
+  }
+
+  async function fetchSettings() {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'general')
+      .single();
+    if (!error && data) setSettings(data.value);
   }
 
   const handleAddInteraction = async (e: React.FormEvent) => {
@@ -512,7 +523,7 @@ export default function AdminPanel() {
             <form onSubmit={async (e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
-              const settings = {
+              const newSettings = {
                 whatsapp: formData.get('whatsapp'),
                 facebook: formData.get('facebook'),
                 instagram: formData.get('instagram'),
@@ -523,15 +534,18 @@ export default function AdminPanel() {
               
               const { error } = await supabase
                 .from('settings')
-                .upsert({ key: 'general', value: settings });
+                .upsert({ key: 'general', value: newSettings });
                 
               if (error) alert('Error al guardar configuración');
-              else alert('Configuración guardada correctamente');
+              else {
+                alert('Configuración guardada correctamente');
+                setSettings(newSettings);
+              }
             }} className="apple-card p-8 space-y-6">
               <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Logo de la Tienda</label>
                 <div className="flex gap-4">
-                  <input name="logo_url" type="url" className="apple-input text-lg py-4 flex-grow" placeholder="https://..." defaultValue={products[0]?.image_url ? '' : ''} />
+                  <input name="logo_url" type="url" className="apple-input text-lg py-4 flex-grow" placeholder="https://..." defaultValue={settings?.logo_url || ''} />
                   <label className="cursor-pointer bg-apple-gray hover:bg-zinc-200 p-4 rounded-xl transition-colors flex items-center justify-center min-w-[60px]">
                     <Upload size={20} />
                     <input 
@@ -554,24 +568,24 @@ export default function AdminPanel() {
               </div>
               <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Número de WhatsApp</label>
-                <input name="whatsapp" type="text" className="apple-input text-lg py-4" placeholder="+51..." />
+                <input name="whatsapp" type="text" className="apple-input text-lg py-4" placeholder="+51..." defaultValue={settings?.whatsapp || ''} />
               </div>
               <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Facebook URL</label>
-                <input name="facebook" type="url" className="apple-input text-lg py-4" placeholder="https://facebook.com/..." />
+                <input name="facebook" type="url" className="apple-input text-lg py-4" placeholder="https://facebook.com/..." defaultValue={settings?.facebook || ''} />
               </div>
               <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Instagram URL</label>
-                <input name="instagram" type="url" className="apple-input text-lg py-4" placeholder="https://instagram.com/..." />
+                <input name="instagram" type="url" className="apple-input text-lg py-4" placeholder="https://instagram.com/..." defaultValue={settings?.instagram || ''} />
               </div>
               <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">TikTok URL</label>
-                <input name="tiktok" type="url" className="apple-input text-lg py-4" placeholder="https://tiktok.com/..." />
+                <input name="tiktok" type="url" className="apple-input text-lg py-4" placeholder="https://tiktok.com/..." defaultValue={settings?.tiktok || ''} />
               </div>
               <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Fotos del Carrusel (URLs separadas por coma)</label>
                 <div className="flex gap-4">
-                  <textarea name="slides" className="apple-input text-lg py-4 min-h-[100px] flex-grow" placeholder="https://..., https://..." />
+                  <textarea name="slides" className="apple-input text-lg py-4 min-h-[100px] flex-grow" placeholder="https://..., https://..." defaultValue={settings?.slides?.join(', ') || ''} />
                   <label className="cursor-pointer bg-apple-gray hover:bg-zinc-200 p-4 rounded-xl transition-colors flex items-center justify-center min-w-[60px] h-[100px]">
                     <Upload size={20} />
                     <input 
