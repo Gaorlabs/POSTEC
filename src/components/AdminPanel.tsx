@@ -339,7 +339,11 @@ export default function AdminPanel() {
       fetchLabels();
     } catch (error: any) {
       console.error('Error saving label:', error);
-      alert(`Error al guardar la etiqueta: ${error.message || 'Error desconocido'}`);
+      if (error?.message?.includes('duplicate key value') || error?.code === '23505') {
+        alert('Ya existe una etiqueta con este nombre. Por favor, elige un nombre diferente.');
+      } else {
+        alert(`Error al guardar la etiqueta: ${error.message || 'Error desconocido'}`);
+      }
     }
   };
 
