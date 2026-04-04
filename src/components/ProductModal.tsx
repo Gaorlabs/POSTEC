@@ -217,14 +217,22 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] md:text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Categoría</label>
-                  <input 
+                  <select 
                     required
-                    type="text" 
-                    value={product.category || ''}
+                    value={product.category || 'Otros'}
                     onChange={e => setProduct({...product, category: e.target.value})}
-                    className="apple-input text-base md:text-lg py-3 md:py-4"
-                    placeholder="Ej. Otros"
-                  />
+                    className="apple-input text-base md:text-lg py-3 md:py-4 appearance-none bg-white w-full"
+                  >
+                    <option value="Impresoras Térmicas">Impresoras Térmicas</option>
+                    <option value="Gavetas de Dinero">Gavetas de Dinero</option>
+                    <option value="Control de Acceso">Control de Acceso</option>
+                    <option value="Lector de Código de Barras">Lector de Código de Barras</option>
+                    <option value="Monitores Touch">Monitores Touch</option>
+                    <option value="PC O LAPTOP">PC O LAPTOP</option>
+                    <option value="Suministros">Suministros</option>
+                    <option value="Terminal Punto de Venta">Terminal Punto de Venta</option>
+                    <option value="Otros">Otros</option>
+                  </select>
                 </div>
               </div>
               <div className="space-y-2">
