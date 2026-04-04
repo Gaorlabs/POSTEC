@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
+  const [combos, setCombos] = useState<any[]>([]);
   const [labels, setLabels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<OrderItem[]>([]);
@@ -22,7 +23,7 @@ export default function HomePage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<number | null>(null);
-  const [currentTab, setCurrentTab] = useState<'Tienda' | 'Soporte' | 'Controladores'>('Tienda');
+  const [currentTab, setCurrentTab] = useState<'Tienda' | 'Soporte' | 'Controladores' | 'Combos'>('Tienda');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedIndustry, setSelectedIndustry] = useState('Restaurante');
@@ -157,6 +158,7 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchProducts();
+    fetchCombos();
     fetchLabels();
     fetchSettings();
   }, []);
@@ -168,6 +170,11 @@ export default function HomePage() {
       setSelectedImage(null);
     }
   }, [selectedProduct]);
+
+  async function fetchCombos() {
+    const { data, error } = await supabase.from('combos').select('*').order('created_at', { ascending: false });
+    if (!error) setCombos(data || []);
+  }
 
   async function fetchLabels() {
     const { data, error } = await supabase.from('labels').select('*');
@@ -294,6 +301,13 @@ export default function HomePage() {
               {currentTab === 'Tienda' && <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-apple-accent" />}
             </button>
             <button 
+              onClick={() => setCurrentTab('Combos')}
+              className={`relative py-5 transition-colors ${currentTab === 'Combos' ? 'text-apple-accent' : 'hover:text-apple-accent'}`}
+            >
+              Packs Emprendedor
+              {currentTab === 'Combos' && <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-apple-accent" />}
+            </button>
+            <button 
               onClick={() => setCurrentTab('Soporte')}
               className={`relative py-5 transition-colors ${currentTab === 'Soporte' ? 'text-apple-accent' : 'hover:text-apple-accent'}`}
             >
@@ -326,6 +340,7 @@ export default function HomePage() {
                 className="absolute top-16 left-0 right-0 bg-white border-b border-apple-border p-6 md:hidden z-50 flex flex-col gap-4 text-lg font-semibold"
               >
                 <button onClick={() => { setCurrentTab('Tienda'); setIsMobileMenuOpen(false); }} className="text-left py-2">Tienda</button>
+                <button onClick={() => { setCurrentTab('Combos'); setIsMobileMenuOpen(false); }} className="text-left py-2">Packs Emprendedor</button>
                 <button onClick={() => { setCurrentTab('Soporte'); setIsMobileMenuOpen(false); }} className="text-left py-2">Soporte</button>
                 <button onClick={() => { setCurrentTab('Controladores'); setIsMobileMenuOpen(false); }} className="text-left py-2">Controladores</button>
               </motion.div>
@@ -513,7 +528,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Main Solution: Retail/POS */}
+                  {/* Main Solution: Retail/POS -> Changed to Combos */}
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -522,21 +537,21 @@ export default function HomePage() {
                   >
                     <img 
                       src="https://images.unsplash.com/photo-1556740734-7f95834d0ff9?auto=format&fit=crop&q=80&w=1200" 
-                      alt="Smart POS"
+                      alt="Packs Emprendedor"
                       className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105"
                       referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                     <div className="absolute inset-0 p-10 flex flex-col justify-end">
-                      <h3 className="text-2xl md:text-3xl font-semibold text-white mb-3 tracking-tight">Puntos de Venta Inteligentes</h3>
+                      <h3 className="text-2xl md:text-3xl font-semibold text-white mb-3 tracking-tight">Packs para Emprendedores</h3>
                       <p className="text-zinc-300 text-base max-w-md mb-6 line-clamp-2">
-                        Elimina las colas y los errores de facturación con terminales touch e impresoras de alta velocidad.
+                        Combos completos con todo lo necesario para iniciar tu negocio. Ahorra comprando en paquete.
                       </p>
                       <button 
-                        onClick={() => { setCategory('Terminal Punto de Venta'); scrollToProducts(); }}
+                        onClick={() => { setCurrentTab('Combos' as any); scrollToProducts(); }}
                         className="flex items-center gap-2 text-apple-accent font-semibold text-sm group-hover:gap-4 transition-all"
                       >
-                        Ver equipos POS <ArrowRight size={18} />
+                        Ver todos los packs <ArrowRight size={18} />
                       </button>
                     </div>
                   </motion.div>
@@ -837,6 +852,95 @@ export default function HomePage() {
                   </div>
                 </div>
               </section>
+            </motion.div>
+          )}
+
+          {currentTab === 'Combos' && (
+            <motion.div
+              key="combos"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+              className="py-12 md:py-24"
+            >
+              <div className="text-center mb-12 md:mb-20 px-6">
+                <h1 className="text-[2.5rem] md:text-[4rem] font-semibold tracking-tight leading-tight mb-4">
+                  Packs Emprendedor.
+                </h1>
+                <p className="text-xl md:text-2xl text-apple-sub max-w-3xl mx-auto font-medium">
+                  Todo lo que necesitas para iniciar o modernizar tu negocio, en un solo paquete y a un mejor precio.
+                </p>
+              </div>
+
+              <div className="max-w-[1600px] mx-auto px-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {combos.map((combo, idx) => (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: idx * 0.1 }}
+                      key={combo.id} 
+                      className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col group"
+                    >
+                      <div className="relative h-64 bg-apple-gray flex items-center justify-center overflow-hidden">
+                        <img 
+                          src={combo.image_url || `https://picsum.photos/seed/combo-${combo.id}/800/600`} 
+                          alt={combo.name} 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-lg font-bold text-apple-dark shadow-lg">
+                          S/ {combo.price.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                        </div>
+                      </div>
+                      <div className="p-8 flex flex-col flex-grow">
+                        <h3 className="text-2xl font-bold text-apple-dark mb-3 tracking-tight">{combo.name}</h3>
+                        <p className="text-apple-sub mb-6 line-clamp-3 leading-relaxed">{combo.description}</p>
+                        
+                        <div className="mb-8 flex-grow">
+                          <h4 className="text-[11px] uppercase tracking-widest font-bold text-apple-sub mb-4">¿Qué incluye?</h4>
+                          <div className="space-y-3">
+                            {combo.product_ids?.map((id: number) => {
+                              const product = products.find(p => p.id === id);
+                              return product ? (
+                                <div key={id} className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-apple-gray rounded-lg flex items-center justify-center shrink-0">
+                                    <img src={product.image_url || `https://picsum.photos/seed/${product.id}/50/50`} alt="" className="w-8 h-8 object-contain" />
+                                  </div>
+                                  <span className="text-sm font-medium text-apple-dark line-clamp-1">{product.name}</span>
+                                </div>
+                              ) : null;
+                            })}
+                          </div>
+                        </div>
+
+                        <button 
+                          onClick={() => {
+                            // Add all products in combo to cart
+                            combo.product_ids?.forEach((id: number) => {
+                              const product = products.find(p => p.id === id);
+                              if (product) addToCart(product);
+                            });
+                            setIsCartOpen(true);
+                          }}
+                          className="w-full bg-apple-dark hover:bg-black text-white py-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+                        >
+                          <ShoppingCart size={18} /> Agregar Pack al Carrito
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                
+                {combos.length === 0 && (
+                  <div className="text-center py-20">
+                    <Package size={48} className="mx-auto text-apple-sub mb-4 opacity-50" />
+                    <h3 className="text-2xl font-semibold text-apple-dark mb-2">Próximamente</h3>
+                    <p className="text-apple-sub">Estamos preparando los mejores packs para tu negocio.</p>
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
 

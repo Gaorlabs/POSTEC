@@ -5,13 +5,15 @@ import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, External
 import { buildWhatsAppMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductModal from './ProductModal';
+import ComboModal from './ComboModal';
 import OrderModal from './OrderModal';
 import AdminLogin from './AdminLogin';
 
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('admin_auth') === 'true');
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'crm' | 'settings' | 'labels'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'combos' | 'orders' | 'crm' | 'settings' | 'labels'>('products');
   const [products, setProducts] = useState<Product[]>([]);
+  const [combos, setCombos] = useState<any[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [labels, setLabels] = useState<any[]>([]);
@@ -19,11 +21,13 @@ export default function AdminPanel() {
   
   // Product Modal State
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isComboModalOpen, setIsComboModalOpen] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
   const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Partial<Product> | null>(null);
+  const [editingCombo, setEditingCombo] = useState<any | null>(null);
   const [editingLabel, setEditingLabel] = useState<any | null>(null);
   const [sharingProduct, setSharingProduct] = useState<Product | null>(null);
   const [copied, setCopied] = useState(false);
@@ -119,13 +123,18 @@ export default function AdminPanel() {
 
   async function fetchData() {
     setLoading(true);
-    await Promise.all([fetchProducts(), fetchOrders(), fetchCustomers(), fetchLabels()]);
+    await Promise.all([fetchProducts(), fetchCombos(), fetchOrders(), fetchCustomers(), fetchLabels()]);
     setLoading(false);
   }
 
   async function fetchProducts() {
     const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
     if (!error) setProducts(data || []);
+  }
+
+  async function fetchCombos() {
+    const { data, error } = await supabase.from('combos').select('*').order('created_at', { ascending: false });
+    if (!error) setCombos(data || []);
   }
 
   async function fetchLabels() {
@@ -265,6 +274,47 @@ export default function AdminPanel() {
     }
   };
 
+  const handleSaveCombo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCombo) return;
+
+    try {
+      const { id, created_at, ...updateData } = editingCombo as any;
+      
+      if (id) {
+        const { error } = await supabase
+          .from('combos')
+          .update(updateData)
+          .eq('id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('combos')
+          .insert([updateData]);
+        if (error) throw error;
+      }
+      setIsComboModalOpen(false);
+      setEditingCombo(null);
+      fetchCombos();
+    } catch (error: any) {
+      console.error('Error saving combo:', error);
+      alert(`Error al guardar el combo: ${error.message || 'Error desconocido'}`);
+    }
+  };
+
+  const handleDeleteCombo = async (id: number) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este combo?')) return;
+    
+    try {
+      const { error } = await supabase.from('combos').delete().eq('id', id);
+      if (error) throw error;
+      fetchCombos();
+    } catch (error: any) {
+      console.error('Error deleting combo:', error);
+      alert(`Error al eliminar el combo: ${error.message || 'Error desconocido'}`);
+    }
+  };
+
   const handleSaveLabel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingLabel) return;
@@ -400,6 +450,7 @@ export default function AdminPanel() {
         <div className="flex gap-6 md:gap-10 mb-8 md:mb-16 border-b border-apple-border/20 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
           {[
             { id: 'products', label: 'Productos', icon: Package },
+            { id: 'combos', label: 'Combos', icon: Package },
             { id: 'orders', label: 'Pedidos', icon: ShoppingBag },
             { id: 'crm', label: 'CRM', icon: Users },
             { id: 'labels', label: 'Etiquetas', icon: Zap },
@@ -636,6 +687,92 @@ export default function AdminPanel() {
                   </div>
                 )}
               </div>
+            </div>
+          </motion.div>
+        ) : activeTab === 'combos' ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-10"
+          >
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+              <div>
+                <h2 className="text-2xl md:text-[2.5rem] font-semibold tracking-tight leading-tight">Gestión de Combos</h2>
+                <p className="text-apple-sub text-base md:text-lg mt-1 md:mt-2">Crea packs de productos para emprendedores.</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setEditingCombo({ name: '', description: '', price: 0, image_url: '', product_ids: [] });
+                  setIsComboModalOpen(true);
+                }}
+                className="apple-button w-full md:w-auto flex items-center justify-center gap-2 shadow-lg shadow-apple-accent/20"
+              >
+                <Plus size={20} /> Nuevo Combo
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {combos.map(combo => (
+                <div key={combo.id} className="apple-card border-none bg-white shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                  <div className="relative h-48 bg-apple-gray flex items-center justify-center">
+                    <img 
+                      src={combo.image_url || `https://picsum.photos/seed/combo-${combo.id}/400/300`} 
+                      alt={combo.name} 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-bold text-apple-dark shadow-sm">
+                      S/ {combo.price.toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="p-6 flex flex-col flex-grow">
+                    <h3 className="text-lg font-semibold text-apple-dark mb-2">{combo.name}</h3>
+                    <p className="text-sm text-apple-sub mb-4 line-clamp-2 flex-grow">{combo.description}</p>
+                    
+                    <div className="mb-6">
+                      <h4 className="text-[10px] uppercase tracking-widest font-bold text-apple-sub mb-2">Productos Incluidos ({combo.product_ids?.length || 0})</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {combo.product_ids?.slice(0, 3).map((id: number) => {
+                          const product = products.find(p => p.id === id);
+                          return product ? (
+                            <div key={id} className="flex items-center gap-2 bg-apple-gray/50 rounded-lg p-1.5 pr-3">
+                              <img src={product.image_url || `https://picsum.photos/seed/${product.id}/50/50`} alt="" className="w-6 h-6 rounded-md object-cover" />
+                              <span className="text-[11px] font-medium text-apple-dark truncate max-w-[100px]">{product.name}</span>
+                            </div>
+                          ) : null;
+                        })}
+                        {combo.product_ids?.length > 3 && (
+                          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-apple-gray text-[11px] font-bold text-apple-sub">
+                            +{combo.product_ids.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 mt-auto">
+                      <button 
+                        onClick={() => {
+                          setEditingCombo(combo);
+                          setIsComboModalOpen(true);
+                        }}
+                        className="flex-1 py-2.5 bg-apple-gray text-apple-dark rounded-xl text-xs font-semibold flex items-center justify-center gap-2 hover:bg-apple-gray/80 transition-colors"
+                      >
+                        <Edit2 size={14} /> Editar
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteCombo(combo.id)}
+                        className="flex-1 py-2.5 bg-red-50 text-red-500 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 hover:bg-red-100 transition-colors"
+                      >
+                        <Trash2 size={14} /> Eliminar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {combos.length === 0 && (
+                <div className="col-span-full p-12 text-center text-apple-sub font-medium bg-white rounded-3xl border border-apple-border/10">
+                  No hay combos creados. Crea el primer pack para emprendedores.
+                </div>
+              )}
             </div>
           </motion.div>
         ) : activeTab === 'orders' ? (
@@ -1075,6 +1212,16 @@ export default function AdminPanel() {
         setProduct={setEditingProduct} 
         onSave={handleSaveProduct} 
         labelsList={labels}
+      />
+
+      {/* Combo Modal */}
+      <ComboModal
+        isOpen={isComboModalOpen}
+        onClose={() => setIsComboModalOpen(false)}
+        combo={editingCombo}
+        onSave={handleSaveCombo}
+        onChange={setEditingCombo}
+        products={products}
       />
 
       {/* Label Modal */}

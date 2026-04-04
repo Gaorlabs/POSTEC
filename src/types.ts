@@ -24,6 +24,16 @@ export interface Label {
   created_at?: string;
 }
 
+export interface Combo {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image_url?: string;
+  product_ids: number[];
+  created_at?: string;
+}
+
 export interface OrderItem {
   id: number;
   name: string;
