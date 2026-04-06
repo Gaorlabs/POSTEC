@@ -23,7 +23,7 @@ export default function HomePage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<number | null>(null);
-  const [currentTab, setCurrentTab] = useState<'Tienda' | 'Soporte' | 'Controladores' | 'Combos'>('Tienda');
+  const [currentTab, setCurrentTab] = useState<'Tienda' | 'Soporte y Controladores' | 'Combos'>('Tienda');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedIndustry, setSelectedIndustry] = useState('Restaurante');
@@ -308,18 +308,11 @@ export default function HomePage() {
               {currentTab === 'Combos' && <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-apple-accent" />}
             </button>
             <button 
-              onClick={() => setCurrentTab('Soporte')}
-              className={`relative py-5 transition-colors ${currentTab === 'Soporte' ? 'text-apple-accent' : 'hover:text-apple-accent'}`}
+              onClick={() => setCurrentTab('Soporte y Controladores')}
+              className={`relative py-5 transition-colors ${currentTab === 'Soporte y Controladores' ? 'text-apple-accent' : 'hover:text-apple-accent'}`}
             >
-              Soporte
-              {currentTab === 'Soporte' && <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-apple-accent" />}
-            </button>
-            <button 
-              onClick={() => setCurrentTab('Controladores')}
-              className={`relative py-5 transition-colors ${currentTab === 'Controladores' ? 'text-apple-accent' : 'hover:text-apple-accent'}`}
-            >
-              Controladores
-              {currentTab === 'Controladores' && <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-apple-accent" />}
+              Soporte y Controladores
+              {currentTab === 'Soporte y Controladores' && <motion.div layoutId="nav-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-apple-accent" />}
             </button>
           </div>
 
@@ -341,8 +334,7 @@ export default function HomePage() {
               >
                 <button onClick={() => { setCurrentTab('Tienda'); setIsMobileMenuOpen(false); }} className="text-left py-2">Tienda</button>
                 <button onClick={() => { setCurrentTab('Combos'); setIsMobileMenuOpen(false); }} className="text-left py-2">Packs Emprendedor</button>
-                <button onClick={() => { setCurrentTab('Soporte'); setIsMobileMenuOpen(false); }} className="text-left py-2">Soporte</button>
-                <button onClick={() => { setCurrentTab('Controladores'); setIsMobileMenuOpen(false); }} className="text-left py-2">Controladores</button>
+                <button onClick={() => { setCurrentTab('Soporte y Controladores'); setIsMobileMenuOpen(false); }} className="text-left py-2">Soporte y Controladores</button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -944,24 +936,24 @@ export default function HomePage() {
             </motion.div>
           )}
 
-          {currentTab === 'Soporte' && (
+          {currentTab === 'Soporte y Controladores' && (
             <motion.div
-              key="soporte"
+              key="soporte-controladores"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5 }}
-              className="py-24"
+              className="py-12 md:py-24"
             >
               <div className="text-center mb-16">
-                <h1 className="text-[2.5rem] md:text-[3.5rem] font-semibold tracking-tight mb-4">Soporte Pos-Tec.</h1>
-                <p className="text-xl text-apple-sub max-w-2xl mx-auto">Estamos aquí para ayudarte con cualquier duda o problema técnico.</p>
+                <h1 className="text-[2.5rem] md:text-[3.5rem] font-semibold tracking-tight mb-4">Soporte y Controladores.</h1>
+                <p className="text-xl text-apple-sub max-w-2xl mx-auto px-4">Estamos aquí para ayudarte con cualquier duda técnica y proporcionarte el software más reciente.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
                 <div className="apple-card p-8 bg-zinc-50 flex flex-col justify-between h-[400px] border-none">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-3">Chat en vivo</h2>
+                    <h2 className="text-2xl font-semibold mb-3">Soporte Técnico</h2>
                     <p className="text-lg text-apple-sub">Habla con un experto de Pos-Tec en tiempo real.</p>
                   </div>
                   <div className="flex justify-center py-8">
@@ -969,47 +961,38 @@ export default function HomePage() {
                       <Zap size={32} />
                     </div>
                   </div>
-                  <button className="apple-button w-full py-3 text-lg">Iniciar Chat</button>
+                  <a 
+                    href={buildWhatsAppMessage('Hola, necesito soporte técnico para mi equipo.')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="apple-button w-full py-3 text-lg flex justify-center"
+                  >
+                    Contactar a Soporte
+                  </a>
                 </div>
                 <div className="apple-card p-8 bg-zinc-50 flex flex-col justify-between h-[400px] border-none">
                   <div>
-                    <h2 className="text-2xl font-semibold mb-3">Llámanos</h2>
-                    <p className="text-lg text-apple-sub">Nuestro equipo está disponible de Lunes a Viernes.</p>
+                    <h2 className="text-2xl font-semibold mb-3">Garantía</h2>
+                    <p className="text-lg text-apple-sub">Todos nuestros equipos cuentan con garantía.</p>
                   </div>
                   <div className="flex justify-center py-8">
                     <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-green-500/20">
                       <Package size={32} />
                     </div>
                   </div>
-                  <button className="apple-button w-full py-3 text-lg">Ver Números</button>
+                  <a 
+                    href={buildWhatsAppMessage('Hola, necesito ayuda sobre una garantía.')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="apple-button w-full py-3 text-lg flex justify-center"
+                  >
+                    Consultar Garantía
+                  </a>
                 </div>
               </div>
 
-              <div className="apple-card p-12 bg-apple-dark text-white text-center border-none">
-                <h2 className="text-3xl font-semibold mb-4">¿Buscas manuales?</h2>
-                <p className="text-lg text-zinc-400 mb-8 max-w-2xl mx-auto">Encuentra guías de usuario, especificaciones técnicas y más para todos tus productos.</p>
-                <button className="bg-white text-apple-dark px-8 py-3 rounded-full font-semibold text-lg hover:bg-zinc-200 transition-colors active:scale-95 transition-transform">
-                  Ir a Documentación
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {currentTab === 'Controladores' && (
-            <motion.div
-              key="controladores"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.5 }}
-              className="py-24"
-            >
-              <div className="text-center mb-12">
-                <h1 className="text-[2.5rem] md:text-[3.5rem] font-semibold tracking-tight mb-4">Controladores.</h1>
-                <p className="text-xl text-apple-sub max-w-2xl mx-auto">Descarga el software más reciente para tus dispositivos Pos-Tec.</p>
-              </div>
-
               <div className="max-w-6xl mx-auto">
+                <h2 className="text-2xl font-semibold mb-6 px-4">Descarga de Controladores</h2>
                 <div className="apple-card overflow-hidden border-none bg-apple-gray/30">
                   <div className="p-8 border-b border-apple-border/20 bg-apple-gray/50">
                     <div className="flex items-center gap-4 bg-white rounded-2xl px-6 py-4 shadow-sm">
@@ -1028,7 +1011,7 @@ export default function HomePage() {
                       { name: 'Software de Configuración de Cajón', version: 'v3.1.0', size: '8MB', date: 'Ene 2024' },
                       { name: 'Driver Pantalla Táctil POS-15', version: 'v5.2.2', size: '45MB', date: 'Dic 2023' },
                     ].map((driver, i) => (
-                      <div key={i} className="p-6 flex items-center justify-between hover:bg-white/50 transition-colors">
+                      <div key={i} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/50 transition-colors">
                          <div>
                            <h3 className="text-lg font-semibold mb-1">{driver.name}</h3>
                            <p className="text-apple-sub text-sm font-medium">Versión {driver.version} • {driver.size} • {driver.date}</p>
@@ -1235,7 +1218,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-apple-dark text-white py-10">
+      <footer className="bg-apple-dark text-white py-10 pb-safe">
         <div className="max-w-[1600px] mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div className="col-span-1">
@@ -1277,7 +1260,7 @@ export default function HomePage() {
       </footer>
 
       {/* Floating Help Chat */}
-      <div className="fixed bottom-8 right-8 z-[120] flex flex-col items-end gap-4">
+      <div className="fixed bottom-8 right-8 z-[120] flex flex-col items-end gap-4 pb-safe">
         <AnimatePresence>
           {isHelpMenuOpen && (
             <motion.div

@@ -1,10 +1,10 @@
 {
-  "name": "Pos-Tec Admin",
-  "short_name": "Pos-Tec Admin",
-  "description": "Panel de Administración de Pos-Tec Store",
-  "start_url": "/admin",
+  "name": "Pos-Tec Store",
+  "short_name": "Pos-Tec",
+  "description": "Equipos para Puntos de Venta",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
+  "background_color": "#121212",
   "theme_color": "#121212",
   "icons": [
     {

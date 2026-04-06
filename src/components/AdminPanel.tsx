@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Product, Order, Customer, Interaction } from '../types';
-import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail, Upload, Bell, BellOff, Search, Filter, Share2, Facebook, Instagram, Music, Send, Link, Copy } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail, Upload, Bell, BellOff, Search, Filter, Share2, Facebook, Instagram, Music, Send, Link, Copy, Download } from 'lucide-react';
 import { buildWhatsAppMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductModal from './ProductModal';
@@ -358,6 +358,33 @@ export default function AdminPanel() {
     }
   };
 
+  const exportProductsToCSV = () => {
+    const headers = ['Categoría', 'Nombre', 'Descripción', 'Uso/Características', 'Precio', 'Stock'];
+    
+    const rows = products.map(p => [
+      `"${(p.category || '').replace(/"/g, '""')}"`,
+      `"${(p.name || '').replace(/"/g, '""')}"`,
+      `"${(p.description || '').replace(/"/g, '""')}"`,
+      `"${(p.features || '').replace(/"/g, '""')}"`,
+      p.price,
+      p.stock || 0
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+    
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `productos_postec_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleDeleteProduct = async (id: number) => {
     if (!confirm('¿Estás seguro de eliminar este producto?')) return;
     try {
@@ -486,15 +513,23 @@ export default function AdminPanel() {
                 <h2 className="text-2xl md:text-[2.5rem] font-semibold tracking-tight leading-tight">Gestión de Productos</h2>
                 <p className="text-apple-sub text-base md:text-lg mt-1 md:mt-2">Administra el inventario de tu tienda.</p>
               </div>
-              <button 
-                onClick={() => {
-                  setEditingProduct({ name: '', description: '', price: 0, category: 'Otros', image_url: '' });
-                  setIsProductModalOpen(true);
-                }}
-                className="apple-button w-full md:w-auto flex items-center justify-center gap-2 shadow-lg shadow-apple-accent/20"
-              >
-                <Plus size={20} /> Nuevo Producto
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <button 
+                  onClick={exportProductsToCSV}
+                  className="apple-button-secondary w-full sm:w-auto flex items-center justify-center gap-2"
+                >
+                  <Download size={20} /> Exportar
+                </button>
+                <button 
+                  onClick={() => {
+                    setEditingProduct({ name: '', description: '', price: 0, category: 'Otros', image_url: '' });
+                    setIsProductModalOpen(true);
+                  }}
+                  className="apple-button w-full sm:w-auto flex items-center justify-center gap-2 shadow-lg shadow-apple-accent/20"
+                >
+                  <Plus size={20} /> Nuevo Producto
+                </button>
+              </div>
             </div>
 
             {/* Search and Filter Bar */}

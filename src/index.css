@@ -21,6 +21,11 @@
 
 .apple-nav {
   @apply sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-xl border-b border-apple-border/30 transition-all duration-300;
+  padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .apple-card {
