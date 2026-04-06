@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './components/HomePage';
 import AdminPanel from './components/AdminPanel';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 import { AlertTriangle } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
 import { seedProducts } from './lib/seedData';
@@ -54,6 +55,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/admin" element={<AdminPanel />} />
         </Routes>
+        <PWAInstallPrompt />
       </div>
     </BrowserRouter>
   );
