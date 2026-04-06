@@ -962,7 +962,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <a 
-                    href={buildWhatsAppMessage('Hola, necesito soporte técnico para mi equipo.')}
+                    href={`https://wa.me/51${import.meta.env.VITE_WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola, necesito soporte técnico para mi equipo.')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="apple-button w-full py-3 text-lg flex justify-center"
@@ -981,7 +981,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <a 
-                    href={buildWhatsAppMessage('Hola, necesito ayuda sobre una garantía.')}
+                    href={`https://wa.me/51${import.meta.env.VITE_WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola, necesito ayuda sobre una garantía.')}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="apple-button w-full py-3 text-lg flex justify-center"
