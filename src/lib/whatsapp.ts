@@ -38,3 +38,22 @@ export function buildProductInquiryMessage(productId: number, productName: strin
   
   return `https://wa.me/51${whatsappNumber}?text=${encodedMessage}`;
 }
+
+export function buildCartQuoteMessage(items: OrderItem[], total: number): string {
+  const itemsText = items
+    .map((item) => `• ${item.quantity}x ${item.name}`)
+    .join('\n');
+
+  const message = `Hola Pos-Tec, deseo solicitar una cotización por los siguientes productos:
+
+${itemsText}
+
+Total estimado: S/.${total.toFixed(2)}
+
+Quedo atento a su respuesta.`;
+
+  const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '';
+  const encodedMessage = encodeURIComponent(message);
+  
+  return `https://wa.me/51${whatsappNumber}?text=${encodedMessage}`;
+}

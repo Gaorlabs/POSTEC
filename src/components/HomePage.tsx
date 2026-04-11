@@ -4,8 +4,9 @@ import { Logo } from './Logo';
 import { ShoppingCart, X, Plus, Minus, Send, Package, Search, ChevronRight, ChevronLeft, Globe, Zap, ShieldCheck, ArrowRight, Printer, Banknote, Fingerprint, Barcode, Monitor, Laptop, ScrollText, Store, LayoutGrid, CreditCard, Cpu, Menu, Share2, Link, Facebook, Twitter } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { Product, OrderItem } from '../types';
-import { buildWhatsAppMessage, buildProductInquiryMessage } from '../lib/whatsapp';
+import { buildWhatsAppMessage, buildProductInquiryMessage, buildCartQuoteMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
+import Typebot from '@typebot.io/js/web';
 
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -27,11 +28,18 @@ export default function HomePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [selectedIndustry, setSelectedIndustry] = useState('Restaurante');
-  const [isHelpMenuOpen, setIsHelpMenuOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [detailQuantity, setDetailQuantity] = useState(1);
   const [copied, setCopied] = useState(false);
   const productsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    Typebot.initBubble({
+      typebot: import.meta.env.VITE_TYPEBOT_ID || "pos-tec-assistant",
+      apiHost: import.meta.env.VITE_TYPEBOT_URL || "https://typebot.io",
+    });
+  }, []);
 
   useEffect(() => {
     const productId = searchParams.get('product');
@@ -48,6 +56,7 @@ export default function HomePage() {
 
   const handleSelectProduct = (product: Product) => {
     setSearchParams({ product: product.id.toString() });
+    setDetailQuantity(1);
   };
 
   const shareProduct = (product: Product, platform: 'whatsapp' | 'copy') => {
@@ -224,15 +233,15 @@ export default function HomePage() {
     ? products 
     : products.filter(p => p.category === category);
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, quantity: number = 1) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
         return prev.map(item => 
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
-      return [...prev, { id: product.id, name: product.name, price: product.price, quantity: 1 }];
+      return [...prev, { id: product.id, name: product.name, price: product.price, quantity }];
     });
     setIsCartOpen(true);
   };
@@ -249,6 +258,12 @@ export default function HomePage() {
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const handleRequestCartQuote = () => {
+    if (cart.length === 0) return;
+    const whatsappUrl = buildCartQuoteMessage(cart, cartTotal);
+    window.open(whatsappUrl, '_blank');
+  };
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -712,6 +727,10 @@ export default function HomePage() {
                               {/* Top Actions */}
                               <div className="flex justify-between items-center gap-2 mb-4">
                                 <div className="flex flex-wrap gap-1">
+                                  <span className="bg-[#25D366] text-white text-[9px] font-bold uppercase tracking-tight px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1">
+                                    <Zap size={10} fill="white" />
+                                    Cotización Inmediata
+                                  </span>
                                   {product.labels?.map((labelName, idx) => {
                                     const labelData = labels.find(l => l.name === labelName);
                                     return (
@@ -801,10 +820,20 @@ export default function HomePage() {
                                         e.stopPropagation();
                                         addToCart(product);
                                       }}
-                                      className="flex-grow bg-apple-accent hover:bg-[#00A844] text-white py-3 rounded-lg flex items-center justify-center gap-2 text-[14px] font-bold transition-all active:scale-[0.98]"
+                                      className="flex-1 bg-apple-accent hover:bg-[#00A844] text-white py-3 rounded-lg flex items-center justify-center gap-2 text-[13px] font-bold transition-all active:scale-[0.98]"
                                     >
-                                      <ShoppingCart size={18} />
+                                      <ShoppingCart size={16} />
                                       Agregar
+                                    </button>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        shareProduct(product, 'whatsapp');
+                                      }}
+                                      className="flex-1 bg-white border border-[#25D366] text-[#25D366] hover:bg-green-50 py-3 rounded-lg flex items-center justify-center gap-2 text-[13px] font-bold transition-all active:scale-[0.98]"
+                                    >
+                                      <Send size={16} />
+                                      Cotizar
                                     </button>
                                   </div>
                                 </div>
@@ -1151,6 +1180,24 @@ export default function HomePage() {
                         >
                           {isSubmitting ? 'Procesando...' : 'Pagar'}
                         </button>
+                        
+                        <div className="relative py-4">
+                          <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-apple-gray"></div>
+                          </div>
+                          <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-white px-2 text-zinc-400">O también</span>
+                          </div>
+                        </div>
+
+                        <button 
+                          type="button"
+                          onClick={handleRequestCartQuote}
+                          className="w-full bg-apple-dark text-white py-4 rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center gap-3"
+                        >
+                          <Send size={20} />
+                          SOLICITAR COTIZACIÓN
+                        </button>
                       </form>
                     </div>
                   </div>
@@ -1292,55 +1339,18 @@ export default function HomePage() {
 
       {/* Floating Help Chat */}
       <div className="fixed bottom-8 right-8 z-[120] flex flex-col items-end gap-4 pb-safe">
-        <AnimatePresence>
-          {isHelpMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.9 }}
-              className="bg-white/80 backdrop-blur-xl border border-white/20 p-2 rounded-3xl shadow-2xl mb-2 flex flex-col gap-1 min-w-[220px]"
-            >
-              {[
-                { label: 'Ventas / Info Producto', icon: <Store size={18} />, msg: 'Hola, necesito información sobre un producto.' },
-                { label: 'Soporte Técnico', icon: <Zap size={18} />, msg: 'Hola, necesito soporte técnico para mi equipo.' },
-                { label: 'Garantía', icon: <ShieldCheck size={18} />, msg: 'Hola, necesito ayuda sobre una garantía.' },
-                { label: 'Controladores', icon: <ScrollText size={18} />, msg: 'Hola, necesito ayuda con un controlador.' },
-              ].map((option, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    const url = `https://wa.me/51900000000?text=${encodeURIComponent(option.msg)}`;
-                    window.open(url, '_blank');
-                    setIsHelpMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-apple-gray rounded-2xl transition-all text-left group"
-                >
-                  <div className="text-apple-accent group-hover:scale-110 transition-transform">
-                    {option.icon}
-                  </div>
-                  <span className="text-[14px] font-medium text-zinc-800">{option.label}</span>
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <motion.button
           initial={{ opacity: 0, scale: 0.8, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => setIsHelpMenuOpen(!isHelpMenuOpen)}
-          className={`p-4 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-500 ${
-            isHelpMenuOpen ? 'bg-zinc-900 text-white' : 'bg-apple-accent text-white'
-          }`}
+          onClick={() => Typebot.open()}
+          className="p-4 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-500 bg-[#25D366] text-white"
         >
-          <div className={`transition-transform duration-500 ${isHelpMenuOpen ? 'rotate-45' : ''}`}>
-            {isHelpMenuOpen ? <X size={24} /> : <Zap size={24} fill="currentColor" />}
+          <div className="transition-transform duration-500">
+            <Send size={24} fill="currentColor" />
           </div>
-          {!isHelpMenuOpen && (
-            <span className="font-medium pr-2">¿Necesitas ayuda?</span>
-          )}
+          <span className="font-bold pr-2">Asistente Virtual AI</span>
         </motion.button>
       </div>
 
@@ -1465,13 +1475,23 @@ export default function HomePage() {
 
                   <div className="flex gap-4 mb-8">
                     <div className="flex items-center border border-apple-border rounded-lg">
-                      <button className="px-4 py-2">-</button>
-                      <span className="px-4 py-2 font-medium">1</span>
-                      <button className="px-4 py-2">+</button>
+                      <button 
+                        onClick={() => setDetailQuantity(prev => Math.max(1, prev - 1))}
+                        className="px-4 py-2 hover:bg-apple-gray transition-colors"
+                      >
+                        -
+                      </button>
+                      <span className="px-4 py-2 font-medium min-w-[3rem] text-center">{detailQuantity}</span>
+                      <button 
+                        onClick={() => setDetailQuantity(prev => prev + 1)}
+                        className="px-4 py-2 hover:bg-apple-gray transition-colors"
+                      >
+                        +
+                      </button>
                     </div>
                     <button 
                       onClick={() => {
-                        addToCart(selectedProduct);
+                        addToCart(selectedProduct, detailQuantity);
                         handleCloseProduct();
                       }}
                       className="flex-grow bg-apple-accent text-white py-3 rounded-lg font-semibold hover:bg-[#00A844] transition-colors"
