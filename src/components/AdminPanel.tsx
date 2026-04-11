@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabaseClient';
 import { Product, Order, Customer, Interaction } from '../types';
 import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail, Upload, Bell, BellOff, Search, Filter, Share2, Facebook, Instagram, Music, Send, Link, Copy, Download } from 'lucide-react';
@@ -359,15 +360,17 @@ export default function AdminPanel() {
   };
 
   const exportProductsToCSV = () => {
-    const headers = ['Categoría', 'Nombre', 'Descripción', 'Uso/Características', 'Precio', 'Stock'];
+    const headers = ['Categoría', 'Marca', 'Nombre', 'Descripción', 'Uso/Características', 'Precio', 'Stock', 'SKU'];
     
     const rows = products.map(p => [
       `"${(p.category || '').replace(/"/g, '""')}"`,
+      `"${(p.brand || '').replace(/"/g, '""')}"`,
       `"${(p.name || '').replace(/"/g, '""')}"`,
       `"${(p.description || '').replace(/"/g, '""')}"`,
       `"${(p.features || '').replace(/"/g, '""')}"`,
       p.price,
-      p.stock || 0
+      p.stock || 0,
+      `"${(p.sku || '').replace(/"/g, '""')}"`
     ]);
     
     const csvContent = [
@@ -380,6 +383,69 @@ export default function AdminPanel() {
     const link = document.createElement('a');
     link.setAttribute('href', url);
     link.setAttribute('download', `productos_postec_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  const exportProductsToExcel = () => {
+    const data = products.map(p => ({
+      'Categoría': p.category || '',
+      'Marca': p.brand || '',
+      'Nombre': p.name || '',
+      'SKU': p.sku || '',
+      'Precio': p.price,
+      'Stock': p.stock || 0,
+      'Descripción': p.description || '',
+      'Uso/Características': p.features || '',
+      'URL Imagen': p.image_url || '',
+      'Etiquetas': (p.labels || []).join(', ')
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Productos");
+
+    // Adjust column widths
+    const wscols = [
+      {wch: 20}, // Categoría
+      {wch: 15}, // Marca
+      {wch: 30}, // Nombre
+      {wch: 15}, // SKU
+      {wch: 10}, // Precio
+      {wch: 10}, // Stock
+      {wch: 40}, // Descripción
+      {wch: 40}, // Características
+      {wch: 30}, // URL Imagen
+      {wch: 20}  // Etiquetas
+    ];
+    worksheet['!cols'] = wscols;
+
+    XLSX.writeFile(workbook, `productos_postec_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const exportProductsToJSON = () => {
+    const data = products.map(p => ({
+      id: p.id,
+      sku: p.sku,
+      marca: p.brand,
+      nombre: p.name,
+      categoria: p.category,
+      precio: p.price,
+      descripcion: p.description,
+      caracteristicas: p.features,
+      stock: p.stock,
+      url_imagen: p.image_url,
+      colores: p.colors,
+      etiquetas: p.labels
+    }));
+    
+    const jsonString = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `productos_postec_bot_${new Date().toISOString().split('T')[0]}.json`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -514,12 +580,22 @@ export default function AdminPanel() {
                 <p className="text-apple-sub text-base md:text-lg mt-1 md:mt-2">Administra el inventario de tu tienda.</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                <button 
-                  onClick={exportProductsToCSV}
-                  className="apple-button-secondary w-full sm:w-auto flex items-center justify-center gap-2"
-                >
-                  <Download size={20} /> Exportar
-                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={exportProductsToExcel}
+                    className="apple-button-secondary flex-1 sm:flex-none flex items-center justify-center gap-2"
+                    title="Exportar a Excel (.xlsx)"
+                  >
+                    <Download size={20} /> Excel
+                  </button>
+                  <button 
+                    onClick={exportProductsToJSON}
+                    className="apple-button-secondary flex-1 sm:flex-none flex items-center justify-center gap-2"
+                    title="Exportar para Bot (JSON)"
+                  >
+                    <MessageCircle size={20} /> JSON
+                  </button>
+                </div>
                 <button 
                   onClick={() => {
                     setEditingProduct({ name: '', description: '', price: 0, category: 'Otros', image_url: '' });
