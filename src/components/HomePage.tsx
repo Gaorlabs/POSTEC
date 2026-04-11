@@ -4,7 +4,7 @@ import { Logo } from './Logo';
 import { ShoppingCart, X, Plus, Minus, Send, Package, Search, ChevronRight, ChevronLeft, Globe, Zap, ShieldCheck, ArrowRight, Printer, Banknote, Fingerprint, Barcode, Monitor, Laptop, ScrollText, Store, LayoutGrid, CreditCard, Cpu, Menu, Share2, Link, Facebook, Twitter } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { Product, OrderItem } from '../types';
-import { buildWhatsAppMessage } from '../lib/whatsapp';
+import { buildWhatsAppMessage, buildProductInquiryMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function HomePage() {
@@ -48,6 +48,19 @@ export default function HomePage() {
 
   const handleSelectProduct = (product: Product) => {
     setSearchParams({ product: product.id.toString() });
+  };
+
+  const shareProduct = (product: Product, platform: 'whatsapp' | 'copy') => {
+    const productUrl = `${window.location.origin}/?product=${product.id}`;
+    
+    if (platform === 'whatsapp') {
+      const inquiryUrl = buildProductInquiryMessage(product.id, product.name);
+      window.open(inquiryUrl, '_blank');
+    } else if (platform === 'copy') {
+      navigator.clipboard.writeText(productUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleCloseProduct = () => {
@@ -712,10 +725,28 @@ export default function HomePage() {
                                     );
                                   })}
                                 </div>
-                                <label className="flex items-center gap-2 cursor-pointer text-[#70757a] text-sm hover:text-apple-accent transition-colors">
-                                  <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-apple-accent focus:ring-apple-accent" />
-                                  <span>Comparar</span>
-                                </label>
+                                <div className="flex items-center gap-2">
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      shareProduct(product, 'whatsapp');
+                                    }}
+                                    className="p-2 hover:bg-green-50 text-green-600 rounded-full transition-colors"
+                                    title="Compartir en WhatsApp"
+                                  >
+                                    <Send size={16} />
+                                  </button>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      shareProduct(product, 'copy');
+                                    }}
+                                    className="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition-colors"
+                                    title="Copiar enlace"
+                                  >
+                                    <Link size={16} />
+                                  </button>
+                                </div>
                               </div>
 
                               {/* Product Image */}
@@ -1449,9 +1480,39 @@ export default function HomePage() {
                     </button>
                   </div>
                   
-                  <button className="w-full bg-apple-dark text-white py-3 rounded-lg font-semibold hover:bg-black transition-colors mb-8">
-                    COMPRAR AHORA
+                  <button 
+                    onClick={() => shareProduct(selectedProduct, 'whatsapp')}
+                    className="w-full bg-apple-dark text-white py-4 rounded-xl font-bold hover:bg-black transition-all active:scale-[0.98] mb-8 flex items-center justify-center gap-3 shadow-xl shadow-black/10"
+                  >
+                    <Send size={20} />
+                    CONSULTAR Y COTIZAR POR WHATSAPP
                   </button>
+
+                  <div className="pt-6 border-t border-apple-border/10 mb-8">
+                    <p className="text-sm font-medium text-apple-sub mb-4 uppercase tracking-widest">Compartir este producto</p>
+                    <div className="flex gap-3">
+                      <button 
+                        onClick={() => shareProduct(selectedProduct, 'whatsapp')}
+                        className="flex-1 bg-[#25D366] hover:bg-[#128C7E] text-white py-3 rounded-xl flex items-center justify-center gap-2 font-semibold transition-all active:scale-[0.98]"
+                      >
+                        <Send size={20} />
+                        WhatsApp
+                      </button>
+                      <button 
+                        onClick={() => shareProduct(selectedProduct, 'copy')}
+                        className="flex-1 bg-apple-gray hover:bg-zinc-200 text-apple-dark py-3 rounded-xl flex items-center justify-center gap-2 font-semibold transition-all active:scale-[0.98] relative"
+                      >
+                        {copied ? (
+                          <span className="text-apple-accent font-bold">¡Copiado!</span>
+                        ) : (
+                          <>
+                            <Link size={20} />
+                            Copiar Link
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
 
                   {selectedProduct.features && (
                     <div className="mb-8">

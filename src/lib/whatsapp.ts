@@ -30,3 +30,11 @@ _Pedido realizado desde la tienda online_`;
   
   return `https://wa.me/51${whatsappNumber}?text=${encodedMessage}`;
 }
+
+export function buildProductInquiryMessage(productId: number, productName: string): string {
+  const message = `Hola Pos-Tec, me interesa este producto: [ID: ${productId}] ${productName}. Deseo más información.`;
+  const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '';
+  const encodedMessage = encodeURIComponent(message);
+  
+  return `https://wa.me/51${whatsappNumber}?text=${encodedMessage}`;
+}
