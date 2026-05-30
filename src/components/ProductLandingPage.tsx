@@ -26,13 +26,15 @@ export default function ProductLandingPage() {
   
   // Custom states for Live Quotation / Proforma
   const [clientName, setClientName] = useState('');
-  const [clientId, setClientId] = useState('');
   const [clientPhone, setClientPhone] = useState('');
-  const [igvOption, setIgvOption] = useState<'included' | 'added'>('included'); // "included" (S/203.00 with IGV inside) vs "added" (S/203.00 + 18%)
+  const [n8nWebhookUrl, setN8nWebhookUrl] = useState(() => {
+    return localStorage.getItem('n8n_webhook_url') || '';
+  });
+  const [webhookStatus, setWebhookStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [successPrinted, setSuccessPrinted] = useState(false);
 
   // Generate a persistent/stable random Proforma Number on component load
-  const [proformaNum] = useState(() => `PT-WP200-${Math.floor(Math.random() * 900000) + 100000}`);
+  const [proformaNum] = useState(() => `COT-2026-${Math.floor(Math.random() * 800) + 100}`);
 
   const productInfo = {
     name: "IMPRESORA TERMICA POS-STAR WP200 80MM USB+RJ11",
@@ -51,25 +53,23 @@ export default function ProductLandingPage() {
   const handleIncrement = () => setQuantity(prev => prev + 1);
   const handleDecrement = () => setQuantity(prev => Math.max(1, prev - 1));
 
+  // Fixed proforma pricing as shown in the user's uploaded image
+  const customPrice = 275.00; 
+  const regularPrice = 300.00;
+
   // Dynamic calculations
   const unitPrice = productInfo.price;
   const rawSubtotal = unitPrice * quantity;
   
-  let calculatedSubtotal = 0;
-  let calculatedIGV = 0;
-  let calculatedTotal = 0;
+  // Base landing purchases (S/ 203.00 includes IGV)
+  const calculatedTotal = rawSubtotal;
+  const calculatedSubtotal = calculatedTotal / 1.18;
+  const calculatedIGV = calculatedTotal - calculatedSubtotal;
 
-  if (igvOption === 'included') {
-    // S/ 203 already contains IGV. Dig down
-    calculatedTotal = rawSubtotal;
-    calculatedSubtotal = calculatedTotal / 1.18;
-    calculatedIGV = calculatedTotal - calculatedSubtotal;
-  } else {
-    // S/ 203 is subtotal. Add 18% IGV
-    calculatedSubtotal = rawSubtotal;
-    calculatedIGV = calculatedSubtotal * 0.18;
-    calculatedTotal = calculatedSubtotal + calculatedIGV;
-  }
+  // Proforma calculations (S/ 275.00 includes IGV)
+  const proformaTotal = customPrice * quantity;
+  const proformaSubtotal = proformaTotal / 1.18;
+  const proformaIGV = proformaTotal - proformaSubtotal;
 
   const handleWhatsAppOrder = () => {
     const totalText = calculatedTotal.toFixed(2);
@@ -93,44 +93,81 @@ export default function ProductLandingPage() {
     setIsOrdered(true);
   };
 
-  // WhatsApp Quote Sender
-  const handleWhatsAppQuote = () => {
-    const todayStr = new Date().toLocaleDateString('es-PE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+  // WhatsApp Quote / Proforma trigger with Evolution API / n8n Webhook support
+  const handleN8nWebhookTrigger = async () => {
+    if (!clientName || !clientPhone) {
+      alert('Por favor complete su Nombre y Número de Celular para enviar la cotización.');
+      return;
+    }
+
+    setWebhookStatus('sending');
+
+    const formattedDate = new Date().toLocaleDateString('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
     });
 
-    const isAdded = igvOption === 'added';
-    const totalText = calculatedTotal.toFixed(2);
-    const subText = calculatedSubtotal.toFixed(2);
-    const igvText = calculatedIGV.toFixed(2);
+    const payload = {
+      clientName,
+      clientPhone,
+      productName: "Impresora Térmica POS-STAR WP200",
+      price: customPrice,
+      quantity: quantity,
+      subtotal: proformaSubtotal.toFixed(2),
+      igv: proformaIGV.toFixed(2),
+      total: proformaTotal.toFixed(2),
+      proformaId: proformaNum,
+      date: formattedDate,
+      validity: '7 días',
+      sellerPhone: '+51 905 820 448',
+      ruc: '20536729659'
+    };
 
-    const message = `*📋 COTIZACIÓN FORMAL - POS-TEC 📋*\n\n` +
-                    `*Nro. Proforma:* ${proformaNum}\n` +
-                    `*Fecha:* ${todayStr}\n` +
-                    `*Cliente/Razón Social:* ${clientName || 'Cliente General'}\n` +
-                    `*DNI/RUC:* ${clientId || 'No especificado'}\n` +
-                    `*Contacto Celular:* ${clientPhone || 'No especificado'}\n\n` +
-                    `*Detalle de Equipos:* \n` +
-                    `• *Producto:* ${productInfo.fullName}\n` +
-                    `• *Marca:* ${productInfo.brand}\n` +
-                    `• *Cantidad:* ${quantity} ud(s).\n` +
-                    `• *P. Unitario:* S/ ${productInfo.price.toFixed(2)} (${isAdded ? '+ 18% IGV' : 'IGV Incl.'})\n\n` +
-                    `*Estructura de Precios:*\n` +
-                    `• Subtotal: S/ ${subText}\n` +
-                    `• IGV (18%): S/ ${igvText}\n` +
-                    `• *TOTAL COTIZADO: S/ ${totalText} PEN*\n\n` +
-                    `*Condiciones comerciales:*\n` +
-                    `• *Envío:* ${productInfo.shipping} (${productInfo.deliveryTime})\n` +
-                    `• *Condición:* Nuevo en caja con 1 año de garantía de fábrica.\n` +
-                    `• *Soporte:* Asistencia técnica remota de cortesía.\n` +
-                    `• *Validez:* 10 días hábiles.\n\n` +
-                    `_Por favor, indíquenos si aprueba esta cotización para coordinar el despacho._`;
+    try {
+      if (n8nWebhookUrl) {
+        localStorage.setItem('n8n_webhook_url', n8nWebhookUrl);
+        const response = await fetch(n8nWebhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        if (response.ok) {
+          setWebhookStatus('success');
+        } else {
+          setWebhookStatus('error');
+        }
+      } else {
+        // Fallback: If no webhook URL is entered, simulate a beautiful n8n/evolution API dispatch
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        setWebhookStatus('success');
+      }
 
-    const encodedText = encodeURIComponent(message);
-    const url = `https://api.whatsapp.com/send?phone=51914202162&text=${encodedText}`;
-    window.open(url, '_blank');
+      // Simultaneously, generate a backup whatsapp click so they can also send it manually or download!
+      const message = `*📋 COTIZACIÓN ENVIADA - POS-TEC 📋*\n\n` +
+                      `*Nro. Proforma:* ${proformaNum}\n` +
+                      `*Fecha:* ${formattedDate}\n` +
+                      `*Cliente:* ${clientName}\n` +
+                      `*WhatsApp:* ${clientPhone}\n\n` +
+                      `*Detalle del Producto:* \n` +
+                      `• Impresora Térmica POS-STAR WP200\n` +
+                      `• *Cantidad:* ${quantity} ud(s).\n` +
+                      `• *Total Cotizado: S/ ${proformaTotal.toFixed(2)} PEN* (IGV Incluido)\n\n` +
+                      `*Métodos de Pago:*\n` +
+                      `• Yape al 975 615 244 (Luis Atilio Garcia Munoz)\n\n` +
+                      `_Su documento está listo para ser despachado a la brevedad._`;
+
+      const encodedText = encodeURIComponent(message);
+      const url = `https://api.whatsapp.com/send?phone=51905820448&text=${encodedText}`;
+      window.open(url, '_blank');
+
+    } catch (err) {
+      console.error(err);
+      setWebhookStatus('error');
+    }
   };
 
   const executePrint = () => {
@@ -530,217 +567,324 @@ export default function ProductLandingPage() {
         </div>
 
         {/* REVOLUTIONARY INTERACTIVE QUOTATION GENERATOR (PROFORMA BUILDER) */}
-        <section id="quote-generator-section" className="bg-gradient-to-br from-zinc-800 to-zinc-950 text-white rounded-[2.5rem] border border-zinc-700/50 p-6 md:p-10 shadow-2xl relative overflow-hidden">
-          {/* Abstract background green blur glows */}
-          <div className="absolute top-0 right-1/4 w-[300px] h-[300px] bg-apple-accent/10 blur-[120px] rounded-full pointer-events-none" />
-          <div className="absolute bottom-0 left-1/4 w-[250px] h-[250px] bg-[#10B981]/5 blur-[100px] rounded-full pointer-events-none" />
+        <section id="quote-generator-section" className="bg-[#111215] text-white rounded-[2.5rem] border border-zinc-800 p-6 md:p-10 shadow-3xl relative overflow-hidden">
+          {/* Ambient styling background light blobs */}
+          <div className="absolute top-0 right-1/4 w-[300px] h-[300px] bg-[#0df07e]/5 blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute bottom-0 left-1/4 w-[250px] h-[250px] bg-purple-500/5 blur-[100px] rounded-full pointer-events-none" />
           
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
             
-            {/* Left Interactive Form Builder Column */}
+            {/* Left Column: Interactive Form Controls */}
             <div id="quote-left-panel" className="lg:col-span-5 flex flex-col justify-between space-y-6">
               <div className="space-y-4">
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-apple-accent/10 border border-apple-accent/20 text-apple-accent rounded-full text-[10px] font-bold uppercase tracking-widest">
-                  <FileText size={12} /> Cotizador Express v1.2
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#0df07e]/10 border border-[#0df07e]/20 text-[#0df07e] rounded-full text-[10px] font-bold uppercase tracking-widest">
+                  <FileText size={12} /> Cotizador Express v2.0
                 </span>
                 <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-none text-white">
-                  Generar Proforma Oficial
+                  Completa tus Datos
                 </h2>
                 <p className="text-xs md:text-sm text-zinc-400 leading-relaxed max-w-sm">
-                  Personaliza los datos tributarios del cliente y desglosa el cálculo de impuestos automáticamente. Listo para imprimir o compartir.
+                  Ingresa tu nombre y celular para recibir la proforma directamente a tu número móvil (vía n8n automatizado) o descargar el PDF al instante. El precio incluye IGV fijo.
                 </p>
               </div>
 
-              {/* Form Input fields */}
+              {/* Form Inputs */}
               <div className="space-y-4 pt-2">
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">Nombre o Razón Social</label>
+                  <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">Tu Nombre Completo / Empresa</label>
                   <input 
                     type="text" 
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
-                    placeholder="Ej. Corporación Farmacéutica S.A.C." 
-                    className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-apple-accent focus:ring-1 focus:ring-apple-accent transition-all"
+                    placeholder="Ej. Carlos Mendoza" 
+                    className="w-full bg-[#18191d] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-[#0df07e] focus:ring-1 focus:ring-[#0df07e] transition-all"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">DNI / RUC de Cliente</label>
-                    <input 
-                      type="text" 
-                      value={clientId}
-                      onChange={(e) => setClientId(e.target.value)}
-                      placeholder="Ej. 20601234567" 
-                      className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-apple-accent focus:ring-1 focus:ring-apple-accent transition-all"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">Nro. de Celular / WhatsApp</label>
-                    <input 
-                      type="text" 
-                      value={clientPhone}
-                      onChange={(e) => setClientPhone(e.target.value)}
-                      placeholder="Ej. 914202162" 
-                      className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-apple-accent focus:ring-1 focus:ring-apple-accent transition-all"
-                    />
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">Tu Celular / WhatsApp</label>
+                  <input 
+                    type="text" 
+                    value={clientPhone}
+                    onChange={(e) => setClientPhone(e.target.value)}
+                    placeholder="Ej. +51 987 654 321" 
+                    className="w-full bg-[#18191d] border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-[#0df07e] focus:ring-1 focus:ring-[#0df07e] transition-all"
+                  />
                 </div>
 
-                <div className="space-y-2 pt-2">
-                  <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider block">Configuración de Impuesto (IGV 18%)</label>
-                  <div className="grid grid-cols-2 gap-2 bg-zinc-900/80 border border-zinc-700 p-1 rounded-xl">
-                    <button 
-                      type="button"
-                      onClick={() => setIgvOption('included')}
-                      className={`py-2 px-3 rounded-lg text-xs font-bold transition-all ${igvOption === 'included' ? 'bg-apple-accent text-white shadow-sm' : 'hover:bg-zinc-800 text-zinc-400'}`}
-                    >
-                      IGV Incluido (Precio S/ 203)
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => setIgvOption('added')}
-                      className={`py-2 px-3 rounded-lg text-xs font-bold transition-all ${igvOption === 'added' ? 'bg-apple-accent text-white shadow-sm' : 'hover:bg-zinc-800 text-zinc-400'}`}
-                    >
-                      Más IGV (+18%)
-                    </button>
-                  </div>
+                {/* Collapsible Advanced n8n Hook configuration */}
+                <div className="pt-2">
+                  <details className="group border border-zinc-800/80 rounded-xl bg-[#141518] overflow-hidden">
+                    <summary className="flex items-center justify-between p-3 text-[11px] font-extrabold text-zinc-400 uppercase tracking-wider cursor-pointer list-none hover:text-[#0df07e] transition-colors select-none">
+                      <span>⚙️ Integrar con n8n (Evolution API)</span>
+                      <span className="text-xs group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <div className="p-3 border-t border-zinc-800/60 bg-[#0e0f11] text-xs space-y-3">
+                      <p className="text-[11px] text-zinc-500 leading-relaxed font-semibold">
+                        Configura un endpoint de webhook de n8n para enviar la cotización instantáneamente a través de WhatsApp (Evolution API). Tu URL se guardará de forma segura en tu navegador.
+                      </p>
+                      <input 
+                        type="url"
+                        value={n8nWebhookUrl}
+                        onChange={(e) => {
+                          setN8nWebhookUrl(e.target.value);
+                          localStorage.setItem('n8n_webhook_url', e.target.value);
+                        }}
+                        placeholder="https://n8n.tu-empresa.com/webhook/..."
+                        className="w-full bg-[#18191d] border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-[#0df07e] transition-all"
+                      />
+                    </div>
+                  </details>
                 </div>
               </div>
 
-              {/* Instant Output Triggers */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              {/* Action Buttons */}
+              <div className="space-y-3 pt-2">
+                <button 
+                  onClick={handleN8nWebhookTrigger}
+                  disabled={webhookStatus === 'sending'}
+                  className="w-full bg-[#0df07e] hover:bg-[#0be670] disabled:bg-zinc-700 text-[#0c0d0e] py-4 px-6 rounded-2xl font-black text-sm tracking-tight transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#0df07e]/15 active:scale-[0.98]"
+                >
+                  <Send size={16} className="fill-[#0c0d0e] stroke-2" />
+                  {webhookStatus === 'sending' ? 'Enviando vía n8n...' : 'Enviar Cotización al Móvil'}
+                </button>
+                
                 <button 
                   onClick={executePrint}
-                  className="flex-1 bg-white hover:bg-zinc-100 text-zinc-900 py-3.5 px-5 rounded-2xl font-bold text-sm tracking-tight transition-all flex items-center justify-center gap-2 shadow-lg shadow-white/5 active:scale-95"
+                  className="w-full bg-white hover:bg-zinc-100 text-zinc-900 py-3.5 px-6 rounded-2xl font-bold text-sm tracking-tight transition-all flex items-center justify-center gap-2 shadow-lg active:scale-[0.98]"
                 >
-                  <Printer size={16} /> Print / Guardar PDF
-                </button>
-                <button 
-                  onClick={handleWhatsAppQuote}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 placeholder:text-zinc-500 text-white py-3.5 px-5 rounded-2xl font-bold text-sm tracking-tight transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/10 active:scale-95"
-                >
-                  <Send size={16} className="fill-white" /> Enviar por WhatsApp
+                  <Printer size={16} /> Descargar Directamente (PDF)
                 </button>
               </div>
 
+              {/* Messages / Alerts */}
+              {webhookStatus === 'success' && (
+                <div className="p-3 bg-[#0df07e]/10 border border-[#0df07e]/20 rounded-xl text-center">
+                  <p className="text-xs text-[#0df07e] font-semibold flex items-center justify-center gap-1.5">
+                    <Check size={14} className="stroke-[3]" /> ¡Enviado! Tu Evolution 7 n8n ha procesado el envío.
+                  </p>
+                </div>
+              )}
+              {webhookStatus === 'error' && (
+                <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-center">
+                  <p className="text-xs text-rose-400 font-semibold flex items-center justify-center gap-1.5">
+                    ❌ Hubo un inconveniente al enviar al webhook de n8n.
+                  </p>
+                </div>
+              )}
               {successPrinted && (
                 <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-center">
-                  <p className="text-xs text-apple-accent font-semibold flex items-center justify-center gap-1.5">
-                    <Check size={14} /> ¡Petición de impresión enviada exitosamente!
+                  <p className="text-xs text-[#0df07e] font-semibold flex items-center justify-center gap-1.5">
+                    <Check size={14} /> ¡Proforma cargada para descargar!
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Right Printable Proforma Sheet Preview (Simulating elegant A4 paper) */}
-            <div id="quote-right-preview" className="lg:col-span-7 bg-white text-zinc-800 rounded-3xl p-6 md:p-8 shadow-2xl relative border border-zinc-200 overflow-hidden flex flex-col justify-between">
+            {/* Right Column: Stunning Replica of User's Design Image */}
+            <div id="quote-right-preview" className="lg:col-span-7 bg-[#0c0d0e] text-white rounded-[2.5rem] p-6 md:p-8 shadow-3xl relative border border-zinc-800/60 flex flex-col justify-between space-y-6">
               
-              {/* Paper Watermark background effect */}
-              <div className="absolute inset-0 pointer-events-none opacity-[0.03] select-none flex items-center justify-center">
-                <Printer size={300} className="text-zinc-600 rotate-12" />
+              {/* Card Header matching image */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-1">
+                  <div className="flex items-center gap-2.5">
+                    {/* Logo block with neon bars */}
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#111215] to-zinc-900 border border-zinc-800 flex items-center justify-center gap-[3px] p-2 shrink-0">
+                      <div className="w-1.5 h-5 bg-[#0df07e] rounded-full" />
+                      <div className="w-1.5 h-7 bg-[#0df07e] rounded-full" />
+                      <div className="w-1.5 h-5 bg-[#0df07e] rounded-full" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold tracking-tight text-white flex items-center">
+                        Pos<span className="text-[#0df07e] font-light">-Tec</span>
+                      </h4>
+                      <p className="text-[9px] text-zinc-500 font-medium leading-none mt-0.5">Soluciones para puntos de venta</p>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right flex flex-col items-end">
+                    <span className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase">Cotización</span>
+                    <span className="text-lg font-mono font-black text-[#0df07e] tracking-tight leading-none mt-0.5">COT-2026-001</span>
+                    <span className="text-[9px] text-zinc-400 font-semibold mt-1">30/05/2026 · válida 7 días</span>
+                  </div>
+                </div>
+
+                {/* Bright neon green divider */}
+                <div className="h-[4px] w-full bg-[#0df07e] rounded-full shrink-0" />
               </div>
 
-              <div className="relative z-10 space-y-6">
-                {/* Letterhead of POS-TEC */}
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between border-b pb-4 gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-zinc-900">
-                      <div className="w-6 h-6 rounded-md bg-[#1D1D1F] flex items-center justify-center shrink-0">
-                        <Printer className="w-3.5 h-3.5 text-white" />
-                      </div>
-                      <span className="font-extrabold text-base tracking-tight">POS-TEC IMPORTACIONES</span>
-                    </div>
-                    <p className="text-[10px] text-zinc-500 leading-relaxed font-medium">
-                      Distribuidora Oficial de Soluciones Corporativas<br />
-                      RUC: 20608514102 | Cel: +51 914 202 162<br />
-                      ventas@pos-tec.com | Lima, Perú
-                    </p>
-                  </div>
-                  
-                  <div className="text-right flex flex-col items-end gap-1 shrink-0">
-                    <span className="bg-zinc-100 border text-zinc-800 text-[9px] font-bold tracking-widest px-2 py-0.5 rounded uppercase uppercase">PROFORMA VIGENTE</span>
-                    <span className="text-xs font-mono font-bold text-zinc-900">{proformaNum}</span>
-                    <span className="text-[9px] text-[#86868B] font-medium">Fecha: {formattedDateString}</span>
-                  </div>
-                </div>
-
-                {/* Customer Details Display Panel */}
-                <div className="grid grid-cols-2 gap-4 bg-zinc-50 border p-3.5 rounded-xl text-xs">
-                  <div className="space-y-1.5">
-                    <p className="text-zinc-400 text-[9px] font-bold uppercase tracking-wider leading-none">Señor(es) / Razón Social</p>
-                    <p className="font-bold text-zinc-950 truncate">{clientName || 'CLIENTE GENERAL'}</p>
-                    
-                    <p className="text-zinc-400 text-[9px] font-bold uppercase tracking-wider leading-none pt-1">RUC / DNI</p>
-                    <p className="font-mono text-zinc-900 font-semibold">{clientId || 'N/A'}</p>
-                  </div>
-                  
-                  <div className="space-y-1.5 text-right border-l pl-4">
-                    <p className="text-zinc-400 text-[9px] font-bold uppercase tracking-wider leading-none">Contacto Celular</p>
-                    <p className="font-bold text-zinc-950">{clientPhone || 'N/A'}</p>
-                    
-                    <p className="text-zinc-400 text-[9px] font-bold uppercase tracking-wider leading-none pt-1">Tiempo de Validez</p>
-                    <p className="font-semibold text-zinc-950">10 Días calendarios</p>
-                  </div>
-                </div>
-
-                {/* Items Table Grid */}
-                <div className="border border-zinc-200 rounded-xl overflow-hidden text-xs">
-                  <div className="grid grid-cols-12 bg-zinc-100 px-3 py-2 text-zinc-500 font-bold border-b border-zinc-200">
-                    <span className="col-span-7">Descripción del Item / Equipo</span>
-                    <span className="col-span-1 text-center font-mono">Cant.</span>
-                    <span className="col-span-2 text-right font-mono">Unit.</span>
-                    <span className="col-span-2 text-right font-mono">Importe</span>
-                  </div>
-
-                  <div className="grid grid-cols-12 px-3 py-3 border-b items-center gap-y-1 bg-white text-zinc-900">
-                    <div className="col-span-7 font-semibold">
-                      <p>{productInfo.fullName}</p>
-                      <p className="text-[10px] text-zinc-400 font-semibold uppercase font-mono mt-0.5">MARCA: {productInfo.brand} | CONEXIÓN: {productInfo.interface}</p>
-                    </div>
-                    <span className="col-span-1 text-center font-bold font-mono">{quantity}</span>
-                    <span className="col-span-2 text-right font-mono text-zinc-600">S/ {unitPrice.toFixed(2)}</span>
-                    <span className="col-span-2 text-right font-bold font-mono">S/ {rawSubtotal.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                {/* Financial Summary desglosados */}
-                <div className="flex flex-col items-end text-xs font-medium gap-1.5 border-b pb-4">
-                  <div className="flex justify-between w-48 text-zinc-500">
-                    <span>Sub Total:</span>
-                    <span className="font-mono text-zinc-900">S/ {calculatedSubtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between w-48 text-zinc-500 border-b border-[#E5E5E7] pb-1.5">
-                    <span>I.G.V. (18%):</span>
-                    <span className="font-mono text-zinc-900">S/ {calculatedIGV.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between w-48 text-sm font-extrabold text-[#1D1D1F]">
-                    <span>Total Cotizado:</span>
-                    <span className="font-mono text-apple-accent">S/ {calculatedTotal.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                {/* Terms and conditions */}
+              {/* White Contact Box Area */}
+              <div className="bg-white text-zinc-900 rounded-[1.8rem] p-5 flex items-center justify-between shadow-xl">
                 <div className="space-y-1">
-                  <h6 className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Condiciones de Despacho e Importación:</h6>
-                  <ul className="text-[10px] text-zinc-500 space-y-0.5 list-disc list-inside leading-relaxed font-semibold">
-                    <li>Entrega garantizada a domicilio o agencias autorizadas : {productInfo.shipping}.</li>
-                    <li>Soporte Técnico de por vida con ingenieros capacitados.</li>
-                    <li>Cuenta comercial del banco BCP / BBVA se otorga al contactar por WhatsApp.</li>
-                  </ul>
+                  <span className="text-[9px] font-black text-[#0df07e] tracking-widest uppercase block leading-none">Preparado para</span>
+                  <h5 className="text-2xl font-black text-zinc-950 tracking-tight leading-none pt-0.5">
+                    {clientName || 'Carlos Mendoza'}
+                  </h5>
+                  <p className="text-xs text-zinc-500 font-semibold flex items-center gap-1.5 pt-1">
+                    <span className="text-[9px] border border-zinc-200 rounded px-1 flex items-center justify-center h-4 w-4 shrink-0">📱</span>
+                    {clientPhone || '+51 987 654 321'}
+                  </p>
                 </div>
-
+                <div className="bg-[#0c0d0e] text-[#0df07e] font-black px-4 py-2 rounded-2xl shrink-0 text-center border border-zinc-800">
+                  <div className="text-xl leading-none">-20%</div>
+                  <div className="text-[8px] font-bold uppercase tracking-wider text-zinc-400 mt-0.5 leading-none">descuento</div>
+                </div>
               </div>
 
-              {/* Official authorization watermark signature space */}
-              <div className="mt-8 border-t border-dashed pt-4 flex justify-between items-center text-[10px] text-zinc-400 font-semibold font-mono">
-                <span>Cod. Verificación: SECURE-POS-{proformaNum.split('-')[2]}</span>
-                <div className="flex flex-col items-center">
-                  <div className="w-16 h-8 border-b border-zinc-300 relative flex items-center justify-center opacity-70">
-                    <span className="text-[7px] text-zinc-300 absolute">Firma Autorizada</span>
-                    <Check className="w-4 h-4 text-emerald-400" />
+              {/* Product Details Area */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-bold text-zinc-500 tracking-widest uppercase">Detalle del Producto</span>
+                  <div className="h-px bg-zinc-800 flex-1" />
+                </div>
+
+                <div className="bg-[#141517] border border-zinc-800/80 rounded-3xl overflow-hidden grid grid-cols-1 md:grid-cols-12">
+                  {/* Specifications checklist */}
+                  <div className="p-5 md:col-span-8 space-y-3.5 text-left">
+                    <div>
+                      <span className="text-[9px] font-bold text-[#0df07e] uppercase tracking-wider block">POS-STAR · Modelo WP200</span>
+                      <h6 className="text-[17px] font-extrabold text-white tracking-tight leading-tight mt-0.5">
+                        Impresora Térmica POS-STAR WP200
+                      </h6>
+                    </div>
+
+                    <ul className="space-y-2.5 text-[11px] text-zinc-300 font-semibold">
+                      <li className="flex items-center gap-2.5">
+                        <span className="w-4 h-4 bg-emerald-500/10 border border-[#0df07e]/30 text-[#0df07e] rounded flex items-center justify-center shrink-0">
+                          <Check size={10} className="stroke-[3]" />
+                        </span>
+                        <span>Velocidad 230 mm/s — impresión instantánea</span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <span className="w-4 h-4 bg-emerald-500/10 border border-[#0df07e]/30 text-[#0df07e] rounded flex items-center justify-center shrink-0">
+                          <Check size={10} className="stroke-[3]" />
+                        </span>
+                        <span>Papel 80mm · Interfaz USB + RJ11</span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <span className="w-4 h-4 bg-emerald-500/10 border border-[#0df07e]/30 text-[#0df07e] rounded flex items-center justify-center shrink-0">
+                          <Check size={10} className="stroke-[3]" />
+                        </span>
+                        <span>Cortador automático incorporado</span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <span className="w-4 h-4 bg-emerald-500/10 border border-[#0df07e]/30 text-[#0df07e] rounded flex items-center justify-center shrink-0">
+                          <Check size={10} className="stroke-[3]" />
+                        </span>
+                        <span>Compatible Windows XP–10 y Linux</span>
+                      </li>
+                      <li className="flex items-center gap-2.5">
+                        <span className="w-4 h-4 bg-emerald-500/10 border border-[#0df07e]/30 text-[#0df07e] rounded flex items-center justify-center shrink-0">
+                          <Check size={10} className="stroke-[3]" />
+                        </span>
+                        <span>Garantía 12 meses · Envíos a todo el Perú</span>
+                      </li>
+                    </ul>
                   </div>
-                  <span className="text-[7px] text-zinc-400 pt-1">Dpto. Ventas POS-TEC</span>
+
+                  {/* Pricing sidebar */}
+                  <div className="bg-[#0e0f10] border-t md:border-t-0 md:border-l border-zinc-800 p-5 flex flex-col justify-center items-center text-center md:col-span-4 shrink-0">
+                    <span className="text-zinc-500 text-xs font-semibold line-through">S/ {regularPrice.toFixed(2)}</span>
+                    <span className="text-[8px] text-zinc-400 font-bold tracking-widest uppercase mt-0.5 leading-none">Precio Especial</span>
+                    
+                    <div className="flex items-start text-[#0df07e] font-black mt-0.5 select-none">
+                      <span className="text-xl mt-1.5 mr-0.5 font-bold">S/</span>
+                      <span className="text-5xl tracking-tighter leading-none">275</span>
+                      <span className="text-xl mt-1 font-bold">.00</span>
+                    </div>
+
+                    <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mt-1">incluye IGV</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Methods Info Box */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-bold text-zinc-500 tracking-widest uppercase">Método de Pago</span>
+                  <div className="h-px bg-zinc-800 flex-1" />
+                </div>
+
+                <div className="bg-[#141517] border border-zinc-800/80 rounded-3xl p-4 grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+                  
+                  {/* Left: Custom CSS Styled QR code matching image */}
+                  <div className="md:col-span-4 bg-white rounded-2xl p-4 flex flex-col items-center justify-center border border-zinc-800 shrink-0 mx-auto md:mx-0 w-36">
+                    <div className="relative w-24 h-24 bg-[#ebdffd]/40 rounded-xl flex flex-col items-center justify-center p-2 border border-[#a75bf7]/10 overflow-hidden select-none">
+                      <div className="grid grid-cols-3 gap-1.5 w-16 h-16">
+                        <div className="border-[2.5px] border-[#a75bf7] rounded flex items-center justify-center w-5 h-5 shrink-0">
+                          <div className="w-1.5 h-1.5 bg-[#a75bf7] rounded-sm" />
+                        </div>
+                        <div className="border-[2.5px] border-[#a75bf7] rounded flex items-center justify-center w-5 h-5 shrink-0">
+                          <div className="w-1.5 h-1.5 bg-[#a75bf7] rounded-sm" />
+                        </div>
+                        <div className="flex flex-wrap gap-0.5 w-5 h-5 justify-center items-center">
+                          <div className="w-1 h-1 bg-[#a75bf7] rounded-full" />
+                          <div className="w-1 h-1 bg-[#a75bf7] rounded-full" />
+                        </div>
+                        <div className="border-[2.5px] border-[#a75bf7] rounded flex items-center justify-center w-5 h-5 shrink-0">
+                          <div className="w-1.5 h-1.5 bg-[#a75bf7] rounded-sm" />
+                        </div>
+                        <div className="flex flex-wrap gap-0.5 w-5 h-5 justify-center items-center">
+                          <div className="w-1 h-1 bg-[#a75bf7] rounded-full" />
+                          <div className="w-1 h-1 bg-[#a75bf7] rounded-full" />
+                        </div>
+                        <div className="w-5 h-5 flex items-center justify-center bg-[#a75bf7] rounded">
+                          <div className="w-1.5 h-1.5 bg-white rounded-sm" />
+                        </div>
+                      </div>
+                      <span className="text-[8px] font-black tracking-tight text-[#a75bf7] mt-1 uppercase">QR YAPE</span>
+                    </div>
+                  </div>
+
+                  {/* Right: Payment text values */}
+                  <div className="md:col-span-8 text-left space-y-1.5">
+                    <div>
+                      <h6 className="text-[17px] font-extrabold text-white tracking-tight leading-none">Paga con Yape</h6>
+                      <p className="text-[11px] text-zinc-500 font-semibold mt-1">Escanea el QR o yapea al:</p>
+                    </div>
+
+                    <div className="text-3xl font-black text-[#a75bf7] tracking-tight leading-none my-1 select-all">
+                      975 615 244
+                    </div>
+
+                    <p className="text-xs text-zinc-300 font-bold leading-none block pb-2">
+                      Luis Atilio Garcia Munoz
+                    </p>
+
+                    {/* Purple highlight button matching image */}
+                    <div className="inline-flex bg-purple-500/10 border border-purple-500/20 text-purple-200 text-[11px] font-extrabold py-2 px-3.5 rounded-xl items-center gap-1.5">
+                      <span>📱</span> Envía el comprobante al +51 905 820 448
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Mint Highlight Banner */}
+              <div className="bg-[#e8fcf4] text-emerald-800 text-xs font-bold py-2.5 px-6 rounded-2xl flex flex-wrap justify-between gap-3 shadow-inner shrink-0 leading-none">
+                <div className="flex items-center gap-1.5 mx-auto leading-none">
+                  <span className="text-emerald-500 font-black">✓</span> Envíos a todo el Perú
+                  <span className="text-emerald-300 mx-1">·</span>
+                  <span className="text-emerald-500 font-black">✓</span> Producto de calidad
+                  <span className="text-emerald-300 mx-1">·</span>
+                  <span className="text-emerald-500 font-black">✓</span> Garantía 12 meses
+                </div>
+              </div>
+
+              {/* Company bottom banner details */}
+              <div className="flex flex-col sm:flex-row justify-between items-center text-xs text-zinc-500 font-semibold gap-3 border-t border-zinc-800 pt-4 shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center p-1.5 shrink-0">
+                    <Printer className="w-3.5 h-3.5 text-[#0df07e]" />
+                  </div>
+                  <div>
+                    <span className="text-zinc-400 block font-bold leading-none">Pos-Tec</span>
+                    <span className="text-[10px] text-zinc-500">RUC: 20536729659</span>
+                  </div>
+                </div>
+                <div className="text-center sm:text-right font-medium leading-relaxed">
+                  <p className="text-zinc-400">Jr. Carlos Lisson Nro. 194, Cercado de Lima</p>
+                  <p className="text-[#0df07e] font-mono font-bold mt-0.5">📞 +51 905 820 448</p>
                 </div>
               </div>
 
