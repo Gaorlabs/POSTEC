@@ -16,7 +16,10 @@ import {
   Globe,
   Tag,
   ThumbsUp,
-  FileText
+  FileText,
+  ShoppingBag,
+  Smartphone,
+  Copy
 } from 'lucide-react';
 import { Logo } from './Logo';
 
@@ -24,7 +27,14 @@ export default function ProductLandingPage() {
   const [quantity, setQuantity] = useState(1);
   const [isOrdered, setIsOrdered] = useState(false);
   
-  // Custom states for Live Quotation / Proforma
+  // Interactive strategy tabs: 'comprar' (Virtual Store Flow) vs 'cotizar' (Express Quotation)
+  const [activeTab, setActiveTab] = useState<'comprar' | 'cotizar'>('comprar');
+  
+  // Virtual Store States
+  const [yapeOperationCode, setYapeOperationCode] = useState('');
+  const [orderStep, setOrderStep] = useState<'idle' | 'sending' | 'confirmed'>('idle');
+
+  // Custom states for Live Quotation / Proforma / Customer sync
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [n8nWebhookUrl, setN8nWebhookUrl] = useState(() => {
@@ -71,26 +81,75 @@ export default function ProductLandingPage() {
   const proformaSubtotal = proformaTotal / 1.18;
   const proformaIGV = proformaTotal - proformaSubtotal;
 
-  const handleWhatsAppOrder = () => {
-    const totalText = calculatedTotal.toFixed(2);
-    const text = `*🚨 NUEVO PEDIDO WEB - LANDING PAGE 🚨*\n\n` +
-                 `Me interesa comprar el siguiente producto:\n` +
-                 `*Producto:* ${productInfo.fullName}\n` +
-                 `*Marca:* ${productInfo.brand}\n` +
-                 `*Cantidad:* ${quantity} unidad(es)\n` +
-                 `*Precio Unitario:* S/ ${productInfo.price.toFixed(2)}\n` +
-                 `*Total:* S/ ${totalText}\n\n` +
-                 `*Detalles Adicionales del Producto:* \n` +
-                 `• Interfaz: USB + RJ11 (Apertura de gaveta)\n` +
-                 `• Tamaño de Papel: 80mm\n` +
-                 `• Envío: ${productInfo.shipping}\n` +
-                 `• Tiempo Entrega: ${productInfo.deliveryTime}\n\n` +
-                 `Por favor, indíquenme los métodos de pago disponibles para proceder con la compra.`;
+  const handleConfirmPurchase = async () => {
+    if (!clientName || !clientPhone) {
+      alert('Por favor complete su Nombre y Número de Teléfono/WhatsApp para registrar su pedido.');
+      return;
+    }
+    if (!yapeOperationCode) {
+      alert('Por favor coloque el Código o Número de Operación de su Yape para verificar el pago.');
+      return;
+    }
+
+    setOrderStep('sending');
+
+    const formattedDate = new Date().toLocaleDateString('es-PE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const purchaseTotalText = calculatedTotal.toFixed(2);
     
-    const encodedText = encodeURIComponent(text);
-    const url = `https://api.whatsapp.com/send?phone=51914202162&text=${encodedText}`;
-    window.open(url, '_blank');
-    setIsOrdered(true);
+    const message = `*📦 NUEVO PEDIDO - TIENDA VIRTUAL POS-TEC 📦*\n\n` +
+                    `*Fecha:* ${formattedDate}\n` +
+                    `*Cliente:* ${clientName}\n` +
+                    `*Celular:* ${clientPhone}\n\n` +
+                    `*Detalle del Equipo:*\n` +
+                    `• *Producto:* ${productInfo.fullName}\n` +
+                    `• *Cantidad:* ${quantity} unidad(es)\n` +
+                    `• *Monto Cobrado:* S/ ${purchaseTotalText} PEN (IGV Incluido)\n\n` +
+                    `*Validación de Depósito (Yape):*\n` +
+                    `• *Destino:* Yape al 975 615 244 (Luis Atilio Garcia Munoz)\n` +
+                    `• *Código de Operación:* ${yapeOperationCode}\n\n` +
+                    `_Un agente de ventas POS-TEC validará el comprobante de inmediato para despachar el equipo._`;
+
+    // Optionally trigger n8n Webhook
+    if (n8nWebhookUrl) {
+      try {
+        await fetch(n8nWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: 'virtual_store_purchase',
+            clientName,
+            clientPhone,
+            yapeOperationCode,
+            total: purchaseTotalText,
+            quantity,
+            product: "Impresora Térmica POS-STAR WP200",
+            date: formattedDate
+          })
+        });
+      } catch (err) {
+        console.warn("Fallo envio webhook para compra:", err);
+      }
+    }
+
+    // Short timeout to simulate system validation and WhatsApp redirection
+    setTimeout(() => {
+      setOrderStep('confirmed');
+      const encodedText = encodeURIComponent(message);
+      const url = `https://api.whatsapp.com/send?phone=51905820448&text=${encodedText}`;
+      window.open(url, '_blank');
+      setIsOrdered(true);
+    }, 1200);
+  };
+
+  const handleWhatsAppOrder = () => {
+    handleConfirmPurchase();
   };
 
   // WhatsApp Quote / Proforma trigger with Evolution API / n8n Webhook support
@@ -431,40 +490,245 @@ export default function ProductLandingPage() {
               </div>
             </div>
 
-            {/* Interactive Buy Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#86868B]">Cantidad</span>
-                <div className="flex items-center gap-1 bg-[#F5F5F7] border border-zinc-200 rounded-full p-1 shadow-inner">
+            {/* Interactive Strategy Core: Virtual Store Checkout & Express Quotation Options */}
+            <div className="space-y-6 pt-2">
+              
+              {/* Dual Action Strategy Selector Tabs */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#86868B] block">¿Qué deseas realizar?</span>
+                <div className="grid grid-cols-2 gap-2 bg-[#F5F5F7] p-1.5 rounded-2xl border border-zinc-200">
                   <button 
-                    onClick={handleDecrement}
-                    className="w-10 h-10 rounded-full bg-white hover:bg-zinc-100 flex items-center justify-center text-apple-dark font-bold hover:scale-105 active:scale-95 transition-all shadow-sm"
+                    onClick={() => setActiveTab('comprar')}
+                    className={`py-3 px-3 rounded-xl text-[11px] font-black tracking-tight transition-all flex items-center justify-center gap-1.5 ${activeTab === 'comprar' ? 'bg-[#10B981] text-white shadow-md' : 'hover:bg-zinc-200 text-zinc-600'}`}
                   >
-                    <Minus size={16} />
+                    <ShoppingBag size={14} /> 🛒 Comprar (S/ 203)
                   </button>
-                  <span className="w-12 text-center text-lg font-extrabold text-[#1D1D1F] select-none">{quantity}</span>
                   <button 
-                    onClick={handleIncrement}
-                    className="w-10 h-10 rounded-full bg-white hover:bg-zinc-100 flex items-center justify-center text-apple-dark font-bold hover:scale-105 active:scale-95 transition-all shadow-sm"
+                    onClick={() => setActiveTab('cotizar')}
+                    className={`py-3 px-3 rounded-xl text-[11px] font-black tracking-tight transition-all flex items-center justify-center gap-1.5 ${activeTab === 'cotizar' ? 'bg-[#0df07e] text-zinc-950 shadow-md' : 'hover:bg-zinc-200 text-zinc-600'}`}
                   >
-                    <Plus size={16} />
+                    <FileText size={14} /> 📋 Cotizar (S/ 275)
                   </button>
                 </div>
               </div>
 
-              {/* Dynamic Purchase CTA on WhatsApp */}
-              <button 
-                onClick={handleWhatsAppOrder}
-                className="w-full bg-[#10B981] hover:bg-[#059669] active:scale-[0.98] text-white py-4 px-6 rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/15 font-bold transition-all text-base md:text-lg tracking-tight group"
-              >
-                <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Send size={15} className="text-white fill-white ml-0.5" />
+              {/* SHARED QUANTITY SELECTOR */}
+              <div className="flex items-center justify-between bg-zinc-50 border p-3 rounded-2xl">
+                <div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block leading-none">Cantidad de Equipos</span>
+                  <span className="text-xs text-zinc-500 font-semibold mt-0.5">Precio unitario: S/ {activeTab === 'comprar' ? '203.00' : '275.00'}</span>
                 </div>
-                Pedir por WhatsApp (S/ {calculatedTotal.toFixed(2)})
-              </button>
+                <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-full p-1 shadow-sm">
+                  <button 
+                    onClick={handleDecrement}
+                    className="w-8 h-8 rounded-full bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center text-zinc-750 font-bold hover:scale-105 active:scale-95 transition-all"
+                  >
+                    <Minus size={14} />
+                  </button>
+                  <span className="w-10 text-center text-sm font-extrabold text-[#1D1D1F] select-none">{quantity}</span>
+                  <button 
+                    onClick={handleIncrement}
+                    className="w-8 h-8 rounded-full bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center text-zinc-750 font-bold hover:scale-105 active:scale-95 transition-all"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+              </div>
 
-              <p className="text-center text-[11px] text-zinc-400 font-medium leading-relaxed max-w-sm mx-auto">
-                No arriesgues tu inversión. Al hacer tu pedido, un especialista te atenderá de forma inmediata y te brindará un proceso seguro.
+              {activeTab === 'comprar' ? (
+                /* TAB 1: IMMERSIVE VIRTUAL STORE CHECKOUT */
+                <div className="space-y-4 border border-zinc-200/80 bg-zinc-50/50 p-5 rounded-3xl relative overflow-hidden">
+                  {orderStep === 'confirmed' ? (
+                    /* Order Successful Confirmed overlay */
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-center space-y-4 py-4"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-500/20">
+                        <Check className="stroke-[3.5]" size={22} />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-base font-extrabold text-emerald-900 leading-tight">¡Pedido Conformado con éxito!</h4>
+                        <p className="text-xs text-emerald-800 leading-relaxed font-semibold max-w-sm mx-auto">
+                          En breve un agente de POS-TEC se comunicará contigo por WhatsApp para validar tu código de pago y agendar el envío de inmediato.
+                        </p>
+                      </div>
+                      
+                      <div className="p-3.5 bg-white rounded-2xl text-left text-xs font-semibold text-zinc-650 space-y-1.5 border max-w-xs mx-auto">
+                        <div className="flex justify-between border-b pb-1">
+                          <span className="text-zinc-400 text-[10px] uppercase">Cliente:</span>
+                          <span className="font-extrabold text-zinc-900 truncate max-w-[140px]">{clientName}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-1">
+                          <span className="text-zinc-400 text-[10px] uppercase">WhatsApp:</span>
+                          <span className="font-mono text-zinc-900">{clientPhone}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-1">
+                          <span className="text-zinc-400 text-[10px] uppercase">Op. Yape:</span>
+                          <span className="font-mono text-purple-600 font-bold">{yapeOperationCode}</span>
+                        </div>
+                        <div className="flex justify-between pt-0.5">
+                          <span className="text-zinc-400 text-[10px] uppercase">Monto Total:</span>
+                          <span className="font-black text-emerald-600">S/ {calculatedTotal.toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={() => { setOrderStep('idle'); setYapeOperationCode(''); }}
+                        className="text-xs bg-[#1D1D1F] text-white hover:bg-zinc-800 font-bold py-2.5 px-4 rounded-xl transition-all active:scale-95"
+                      >
+                        Hacer Otro Pedido
+                      </button>
+                    </motion.div>
+                  ) : (
+                    /* Checkout form inputs */
+                    <div className="space-y-4">
+                      
+                      {/* Yape quick Instructions panel */}
+                      <div className="p-4 bg-purple-50/85 border border-purple-100 rounded-2xl flex items-center justify-between gap-4">
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-black text-purple-600 uppercase tracking-widest block leading-none">Pasos para comprar</span>
+                          <h6 className="text-[14px] font-black text-purple-950 tracking-tight leading-none mt-1">1. Yapea al 975 615 244</h6>
+                          <p className="text-[10px] text-purple-800 font-bold leading-relaxed mt-0.5">Titular: Luis Atilio Garcia Munoz</p>
+                          <p className="text-[11px] text-[#1D1D1F] font-extrabold mt-1">Monto: <span className="text-[#10B981] font-mono text-xs">S/ {calculatedTotal.toFixed(2)}</span></p>
+                        </div>
+                        {/* QR Quick Indicator */}
+                        <div className="bg-white p-1 rounded-xl shadow-sm border border-purple-200 shrink-0">
+                          <div className="w-10 h-10 bg-purple-100/50 rounded-lg flex flex-col items-center justify-center text-center">
+                            <Smartphone className="w-4 h-4 text-purple-600 animate-pulse" />
+                            <span className="text-[5px] font-black text-purple-600 leading-none mt-0.5 uppercase">QR YAPE</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 pt-1">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Tu Nombre Completo / Empresa</label>
+                          <input 
+                            type="text" 
+                            value={clientName}
+                            onChange={(e) => setClientName(e.target.value)}
+                            placeholder="Ej. Juan Pérez" 
+                            className="w-full bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:border-purple-500 transition-all shadow-inner"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">WhatsApp / Celular</label>
+                            <input 
+                              type="text" 
+                              value={clientPhone}
+                              onChange={(e) => setClientPhone(e.target.value)}
+                              placeholder="Ej. +51 914..." 
+                              className="w-full bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:border-purple-500 transition-all shadow-inner"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Código Operación Yape</label>
+                            <input 
+                              type="text" 
+                              value={yapeOperationCode}
+                              onChange={(e) => setYapeOperationCode(e.target.value)}
+                              placeholder="Ej. Op: 19485" 
+                              className="w-full bg-purple-50/50 border border-purple-200 rounded-xl px-3.5 py-2.5 text-xs text-purple-950 font-black placeholder-purple-300 focus:outline-none focus:border-purple-500 focus:bg-white transition-all shadow-inner"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Final validation order submit */}
+                      <button 
+                        onClick={handleConfirmPurchase}
+                        disabled={orderStep === 'sending'}
+                        className="w-full bg-[#10B981] hover:bg-[#07a370] disabled:bg-zinc-400 text-white py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 border border-emerald-600 font-black text-sm tracking-tight transition-all active:scale-[0.98] shadow-lg shadow-emerald-500/10"
+                      >
+                        {orderStep === 'sending' ? (
+                          <span>Procesando Pedido...</span>
+                        ) : (
+                          <>
+                            <Send size={14} className="fill-white" />
+                            Enviar Pedido Conformado (S/ {calculatedTotal.toFixed(2)})
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* TAB 2: PROMPT COTIZACIÓN RÁPIDA (FORMAL PROFORMA) */
+                <div className="space-y-4 border border-zinc-200 bg-zinc-50/40 p-5 rounded-3xl relative">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black text-[#0df07e] uppercase tracking-widest block">Acciones de Cotización</span>
+                    <h6 className="text-sm font-bold text-zinc-800 leading-none">Generar documento oficial para empresa</h6>
+                    <p className="text-[10px] text-zinc-400 font-semibold leading-relaxed mt-0.5">Ingresa tu número móvil para recibir la proforma directamente o descargar el PDF.</p>
+                  </div>
+
+                  <div className="space-y-3 pt-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Nombre o Razón Social</label>
+                      <input 
+                        type="text" 
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        placeholder="Ej. Inversiones Industriales S.A.C." 
+                        className="w-full bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:border-[#0df07e] transition-all shadow-inner"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">WhatsApp de Destino</label>
+                      <input 
+                        type="text" 
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
+                        placeholder="Ej. +51 987 654 321" 
+                        className="w-full bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:border-[#0df07e] transition-all shadow-inner"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dynamic Action Buttons side-by-side inside Tab */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <button 
+                      onClick={handleN8nWebhookTrigger}
+                      disabled={webhookStatus === 'sending'}
+                      className="bg-[#0df07e] hover:bg-[#0ae175] disabled:bg-zinc-300 text-[#0c0d0e] py-3 px-4 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-md shadow-[#0df07e]/10"
+                    >
+                      <Send size={12} className="fill-[#0c0d0e] stroke-2" />
+                      {webhookStatus === 'sending' ? 'Enviando...' : 'Enviar vía n8n (WSP)'}
+                    </button>
+                    <button 
+                      onClick={executePrint}
+                      className="bg-zinc-800 text-white hover:bg-zinc-900 py-3 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-sm"
+                    >
+                      <Printer size={12} /> Descargar PDF
+                    </button>
+                  </div>
+
+                  {webhookStatus === 'success' && (
+                    <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center">
+                      <p className="text-[11px] text-emerald-600 font-bold flex items-center justify-center gap-1">
+                        <Check size={12} className="stroke-[3]" /> Cotización enviada exitosamente por WhatsApp (n8n).
+                      </p>
+                    </div>
+                  )}
+                  {webhookStatus === 'error' && (
+                    <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-center">
+                      <p className="text-[11px] text-rose-500 font-bold flex items-center justify-center gap-1">
+                        ❌ Falló el envío del webhook. Descárguelo en PDF.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <p className="text-center text-[10px] text-zinc-400 font-semibold leading-relaxed max-w-sm mx-auto">
+                {activeTab === 'comprar' 
+                  ? "Atención automática: un especialista de despacho validará su código Yape para el embalado el mismo día de la compra."
+                  : "Nuestras cotizaciones son válidas durante 7 días y ya incluyen en el desglose el cargo IGV de ley."
+                }
               </p>
             </div>
 
