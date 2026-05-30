@@ -39,8 +39,9 @@ export default function AdminPanel() {
   const [settings, setSettings] = useState<any>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
-  // Product Search and Filter State
+  // Search and Filter State
   const [productSearch, setProductSearch] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState('Todas');
   const categories = ['Todas', 'Impresoras Térmicas', 'Gavetas de Dinero', 'Control de Acceso', 'Lector de Código de Barras', 'Monitores Touch', 'PC O LAPTOP', 'Suministros', 'Terminal Punto de Venta'];
 
@@ -1027,9 +1028,20 @@ export default function AdminPanel() {
             className="space-y-10"
           >
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-              <div>
+              <div className="flex-grow">
                 <h2 className="text-2xl md:text-[2.5rem] font-semibold tracking-tight leading-tight">CRM de Clientes</h2>
-                <p className="text-apple-sub text-base md:text-lg mt-1 md:mt-2">Gestiona tus relaciones con los clientes.</p>
+                <div className="flex flex-col md:flex-row gap-4 mt-4">
+                  <div className="relative flex-grow max-w-md">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-apple-sub" size={18} />
+                    <input 
+                      type="text"
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      placeholder="Buscar por nombre, WhatsApp o email..."
+                      className="apple-input pl-12 py-3 text-sm focus:ring-2 focus:ring-apple-accent/20"
+                    />
+                  </div>
+                </div>
               </div>
               <button 
                 onClick={() => {
@@ -1055,7 +1067,12 @@ export default function AdminPanel() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-apple-border/5">
-                    {customers.map(customer => (
+                    {customers.filter(c => 
+                      c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+                      c.whatsapp.toLowerCase().includes(customerSearch.toLowerCase()) ||
+                      (c.email && c.email.toLowerCase().includes(customerSearch.toLowerCase())) ||
+                      (c.notes && c.notes.toLowerCase().includes(customerSearch.toLowerCase()))
+                    ).map(customer => (
                       <tr key={customer.id} className="hover:bg-apple-gray/30 transition-colors group">
                         <td className="px-10 py-8">
                           <div className="font-semibold text-apple-dark text-[17px]">{customer.name}</div>
@@ -1100,7 +1117,12 @@ export default function AdminPanel() {
 
               {/* Mobile View */}
               <div className="md:hidden divide-y divide-apple-border/10">
-                {customers.map(customer => (
+                {customers.filter(c => 
+                  c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+                  c.whatsapp.toLowerCase().includes(customerSearch.toLowerCase()) ||
+                  (c.email && c.email.toLowerCase().includes(customerSearch.toLowerCase())) ||
+                  (c.notes && c.notes.toLowerCase().includes(customerSearch.toLowerCase()))
+                ).map(customer => (
                   <div key={customer.id} className="p-4 flex flex-col gap-3">
                     <div className="flex justify-between items-start">
                       <div>

@@ -21,4 +21,5 @@ export const seedProducts = [
   { name: 'Terminal A8 Táctil 11.6"', category: 'Terminal Punto de Venta', price: 1100, description: 'Terminal táctil compacto de 11.6 pulgadas.' },
   { name: 'Terminal 818S Touch 15.6"', category: 'Terminal Punto de Venta', price: 1550, description: 'Terminal táctil profesional de 15.6 pulgadas.' },
   { name: 'Terminal A200S / 80MM + NFC', category: 'Terminal Punto de Venta', price: 1950, description: 'Terminal avanzado con NFC e impresora de 80mm.' },
+  { name: 'IMPRESORA TERMICA POS-STAR WP200 80MM', category: 'Impresoras Térmicas', price: 203, description: 'Interfaz USB + RJ11, velocidad de 230mm/s. Precio solo Web.', brand: 'POS-STAR' },
 ];

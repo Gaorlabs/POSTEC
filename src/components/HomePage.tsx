@@ -32,6 +32,7 @@ export default function HomePage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [detailQuantity, setDetailQuantity] = useState(1);
   const [copied, setCopied] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const productsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -115,31 +116,31 @@ export default function HomePage() {
 
   const defaultSlides = [
     {
-      title: "PC O LAPTOP.",
-      subtitle: "Potencia y rendimiento para tu negocio.",
-      image: "https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?auto=format&fit=crop&q=80&w=1920",
-      category: "PC O LAPTOP",
+      title: "Packs para Emprendedores.",
+      subtitle: "Combos completos con todo lo necesario para iniciar tu negocio. Ahorra comprando en paquete.",
+      image: "https://images.unsplash.com/photo-1556740734-7f95834d0ff9?auto=format&fit=crop&q=80&w=1920",
+      category: "Combos",
       color: "from-black"
     },
     {
-      title: "Soluciones para Retail.",
-      subtitle: "Optimiza tus ventas con tecnología de punta.",
-      image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=1920",
-      category: "Impresoras Térmicas",
-      color: "from-blue-900/40"
-    },
-    {
-      title: "Puntos de Venta.",
-      subtitle: "La mejor experiencia para tus clientes.",
-      image: "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1920",
-      category: "Terminal Punto de Venta",
+      title: "Control de Acceso.",
+      subtitle: "Seguridad biométrica de última generación para proteger tus activos.",
+      image: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=1920",
+      category: "Control de Acceso",
       color: "from-zinc-900"
     },
     {
-      title: "Seguridad y Control.",
-      subtitle: "Protege lo que más importa.",
-      image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1920",
-      category: "Control de Acceso",
+      title: "Logística Ágil.",
+      subtitle: "Lectores industriales diseñados para entornos de alto tráfico.",
+      image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=1920",
+      category: "Lector de Código de Barras",
+      color: "from-blue-900/40"
+    },
+    {
+      title: "Cómputo de Alto Rendimiento.",
+      subtitle: "PCs configuradas para software de gestión, garantizando estabilidad 24/7.",
+      image: "https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?auto=format&fit=crop&q=80&w=1920",
+      category: "PC O LAPTOP",
       color: "from-slate-900"
     }
   ];
@@ -229,9 +230,14 @@ export default function HomePage() {
     }
   }
 
-  const filteredProducts = category === 'Todas' 
-    ? products 
-    : products.filter(p => p.category === category);
+  const filteredProducts = products.filter(p => {
+    const matchesCategory = category === 'Todas' || p.category === category;
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (p.brand && p.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                         (p.labels && p.labels.some(l => l.toLowerCase().includes(searchQuery.toLowerCase())));
+    return matchesCategory && matchesSearch;
+  });
 
   const addToCart = (product: Product, quantity: number = 1) => {
     setCart(prev => {
@@ -440,7 +446,15 @@ export default function HomePage() {
                           className="flex gap-4 justify-center"
                         >
                           <button 
-                            onClick={() => setCategory(slides[currentSlide].category)}
+                            onClick={() => {
+                              if (slides[currentSlide].category === 'Combos') {
+                                setCurrentTab('Combos');
+                              } else {
+                                setCategory(slides[currentSlide].category);
+                                setCurrentTab('Tienda');
+                              }
+                              scrollToProducts();
+                            }}
                             className="apple-button px-8 py-3 text-lg"
                           >
                             Comprar
@@ -494,187 +508,119 @@ export default function HomePage() {
                   </motion.h1>
                 </div>
 
-                {/* Category Navigation (Apple Style) */}
-                <div className="flex items-center justify-start md:justify-center gap-8 md:gap-12 overflow-x-auto pb-12 scrollbar-hide -mx-6 px-6">
-                  {categories.map((cat, idx) => (
-                    <motion.button
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      key={cat}
-                      whileHover={{ y: -8 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => {
-                        setCategory(cat);
-                        scrollToProducts();
-                      }}
-                      className="flex flex-col items-center gap-3 group min-w-[100px] flex-shrink-0"
-                    >
-                      <motion.div 
-                        className={`transition-all duration-500 ${
-                          category === cat 
-                            ? 'text-apple-accent scale-110' 
-                            : 'text-apple-dark opacity-60 group-hover:opacity-100 group-hover:text-apple-accent'
-                        }`}
+                {/* Search Bar & Category Navigation */}
+                <section className="mb-12 sticky top-16 z-30 bg-apple-bg/80 backdrop-blur-xl py-6 -mx-6 px-6 border-b border-apple-border/5">
+                  <div className="max-w-[800px] mx-auto mb-10">
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-apple-sub group-focus-within:text-apple-accent transition-colors">
+                        <Search size={22} strokeWidth={2.5} />
+                      </div>
+                      <input 
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="¿Qué estás buscando para tu negocio?"
+                        className="w-full bg-apple-gray/50 border-2 border-transparent focus:border-apple-accent/30 focus:bg-white rounded-2xl py-5 pl-14 pr-6 text-xl font-medium placeholder:text-apple-sub/60 transition-all outline-none shadow-sm focus:shadow-xl focus:shadow-apple-accent/5"
+                      />
+                      {searchQuery && (
+                        <button 
+                          onClick={() => setSearchQuery('')}
+                          className="absolute inset-y-0 right-5 flex items-center text-apple-sub hover:text-apple-dark transition-colors"
+                        >
+                          <X size={20} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-start md:justify-center gap-6 md:gap-10 overflow-x-auto pb-4 scrollbar-hide px-2">
+                    {categories.map((cat, idx) => (
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: idx * 0.03 }}
+                        key={cat}
+                        whileHover={{ y: -4 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setCategory(cat);
+                          if (searchQuery) setSearchQuery('');
+                        }}
+                        className="flex flex-col items-center gap-3 group min-w-[90px] flex-shrink-0 relative"
                       >
-                        {getCategoryIcon(cat)}
-                      </motion.div>
-                      <span className={`text-[11px] font-medium transition-colors whitespace-nowrap ${
-                        category === cat ? 'text-apple-accent font-bold' : 'text-apple-sub group-hover:text-apple-accent'
-                      }`}>
-                        {cat}
-                      </span>
-                    </motion.button>
-                  ))}
-                </div>
+                        <motion.div 
+                          className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 relative z-10 ${
+                            category === cat 
+                              ? 'bg-apple-accent text-white shadow-lg shadow-apple-accent/30' 
+                              : 'bg-white text-apple-dark shadow-sm border border-apple-border/5 group-hover:border-apple-accent/20 group-hover:shadow-md'
+                          }`}
+                        >
+                          {getCategoryIcon(cat)}
+                        </motion.div>
+                        <span className={`text-[12px] font-bold transition-colors whitespace-nowrap px-1 rounded-md ${
+                          category === cat ? 'text-apple-accent' : 'text-apple-sub group-hover:text-apple-dark'
+                        }`}>
+                          {cat}
+                        </span>
+                        {category === cat && (
+                          <motion.div 
+                            layoutId="cat-indicator"
+                            className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-apple-accent"
+                          />
+                        )}
+                      </motion.button>
+                    ))}
+                  </div>
+                </section>
+
+                <div ref={productsRef}></div>
               </section>
 
-              {/* Solutions Ecosystem Section */}
-              <section className="mb-24">
-                <div className="mb-12">
-                  <motion.span 
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    className="text-apple-accent font-semibold tracking-widest uppercase text-[11px] mb-3 block"
-                  >
-                    Ecosistema de Soluciones
-                  </motion.span>
-                  <h2 className="text-[2rem] md:text-[3rem] font-semibold tracking-tight leading-tight mb-4">
-                    Tecnología que impulsa tu éxito.
-                  </h2>
-                  <p className="text-apple-sub text-lg max-w-2xl font-medium">
-                    Diseñamos el flujo de trabajo que tu empresa necesita para escalar al siguiente nivel.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Main Solution: Retail/POS -> Changed to Combos */}
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="md:col-span-2 relative h-[400px] rounded-[2rem] overflow-hidden group cursor-pointer bg-zinc-900"
-                  >
-                    <img 
-                      src="https://images.unsplash.com/photo-1556740734-7f95834d0ff9?auto=format&fit=crop&q=80&w=1200" 
-                      alt="Packs Emprendedor"
-                      className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-1000 group-hover:scale-105"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                    <div className="absolute inset-0 p-10 flex flex-col justify-end">
-                      <h3 className="text-2xl md:text-3xl font-semibold text-white mb-3 tracking-tight">Packs para Emprendedores</h3>
-                      <p className="text-zinc-300 text-base max-w-md mb-6 line-clamp-2">
-                        Combos completos con todo lo necesario para iniciar tu negocio. Ahorra comprando en paquete.
-                      </p>
-                      <button 
-                        onClick={() => { setCurrentTab('Combos' as any); scrollToProducts(); }}
-                        className="flex items-center gap-2 text-apple-accent font-semibold text-sm group-hover:gap-4 transition-all"
-                      >
-                        Ver todos los packs <ArrowRight size={18} />
-                      </button>
-                    </div>
-                  </motion.div>
-
-                  {/* Secondary: Security */}
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.1 }}
-                    className="relative h-[400px] rounded-[2rem] overflow-hidden group cursor-pointer bg-zinc-100"
-                  >
-                    <img 
-                      src="https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=800" 
-                      alt="Security"
-                      className="absolute inset-0 w-full h-full object-cover opacity-20 grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:opacity-100"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 p-8 flex flex-col justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-apple-dark">
-                        <Fingerprint size={20} />
+              {/* Value Strip (Horizontal Summary) */}
+              <section className="mb-20 py-12 px-8 bg-[#0a0a0a] rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden group">
+                {/* Abstract background glow */}
+                <div className="absolute top-0 left-1/4 w-64 h-64 bg-apple-accent/10 blur-[100px] -translate-y-1/2" />
+                <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-apple-accent/5 blur-[100px] translate-y-1/2" />
+                
+                <div className="max-w-[1400px] mx-auto relative z-10">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+                    <div className="flex flex-col items-center text-center gap-5 group/item cursor-default">
+                      <div className="w-16 h-16 rounded-[1.25rem] bg-white/5 border border-white/10 flex items-center justify-center text-apple-accent group-hover/item:bg-apple-accent group-hover/item:text-white group-hover/item:scale-110 transition-all duration-500 shadow-[0_0_20px_rgba(0,255,127,0.1)] group-hover/item:shadow-[0_0_30px_rgba(0,255,127,0.3)]">
+                        <Package size={28} />
                       </div>
-                      <div>
-                        <h3 className="text-xl font-semibold text-apple-dark mb-2">Control de Acceso</h3>
-                        <p className="text-apple-sub text-[13px] leading-relaxed font-medium mb-4">
-                          Seguridad biométrica de última generación para proteger tus activos.
-                        </p>
-                        <button 
-                          onClick={() => { setCategory('Control de Acceso'); scrollToProducts(); }}
-                          className="text-apple-accent font-semibold text-sm hover:underline"
-                        >
-                          Ver equipos de acceso →
-                        </button>
+                      <div className="space-y-1.5">
+                        <h4 className="text-[15px] font-bold text-white tracking-tight">Packs Emprendedor</h4>
+                        <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wider">Equípate desde cero</p>
                       </div>
                     </div>
-                  </motion.div>
-
-                  {/* Tertiary: Logistics */}
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.2 }}
-                    className="relative h-[400px] rounded-[2rem] overflow-hidden group cursor-pointer bg-apple-gray"
-                  >
-                    <div className="absolute inset-0 p-8 flex flex-col justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-apple-dark">
-                        <Barcode size={20} />
+                    <div className="flex flex-col items-center text-center gap-5 group/item cursor-default">
+                      <div className="w-16 h-16 rounded-[1.25rem] bg-white/5 border border-white/10 flex items-center justify-center text-apple-accent group-hover/item:bg-apple-accent group-hover/item:text-white group-hover/item:scale-110 transition-all duration-500 shadow-[0_0_20px_rgba(0,255,127,0.1)] group-hover/item:shadow-[0_0_30px_rgba(0,255,127,0.3)]">
+                        <Fingerprint size={28} />
                       </div>
-                      <div>
-                        <h3 className="text-xl font-semibold text-apple-dark mb-2">Logística Ágil</h3>
-                        <p className="text-apple-sub text-[13px] leading-relaxed font-medium mb-4">
-                          Lectores industriales diseñados para entornos de alto tráfico.
-                        </p>
-                        <button 
-                          onClick={() => { setCategory('Lector de Código de Barras'); scrollToProducts(); }}
-                          className="text-apple-accent font-semibold text-sm hover:underline"
-                        >
-                          Ver lectores →
-                        </button>
+                      <div className="space-y-1.5">
+                        <h4 className="text-[15px] font-bold text-white tracking-tight">Seguridad Biométrica</h4>
+                        <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wider">Control absoluto</p>
                       </div>
-                      <img 
-                        src="https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?auto=format&fit=crop&q=80&w=600" 
-                        alt="Logistics"
-                        className="mt-4 rounded-xl h-40 w-full object-cover shadow-md"
-                        referrerPolicy="no-referrer"
-                      />
                     </div>
-                  </motion.div>
-
-                  {/* Quaternary: Computing/Brain */}
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.3 }}
-                    className="md:col-span-2 relative h-[400px] rounded-[2rem] overflow-hidden group cursor-pointer bg-black"
-                  >
-                    <img 
-                      src="https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=1200" 
-                      alt="Computing"
-                      className="absolute inset-0 w-full h-full object-cover opacity-40 transition-transform duration-1000 group-hover:scale-105"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-                    <div className="absolute inset-0 p-10 flex flex-col justify-end">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="px-2 py-0.5 rounded-full bg-apple-accent/20 text-apple-accent text-[9px] font-bold uppercase tracking-widest">
-                          Infraestructura
-                        </div>
+                    <div className="flex flex-col items-center text-center gap-5 group/item cursor-default">
+                      <div className="w-16 h-16 rounded-[1.25rem] bg-white/5 border border-white/10 flex items-center justify-center text-apple-accent group-hover/item:bg-apple-accent group-hover/item:text-white group-hover/item:scale-110 transition-all duration-500 shadow-[0_0_20px_rgba(0,255,127,0.1)] group-hover/item:shadow-[0_0_30px_rgba(0,255,127,0.3)]">
+                        <Barcode size={28} />
                       </div>
-                      <h3 className="text-2xl md:text-3xl font-semibold text-white mb-3 tracking-tight">Cómputo de Alto Rendimiento</h3>
-                      <p className="text-zinc-400 text-base max-w-lg font-medium mb-6">
-                        PCs configuradas para software de gestión, garantizando estabilidad 24/7.
-                      </p>
-                      <button 
-                        onClick={() => { setCategory('PC O LAPTOP'); scrollToProducts(); }}
-                        className="text-apple-accent font-semibold text-sm hover:underline"
-                      >
-                        Ver computadoras →
-                      </button>
+                      <div className="space-y-1.5">
+                        <h4 className="text-[15px] font-bold text-white tracking-tight">Logística Avanzada</h4>
+                        <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wider">Escaneo industrial</p>
+                      </div>
                     </div>
-                  </motion.div>
+                    <div className="flex flex-col items-center text-center gap-5 group/item cursor-default">
+                      <div className="w-16 h-16 rounded-[1.25rem] bg-white/5 border border-white/10 flex items-center justify-center text-apple-accent group-hover/item:bg-apple-accent group-hover/item:text-white group-hover/item:scale-110 transition-all duration-500 shadow-[0_0_20px_rgba(0,255,127,0.1)] group-hover/item:shadow-[0_0_30px_rgba(0,255,127,0.3)]">
+                        <Monitor size={28} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <h4 className="text-[15px] font-bold text-white tracking-tight">Hardware de Gestión</h4>
+                        <p className="text-[11px] text-zinc-400 font-medium uppercase tracking-wider">Estabilidad 24/7</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </section>
 
