@@ -27,26 +27,15 @@ export default function ProductLandingPage() {
   const [quantity, setQuantity] = useState(1);
   const [isOrdered, setIsOrdered] = useState(false);
   
-  // Interactive strategy tabs: 'comprar' (Virtual Store Flow) vs 'cotizar' (Express Quotation)
-  const [activeTab, setActiveTab] = useState<'comprar' | 'cotizar'>('comprar');
-  
   // Virtual Store States
   const [paymentMethod, setPaymentMethod] = useState<'yape' | 'bcp'>('yape');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [yapeOperationCode, setYapeOperationCode] = useState('');
   const [orderStep, setOrderStep] = useState<'idle' | 'sending' | 'confirmed'>('idle');
 
-  // Custom states for Live Quotation / Proforma / Customer sync
+  // Customer states for Checkout matching proforma/webhook
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
-  const [n8nWebhookUrl, setN8nWebhookUrl] = useState(() => {
-    return localStorage.getItem('n8n_webhook_url') || '';
-  });
-  const [webhookStatus, setWebhookStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-  const [successPrinted, setSuccessPrinted] = useState(false);
-
-  // Generate a persistent/stable random Proforma Number on component load
-  const [proformaNum] = useState(() => `COT-2026-${Math.floor(Math.random() * 800) + 100}`);
 
   const productInfo = {
     name: "IMPRESORA TERMICA POS-STAR WP200 80MM USB+RJ11",
@@ -65,10 +54,6 @@ export default function ProductLandingPage() {
   const handleIncrement = () => setQuantity(prev => prev + 1);
   const handleDecrement = () => setQuantity(prev => Math.max(1, prev - 1));
 
-  // Fixed proforma pricing as shown in the user's uploaded image
-  const customPrice = 275.00; 
-  const regularPrice = 300.00;
-
   // Dynamic calculations
   const unitPrice = productInfo.price;
   const rawSubtotal = unitPrice * quantity;
@@ -77,11 +62,6 @@ export default function ProductLandingPage() {
   const calculatedTotal = rawSubtotal;
   const calculatedSubtotal = calculatedTotal / 1.18;
   const calculatedIGV = calculatedTotal - calculatedSubtotal;
-
-  // Proforma calculations (S/ 275.00 includes IGV)
-  const proformaTotal = customPrice * quantity;
-  const proformaSubtotal = proformaTotal / 1.18;
-  const proformaIGV = proformaTotal - proformaSubtotal;
 
   const handleConfirmPurchase = async () => {
     if (!clientName) {
@@ -137,7 +117,8 @@ export default function ProductLandingPage() {
                     paymentDetailsText + `\n` +
                     `_Un agente de ventas POS-TEC validará el comprobante de inmediato para despachar el equipo._`;
 
-    // Optionally trigger n8n Webhook
+    // Optionally trigger n8n Webhook directly from localstorage
+    const n8nWebhookUrl = localStorage.getItem('n8n_webhook_url') || '';
     if (n8nWebhookUrl) {
       try {
         await fetch(n8nWebhookUrl, {
@@ -174,96 +155,6 @@ export default function ProductLandingPage() {
   const handleWhatsAppOrder = () => {
     handleConfirmPurchase();
   };
-
-  // WhatsApp Quote / Proforma trigger with Evolution API / n8n Webhook support
-  const handleN8nWebhookTrigger = async () => {
-    if (!clientName || !clientPhone) {
-      alert('Por favor complete su Nombre y Número de Celular para enviar la cotización.');
-      return;
-    }
-
-    setWebhookStatus('sending');
-
-    const formattedDate = new Date().toLocaleDateString('es-PE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-
-    const payload = {
-      clientName,
-      clientPhone,
-      productName: "Impresora Térmica POS-STAR WP200",
-      price: customPrice,
-      quantity: quantity,
-      subtotal: proformaSubtotal.toFixed(2),
-      igv: proformaIGV.toFixed(2),
-      total: proformaTotal.toFixed(2),
-      proformaId: proformaNum,
-      date: formattedDate,
-      validity: '7 días',
-      sellerPhone: '+51 905 820 448',
-      ruc: '20536729659'
-    };
-
-    try {
-      if (n8nWebhookUrl) {
-        localStorage.setItem('n8n_webhook_url', n8nWebhookUrl);
-        const response = await fetch(n8nWebhookUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-        
-        if (response.ok) {
-          setWebhookStatus('success');
-        } else {
-          setWebhookStatus('error');
-        }
-      } else {
-        // Fallback: If no webhook URL is entered, simulate a beautiful n8n/evolution API dispatch
-        await new Promise(resolve => setTimeout(resolve, 1200));
-        setWebhookStatus('success');
-      }
-
-      // Simultaneously, generate a backup whatsapp click so they can also send it manually or download!
-      const message = `*📋 COTIZACIÓN ENVIADA - POS-TEC 📋*\n\n` +
-                      `*Nro. Proforma:* ${proformaNum}\n` +
-                      `*Fecha:* ${formattedDate}\n` +
-                      `*Cliente:* ${clientName}\n` +
-                      `*WhatsApp:* ${clientPhone}\n\n` +
-                      `*Detalle del Producto:* \n` +
-                      `• Impresora Térmica POS-STAR WP200\n` +
-                      `• *Cantidad:* ${quantity} ud(s).\n` +
-                      `• *Total Cotizado: S/ ${proformaTotal.toFixed(2)} PEN* (IGV Incluido)\n\n` +
-                      `*Métodos de Pago:*\n` +
-                      `• Yape al +51 989 007 409 (Joaquin Garcia)\n` +
-                      `• BCP Cuenta Corriente S/: 191-1875953-0-18 (COPIERMAX EIR.)\n\n` +
-                      `_Su documento está listo para ser despachado a la brevedad._`;
-
-      const encodedText = encodeURIComponent(message);
-      const url = `https://api.whatsapp.com/send?phone=51905820448&text=${encodedText}`;
-      window.open(url, '_blank');
-
-    } catch (err) {
-      console.error(err);
-      setWebhookStatus('error');
-    }
-  };
-
-  const executePrint = () => {
-    window.print();
-    setSuccessPrinted(true);
-    setTimeout(() => setSuccessPrinted(false), 5000);
-  };
-
-  const formattedDateString = new Date().toLocaleDateString('es-PE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans overflow-x-hidden selection:bg-apple-accent/10">
