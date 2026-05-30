@@ -31,6 +31,8 @@ export default function ProductLandingPage() {
   const [activeTab, setActiveTab] = useState<'comprar' | 'cotizar'>('comprar');
   
   // Virtual Store States
+  const [paymentMethod, setPaymentMethod] = useState<'yape' | 'bcp'>('yape');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   const [yapeOperationCode, setYapeOperationCode] = useState('');
   const [orderStep, setOrderStep] = useState<'idle' | 'sending' | 'confirmed'>('idle');
 
@@ -82,11 +84,19 @@ export default function ProductLandingPage() {
   const proformaIGV = proformaTotal - proformaSubtotal;
 
   const handleConfirmPurchase = async () => {
-    if (!clientName || !clientPhone) {
-      alert('Por favor complete su Nombre y Número de Teléfono/WhatsApp para registrar su pedido.');
+    if (!clientName) {
+      alert('Por favor complete su Nombre Completo para registrar su pedido.');
       return;
     }
-    if (!yapeOperationCode) {
+    if (!clientPhone) {
+      alert('Por favor complete su Número de Teléfono/WhatsApp.');
+      return;
+    }
+    if (!deliveryAddress) {
+      alert('Por favor complete su Dirección de Entrega para planificar el despacho.');
+      return;
+    }
+    if (paymentMethod === 'yape' && !yapeOperationCode) {
       alert('Por favor coloque el Código o Número de Operación de su Yape para verificar el pago.');
       return;
     }
@@ -103,17 +113,28 @@ export default function ProductLandingPage() {
 
     const purchaseTotalText = calculatedTotal.toFixed(2);
     
+    let paymentDetailsText = '';
+    if (paymentMethod === 'yape') {
+      paymentDetailsText = `*Método de Pago: Yape*\n` +
+                           `• *Destino:* Yape al +51 989 007 409 (Joaquin Garcia)\n` +
+                           `• *Código de Operación:* ${yapeOperationCode}\n`;
+    } else {
+      paymentDetailsText = `*Método de Pago: Transferencia BCP*\n` +
+                           `• *Destino:* BCP Cuenta Corriente: 191-1875953-0-18 (COPIERMAX EIR.)\n` +
+                           `• *Referencia de Operación BCP (opcional):* ${yapeOperationCode || 'Adjuntaré captura de constancia por WhatsApp'}\n`;
+    }
+
     const message = `*📦 NUEVO PEDIDO - TIENDA VIRTUAL POS-TEC 📦*\n\n` +
                     `*Fecha:* ${formattedDate}\n` +
                     `*Cliente:* ${clientName}\n` +
-                    `*Celular:* ${clientPhone}\n\n` +
+                    `*Celular / WhatsApp:* ${clientPhone}\n` +
+                    `*Dirección de Entrega:* ${deliveryAddress}\n\n` +
                     `*Detalle del Equipo:*\n` +
                     `• *Producto:* ${productInfo.fullName}\n` +
                     `• *Cantidad:* ${quantity} unidad(es)\n` +
                     `• *Monto Cobrado:* S/ ${purchaseTotalText} PEN (IGV Incluido)\n\n` +
-                    `*Validación de Depósito (Yape):*\n` +
-                    `• *Destino:* Yape al 975 615 244 (Luis Atilio Garcia Munoz)\n` +
-                    `• *Código de Operación:* ${yapeOperationCode}\n\n` +
+                    `*Validación de Depósito:*\n` +
+                    paymentDetailsText + `\n` +
                     `_Un agente de ventas POS-TEC validará el comprobante de inmediato para despachar el equipo._`;
 
     // Optionally trigger n8n Webhook
@@ -126,6 +147,8 @@ export default function ProductLandingPage() {
             event: 'virtual_store_purchase',
             clientName,
             clientPhone,
+            deliveryAddress,
+            paymentMethod,
             yapeOperationCode,
             total: purchaseTotalText,
             quantity,
@@ -216,7 +239,8 @@ export default function ProductLandingPage() {
                       `• *Cantidad:* ${quantity} ud(s).\n` +
                       `• *Total Cotizado: S/ ${proformaTotal.toFixed(2)} PEN* (IGV Incluido)\n\n` +
                       `*Métodos de Pago:*\n` +
-                      `• Yape al 975 615 244 (Luis Atilio Garcia Munoz)\n\n` +
+                      `• Yape al +51 989 007 409 (Joaquin Garcia)\n` +
+                      `• BCP Cuenta Corriente S/: 191-1875953-0-18 (COPIERMAX EIR.)\n\n` +
                       `_Su documento está listo para ser despachado a la brevedad._`;
 
       const encodedText = encodeURIComponent(message);
@@ -490,251 +514,338 @@ export default function ProductLandingPage() {
               </div>
             </div>
 
-            {/* Interactive Strategy Core: Virtual Store Checkout & Express Quotation Options */}
-            <div className="space-y-6 pt-2">
+            {/* Call to Actions - Dedicated Scroll anchors for perfect mobile/desktop rhythm */}
+            <div className="space-y-4 pt-4 border-t border-zinc-100">
+              <div className="flex items-center justify-between pb-2">
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest font-sans">Precio Especial Web:</span>
+                <span className="text-xl font-extrabold text-[#10B981] font-sans">S/ {calculatedTotal.toFixed(2)} PEN <span className="text-[10px] text-zinc-400 font-semibold font-sans">(IGV Incl.)</span></span>
+              </div>
               
-              {/* Dual Action Strategy Selector Tabs */}
-              <div className="space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-[#86868B] block">¿Qué deseas realizar?</span>
-                <div className="grid grid-cols-2 gap-2 bg-[#F5F5F7] p-1.5 rounded-2xl border border-zinc-200">
-                  <button 
-                    onClick={() => setActiveTab('comprar')}
-                    className={`py-3 px-3 rounded-xl text-[11px] font-black tracking-tight transition-all flex items-center justify-center gap-1.5 ${activeTab === 'comprar' ? 'bg-[#10B981] text-white shadow-md' : 'hover:bg-zinc-200 text-zinc-600'}`}
-                  >
-                    <ShoppingBag size={14} /> 🛒 Comprar (S/ 203)
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('cotizar')}
-                    className={`py-3 px-3 rounded-xl text-[11px] font-black tracking-tight transition-all flex items-center justify-center gap-1.5 ${activeTab === 'cotizar' ? 'bg-[#0df07e] text-zinc-950 shadow-md' : 'hover:bg-zinc-200 text-zinc-600'}`}
-                  >
-                    <FileText size={14} /> 📋 Cotizar (S/ 275)
-                  </button>
-                </div>
-              </div>
+              <button 
+                onClick={() => {
+                  const el = document.getElementById('checkout-area');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                className="w-full bg-[#10B981] hover:bg-[#07a370] active:scale-[0.98] text-white py-4 px-6 rounded-2xl flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-500/15 font-black text-sm md:text-base tracking-tight transition-all cursor-pointer font-sans"
+              >
+                🛒 COMPRAR AHORA (Yape / BCP)
+              </button>
 
-              {/* SHARED QUANTITY SELECTOR */}
-              <div className="flex items-center justify-between bg-zinc-50 border p-3 rounded-2xl">
-                <div>
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block leading-none">Cantidad de Equipos</span>
-                  <span className="text-xs text-zinc-500 font-semibold mt-0.5">Precio unitario: S/ {activeTab === 'comprar' ? '203.00' : '275.00'}</span>
-                </div>
-                <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-full p-1 shadow-sm">
-                  <button 
-                    onClick={handleDecrement}
-                    className="w-8 h-8 rounded-full bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center text-zinc-750 font-bold hover:scale-105 active:scale-95 transition-all"
-                  >
-                    <Minus size={14} />
-                  </button>
-                  <span className="w-10 text-center text-sm font-extrabold text-[#1D1D1F] select-none">{quantity}</span>
-                  <button 
-                    onClick={handleIncrement}
-                    className="w-8 h-8 rounded-full bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center text-zinc-750 font-bold hover:scale-105 active:scale-95 transition-all"
-                  >
-                    <Plus size={14} />
-                  </button>
-                </div>
-              </div>
+              <button 
+                onClick={() => {
+                  const el = document.getElementById('quote-generator-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                className="w-full bg-zinc-100 hover:bg-zinc-200 text-zinc-800 py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 border border-zinc-300/40 font-bold text-xs transition-all cursor-pointer font-sans"
+              >
+                📋 Generar Cotización Oficial (S/ 275)
+              </button>
 
-              {activeTab === 'comprar' ? (
-                /* TAB 1: IMMERSIVE VIRTUAL STORE CHECKOUT */
-                <div className="space-y-4 border border-zinc-200/80 bg-zinc-50/50 p-5 rounded-3xl relative overflow-hidden">
-                  {orderStep === 'confirmed' ? (
-                    /* Order Successful Confirmed overlay */
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="text-center space-y-4 py-4"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-500/20">
-                        <Check className="stroke-[3.5]" size={22} />
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="text-base font-extrabold text-emerald-900 leading-tight">¡Pedido Conformado con éxito!</h4>
-                        <p className="text-xs text-emerald-800 leading-relaxed font-semibold max-w-sm mx-auto">
-                          En breve un agente de POS-TEC se comunicará contigo por WhatsApp para validar tu código de pago y agendar el envío de inmediato.
-                        </p>
-                      </div>
-                      
-                      <div className="p-3.5 bg-white rounded-2xl text-left text-xs font-semibold text-zinc-650 space-y-1.5 border max-w-xs mx-auto">
-                        <div className="flex justify-between border-b pb-1">
-                          <span className="text-zinc-400 text-[10px] uppercase">Cliente:</span>
-                          <span className="font-extrabold text-zinc-900 truncate max-w-[140px]">{clientName}</span>
-                        </div>
-                        <div className="flex justify-between border-b pb-1">
-                          <span className="text-zinc-400 text-[10px] uppercase">WhatsApp:</span>
-                          <span className="font-mono text-zinc-900">{clientPhone}</span>
-                        </div>
-                        <div className="flex justify-between border-b pb-1">
-                          <span className="text-zinc-400 text-[10px] uppercase">Op. Yape:</span>
-                          <span className="font-mono text-purple-600 font-bold">{yapeOperationCode}</span>
-                        </div>
-                        <div className="flex justify-between pt-0.5">
-                          <span className="text-zinc-400 text-[10px] uppercase">Monto Total:</span>
-                          <span className="font-black text-emerald-600">S/ {calculatedTotal.toFixed(2)}</span>
-                        </div>
-                      </div>
-
-                      <button 
-                        onClick={() => { setOrderStep('idle'); setYapeOperationCode(''); }}
-                        className="text-xs bg-[#1D1D1F] text-white hover:bg-zinc-800 font-bold py-2.5 px-4 rounded-xl transition-all active:scale-95"
-                      >
-                        Hacer Otro Pedido
-                      </button>
-                    </motion.div>
-                  ) : (
-                    /* Checkout form inputs */
-                    <div className="space-y-4">
-                      
-                      {/* Yape quick Instructions panel */}
-                      <div className="p-4 bg-purple-50/85 border border-purple-100 rounded-2xl flex items-center justify-between gap-4">
-                        <div className="space-y-0.5">
-                          <span className="text-[9px] font-black text-purple-600 uppercase tracking-widest block leading-none">Pasos para comprar</span>
-                          <h6 className="text-[14px] font-black text-purple-950 tracking-tight leading-none mt-1">1. Yapea al 975 615 244</h6>
-                          <p className="text-[10px] text-purple-800 font-bold leading-relaxed mt-0.5">Titular: Luis Atilio Garcia Munoz</p>
-                          <p className="text-[11px] text-[#1D1D1F] font-extrabold mt-1">Monto: <span className="text-[#10B981] font-mono text-xs">S/ {calculatedTotal.toFixed(2)}</span></p>
-                        </div>
-                        {/* QR Quick Indicator */}
-                        <div className="bg-white p-1 rounded-xl shadow-sm border border-purple-200 shrink-0">
-                          <div className="w-10 h-10 bg-purple-100/50 rounded-lg flex flex-col items-center justify-center text-center">
-                            <Smartphone className="w-4 h-4 text-purple-600 animate-pulse" />
-                            <span className="text-[5px] font-black text-purple-600 leading-none mt-0.5 uppercase">QR YAPE</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 pt-1">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Tu Nombre Completo / Empresa</label>
-                          <input 
-                            type="text" 
-                            value={clientName}
-                            onChange={(e) => setClientName(e.target.value)}
-                            placeholder="Ej. Juan Pérez" 
-                            className="w-full bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:border-purple-500 transition-all shadow-inner"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">WhatsApp / Celular</label>
-                            <input 
-                              type="text" 
-                              value={clientPhone}
-                              onChange={(e) => setClientPhone(e.target.value)}
-                              placeholder="Ej. +51 914..." 
-                              className="w-full bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:border-purple-500 transition-all shadow-inner"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Código Operación Yape</label>
-                            <input 
-                              type="text" 
-                              value={yapeOperationCode}
-                              onChange={(e) => setYapeOperationCode(e.target.value)}
-                              placeholder="Ej. Op: 19485" 
-                              className="w-full bg-purple-50/50 border border-purple-200 rounded-xl px-3.5 py-2.5 text-xs text-purple-950 font-black placeholder-purple-300 focus:outline-none focus:border-purple-500 focus:bg-white transition-all shadow-inner"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Final validation order submit */}
-                      <button 
-                        onClick={handleConfirmPurchase}
-                        disabled={orderStep === 'sending'}
-                        className="w-full bg-[#10B981] hover:bg-[#07a370] disabled:bg-zinc-400 text-white py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 border border-emerald-600 font-black text-sm tracking-tight transition-all active:scale-[0.98] shadow-lg shadow-emerald-500/10"
-                      >
-                        {orderStep === 'sending' ? (
-                          <span>Procesando Pedido...</span>
-                        ) : (
-                          <>
-                            <Send size={14} className="fill-white" />
-                            Enviar Pedido Conformado (S/ {calculatedTotal.toFixed(2)})
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* TAB 2: PROMPT COTIZACIÓN RÁPIDA (FORMAL PROFORMA) */
-                <div className="space-y-4 border border-zinc-200 bg-zinc-50/40 p-5 rounded-3xl relative">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-black text-[#0df07e] uppercase tracking-widest block">Acciones de Cotización</span>
-                    <h6 className="text-sm font-bold text-zinc-800 leading-none">Generar documento oficial para empresa</h6>
-                    <p className="text-[10px] text-zinc-400 font-semibold leading-relaxed mt-0.5">Ingresa tu número móvil para recibir la proforma directamente o descargar el PDF.</p>
-                  </div>
-
-                  <div className="space-y-3 pt-2">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">Nombre o Razón Social</label>
-                      <input 
-                        type="text" 
-                        value={clientName}
-                        onChange={(e) => setClientName(e.target.value)}
-                        placeholder="Ej. Inversiones Industriales S.A.C." 
-                        className="w-full bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:border-[#0df07e] transition-all shadow-inner"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block">WhatsApp de Destino</label>
-                      <input 
-                        type="text" 
-                        value={clientPhone}
-                        onChange={(e) => setClientPhone(e.target.value)}
-                        placeholder="Ej. +51 987 654 321" 
-                        className="w-full bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:border-[#0df07e] transition-all shadow-inner"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Dynamic Action Buttons side-by-side inside Tab */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                    <button 
-                      onClick={handleN8nWebhookTrigger}
-                      disabled={webhookStatus === 'sending'}
-                      className="bg-[#0df07e] hover:bg-[#0ae175] disabled:bg-zinc-300 text-[#0c0d0e] py-3 px-4 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-md shadow-[#0df07e]/10"
-                    >
-                      <Send size={12} className="fill-[#0c0d0e] stroke-2" />
-                      {webhookStatus === 'sending' ? 'Enviando...' : 'Enviar vía n8n (WSP)'}
-                    </button>
-                    <button 
-                      onClick={executePrint}
-                      className="bg-zinc-800 text-white hover:bg-zinc-900 py-3 px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-sm"
-                    >
-                      <Printer size={12} /> Descargar PDF
-                    </button>
-                  </div>
-
-                  {webhookStatus === 'success' && (
-                    <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-center">
-                      <p className="text-[11px] text-emerald-600 font-bold flex items-center justify-center gap-1">
-                        <Check size={12} className="stroke-[3]" /> Cotización enviada exitosamente por WhatsApp (n8n).
-                      </p>
-                    </div>
-                  )}
-                  {webhookStatus === 'error' && (
-                    <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-center">
-                      <p className="text-[11px] text-rose-500 font-bold flex items-center justify-center gap-1">
-                        ❌ Falló el envío del webhook. Descárguelo en PDF.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <p className="text-center text-[10px] text-zinc-400 font-semibold leading-relaxed max-w-sm mx-auto">
-                {activeTab === 'comprar' 
-                  ? "Atención automática: un especialista de despacho validará su código Yape para el embalado el mismo día de la compra."
-                  : "Nuestras cotizaciones son válidas durante 7 días y ya incluyen en el desglose el cargo IGV de ley."
-                }
+              <p className="text-center text-[10px] text-zinc-400 font-semibold leading-relaxed max-w-xs mx-auto font-sans">
+                No arriesgues tu inversión. Al hacer tu pedido, un especialista te atenderá de forma inmediata por WhatsApp y programará el despacho hoy mismo.
               </p>
             </div>
 
           </div>
 
         </div>
+
+        {/* Standalone Interactive Purchase Checkout Area */}
+        <section id="checkout-area" className="bg-white rounded-[2.5rem] border border-[#E5E5E7] p-6 md:p-10 shadow-2xl relative overflow-hidden scroll-mt-20">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 blur-[80px] rounded-full pointer-events-none animate-pulse" />
+          
+          {orderStep === 'confirmed' ? (
+            /* SUCCESS CASE MESSAGE STATE */
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="text-center py-8 space-y-6 max-w-xl mx-auto"
+            >
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-500/20">
+                <Check className="stroke-[3]" size={32} />
+              </div>
+              
+              <div className="space-y-3">
+                <h3 className="text-2xl font-black text-zinc-905 tracking-tight leading-tight font-sans">
+                  ¡Pago exitoso! 
+                </h3>
+                <p className="text-sm text-zinc-650 font-bold leading-relaxed font-sans">
+                  En breve se comunicará un asesor de ventas por WhatsApp (WSP) para coordinar el envío de su equipo de inmediato.
+                </p>
+              </div>
+
+              {/* Dynamic printable receipt ticket */}
+              <div className="p-5 bg-zinc-50 rounded-3xl border border-zinc-200 text-left text-xs font-semibold text-zinc-700 space-y-2.5 shadow-inner">
+                <div className="font-bold border-b border-dashed pb-2 text-center text-zinc-500 uppercase tracking-widest text-[10px] font-sans">Copia de Pedido Registrado</div>
+                <div className="flex justify-between items-center pb-2 border-b">
+                  <span className="text-zinc-450 text-[10px] uppercase font-sans">Cliente:</span>
+                  <span className="font-extrabold text-zinc-900 font-sans">{clientName}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b">
+                  <span className="text-zinc-450 text-[10px] uppercase font-sans">Contacto:</span>
+                  <span className="font-mono text-zinc-900">{clientPhone}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b">
+                  <span className="text-zinc-450 text-[10px] uppercase font-sans">Dirección de Entrega:</span>
+                  <span className="font-extrabold text-zinc-900 text-right max-w-[200px] truncate font-sans">{deliveryAddress}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b">
+                  <span className="text-zinc-455 text-[10px] uppercase font-sans">Método Pago:</span>
+                  <span className="font-bold text-zinc-900 uppercase font-sans">{paymentMethod === 'yape' ? 'Yape (Joaquin Garcia)' : 'Banco BCP (COPIERMAX EIR.)'}</span>
+                </div>
+                {paymentMethod === 'yape' && (
+                  <div className="flex justify-between items-center pb-2 border-b">
+                    <span className="text-zinc-450 text-[10px] uppercase font-sans">Código Operación:</span>
+                    <span className="font-mono text-purple-600 font-bold">{yapeOperationCode}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-zinc-450 text-[10px] uppercase font-sans">Total del Pedido:</span>
+                  <span className="font-black text-emerald-600 text-sm font-sans">S/ {calculatedTotal.toFixed(2)} PEN</span>
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+                <button 
+                  onClick={() => {
+                    const paymentDetailsText = paymentMethod === 'yape' 
+                      ? `*Método de Pago: Yape*\n• *Destino:* Yape al +51 989 007 409 (Joaquin Garcia)\n• *Código de Operación:* ${yapeOperationCode}`
+                      : `*Método de Pago: Transferencia BCP*\n• *Destino:* BCP Cuenta Corriente: 191-1875953-0-18 (COPIERMAX EIR.)\n• *Referencia Op (opcional):* ${yapeOperationCode || 'Se adjunta captura'}`;
+
+                    const messageText = `*📦 COPIA PEDIDO REGISTRADO - POS-TEC 📦*\n\n` +
+                                        `*Fecha:* ${new Date().toLocaleDateString()}\n` +
+                                        `*Cliente:* ${clientName}\n` +
+                                        `*Teléfono:* ${clientPhone}\n` +
+                                        `*Dirección de Entrega:* ${deliveryAddress}\n\n` +
+                                        `*Producto:* Impresora Térmica WP200\n` +
+                                        `*Cantidad:* ${quantity} unidad(es)\n` +
+                                        `*Total:* S/ ${calculatedTotal.toFixed(2)}\n\n` +
+                                        `*Validación:*\n${paymentDetailsText}`;
+                    const encoded = encodeURIComponent(messageText);
+                    window.open(`https://api.whatsapp.com/send?phone=51905820448&text=${encoded}`, '_blank');
+                  }}
+                  className="bg-[#10B981] hover:bg-[#07a370] text-white py-3 px-6 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer font-sans"
+                >
+                  💬 Reabrir WhatsApp del Asesor
+                </button>
+                <button 
+                  onClick={() => { setOrderStep('idle'); setYapeOperationCode(''); }}
+                  className="bg-zinc-100 hover:bg-zinc-200 text-zinc-800 py-3 px-6 rounded-xl font-bold text-xs transition-all cursor-pointer font-sans"
+                >
+                  Hacer Otro Pedido
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            /* ACTIVE CHECKOUT FORM STATE */
+            <div className="space-y-8">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-100 pb-6">
+                <div>
+                  <span className="bg-emerald-500/10 text-emerald-700 font-bold text-[10px] uppercase tracking-widest px-3 py-1 rounded-full border border-emerald-500/20 font-sans">
+                    Soporte de Envío Asegurado
+                  </span>
+                  <h2 className="text-2xl font-black text-zinc-900 tracking-tight mt-2.5 font-sans">
+                    Formulario de Pedido Web
+                  </h2>
+                  <p className="text-xs text-zinc-500 font-medium mt-1 leading-relaxed font-sans">
+                    Llena los datos para formalizar el despacho inmediato de tu Impresora Térmica POS-STAR WP200.
+                  </p>
+                </div>
+                
+                {/* Dynamically calculated price label inside checkout */}
+                <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-left md:text-right shrink-0 min-w-[200px]">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block font-sans">Total estimado a pagar</span>
+                  <span className="text-3xl font-black text-[#10B981] block mt-0.5 select-none font-sans">
+                    S/ {calculatedTotal.toFixed(2)}
+                  </span>
+                  <span className="text-[9px] text-zinc-400 font-bold block mt-0.5 font-sans">IGV 18% Incluido (S/ {calculatedIGV.toFixed(2)} PEN)</span>
+                </div>
+              </div>
+
+              {/* Form Input fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <h4 className="text-sm font-bold text-[#10B981] border-l-4 border-[#10B981] pl-3 font-sans">
+                    1. Datos de Entrega
+                  </h4>
+
+                  {/* Quantity selector inside process */}
+                  <div className="flex items-center justify-between bg-[#F8F9FA] border p-4.5 rounded-2xl">
+                    <div>
+                      <span className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest block leading-none font-sans">Cantidad</span>
+                      <span className="text-xs text-zinc-500 font-semibold mt-1 block font-sans">Equipos: S/ 203.00 c/u</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-white border border-zinc-200 rounded-full p-1 shadow-sm">
+                      <button 
+                        onClick={handleDecrement}
+                        className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-750 font-bold hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <span className="w-8 text-center text-sm font-extrabold text-[#1D1D1F] select-none font-sans">{quantity}</span>
+                      <button 
+                        onClick={handleIncrement}
+                        className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-750 font-bold hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block font-sans">Tu Nombre Completo / Razón Social <span className="text-red-500">*</span></label>
+                      <input 
+                        type="text" 
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        placeholder="Ej. Carlos García" 
+                        className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981] transition-all shadow-inner font-sans"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block font-sans">Teléfono / WhatsApp de Contacto <span className="text-red-500">*</span></label>
+                      <input 
+                        type="text" 
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
+                        placeholder="Ej. 989007409" 
+                        className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981] transition-all shadow-inner font-sans"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block font-sans">Dirección de Entrega Completa <span className="text-red-500">*</span></label>
+                      <input 
+                        type="text" 
+                        value={deliveryAddress}
+                        onChange={(e) => setDeliveryAddress(e.target.value)}
+                        placeholder="Ej. Jr. Huancavelica 450, Cercado de Lima" 
+                        className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981] transition-all shadow-inner font-sans"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Interactive Select Payment Method */}
+                <div className="space-y-6">
+                  <h4 className="text-sm font-bold text-[#10B981] border-l-4 border-[#10B981] pl-3 font-sans">
+                    2. Elige tu Forma de Pago
+                  </h4>
+
+                  <div className="grid grid-cols-2 gap-2.5 bg-zinc-50 p-1.5 rounded-2xl border border-zinc-200">
+                    <button 
+                      type="button"
+                      onClick={() => setPaymentMethod('yape')}
+                      className={`py-3 px-3 rounded-xl text-xs font-black tracking-tight transition-all flex items-center justify-center gap-1.5 cursor-pointer font-sans ${paymentMethod === 'yape' ? 'bg-purple-600 text-white shadow-md' : 'hover:bg-zinc-200 text-zinc-600 hover:text-zinc-900'}`}
+                    >
+                      <span>📱 Yape</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setPaymentMethod('bcp')}
+                      className={`py-3 px-3 rounded-xl text-xs font-black tracking-tight transition-all flex items-center justify-center gap-1.5 cursor-pointer font-sans ${paymentMethod === 'bcp' ? 'bg-indigo-600 text-white shadow-md' : 'hover:bg-zinc-200 text-zinc-600 hover:text-zinc-900'}`}
+                    >
+                      <span>🏦 Cuenta BCP</span>
+                    </button>
+                  </div>
+
+                  {paymentMethod === 'yape' ? (
+                    /* YAPE PAYMENT DETAILS */
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-purple-50/50 border border-purple-200 p-5 rounded-3xl space-y-4 text-left"
+                    >
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 bg-purple-500/10 rounded-xl text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
+                          <Smartphone size={20} />
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-[9px] font-black tracking-widest uppercase text-purple-600 font-sans">Instrucciones de Yape</span>
+                          <h6 className="text-[15px] font-black text-purple-950 leading-tight font-sans">Yapea al +51 989 007 409</h6>
+                          <p className="text-xs text-purple-855 font-bold font-sans">Titular: Joaquin garcia</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 pt-2 border-t border-purple-100">
+                        <label className="text-[10px] font-black text-purple-700 uppercase tracking-widest block font-sans">
+                          Ingresa tu Código de Pago / Operación <span className="text-red-500">*</span>
+                        </label>
+                        <input 
+                          type="text"
+                          value={yapeOperationCode}
+                          onChange={(e) => setYapeOperationCode(e.target.value)}
+                          placeholder="Ej. OP: 198275"
+                          className="w-full bg-white border border-purple-200 rounded-xl px-4 py-3 text-xs text-purple-950 font-black placeholder-purple-300 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600 shadow-sm font-sans font-mono"
+                        />
+                        <p className="text-[10px] text-purple-500 font-semibold leading-relaxed font-sans">
+                          Por favor yapee la suma correspondiente de S/ {calculatedTotal.toFixed(2)} y coloque el código arriba para remitir su pedido.
+                        </p>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    /* BCP PAYMENT DETAILS */
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-indigo-50/50 border border-indigo-200 p-5 rounded-3xl space-y-4 text-left"
+                    >
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 bg-indigo-500/10 rounded-xl text-[#005cbb] flex items-center justify-center shrink-0 mt-0.5 font-bold">
+                          🏦
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-[9px] font-black tracking-widest uppercase text-indigo-600 font-sans">Transferencia BCP Directa</span>
+                          <h6 className="text-[14px] font-black text-indigo-950 leading-tight select-all font-mono">191-1875953-0-18</h6>
+                          <p className="text-xs text-indigo-855 font-bold font-sans">Titular: COPIERMAX EIR.</p>
+                          <p className="text-xs text-zinc-500 font-sans">Cuenta Corriente Soles</p>
+                        </div>
+                      </div>
+
+                      <div className="p-3.5 bg-yellow-500/10 rounded-2xl border border-yellow-500/20 text-yellow-800 text-[11px] font-bold leading-relaxed font-sans">
+                        ⚠️ Deberás enviar la constancia de pago al número de WhatsApp del Pos-Tec para poder coordinar de inmediato el envío de tu equipo y confirmar el pago.
+                      </div>
+
+                      <div className="space-y-1.5 pt-1">
+                        <label className="text-[10px] font-black text-indigo-700 uppercase tracking-widest block font-sans">
+                          Nro. de Operación BCP (opcional)
+                        </label>
+                        <input 
+                          type="text"
+                          value={yapeOperationCode}
+                          onChange={(e) => setYapeOperationCode(e.target.value)}
+                          placeholder="Ej. OP-10493 (o déjalo vacío para enviar foto en el chat)"
+                          className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 font-bold focus:outline-none focus:ring-1 focus:ring-indigo-600 shadow-sm font-sans"
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-4 border-t border-zinc-100 flex justify-end">
+                <button 
+                  onClick={handleConfirmPurchase}
+                  disabled={orderStep === 'sending'}
+                  className="w-full md:w-auto bg-[#10B981] hover:bg-[#07a370] disabled:bg-zinc-300 text-white py-4 px-8 rounded-2xl flex items-center justify-center gap-2.5 border border-emerald-600 font-black text-sm tracking-tight transition-all active:scale-[0.98] shadow-lg shadow-emerald-500/10 cursor-pointer font-sans"
+                >
+                  {orderStep === 'sending' ? (
+                    <span>Procesando Pedido...</span>
+                  ) : (
+                    <>
+                      <Send size={14} className="fill-white" />
+                      Enviar Pedido Exitoso (S/ {calculatedTotal.toFixed(2)})
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
 
         {/* Detailed Technical Specs Table */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
@@ -1103,21 +1214,25 @@ export default function ProductLandingPage() {
                   {/* Right: Payment text values */}
                   <div className="md:col-span-8 text-left space-y-1.5">
                     <div>
-                      <h6 className="text-[17px] font-extrabold text-white tracking-tight leading-none">Paga con Yape</h6>
-                      <p className="text-[11px] text-zinc-500 font-semibold mt-1">Escanea el QR o yapea al:</p>
+                      <h6 className="text-[17px] font-extrabold text-white tracking-tight leading-none">Paga con Yape / BCP</h6>
+                      <p className="text-[11px] text-zinc-500 font-semibold mt-1">Yape al número:</p>
                     </div>
 
-                    <div className="text-3xl font-black text-[#a75bf7] tracking-tight leading-none my-1 select-all">
-                      975 615 244
+                    <div className="text-2xl font-black text-[#a75bf7] tracking-tight leading-none my-1 select-all font-mono">
+                      +51 989 007 409
                     </div>
 
-                    <p className="text-xs text-zinc-300 font-bold leading-none block pb-2">
-                      Luis Atilio Garcia Munoz
+                    <p className="text-xs text-zinc-300 font-bold leading-none block pb-1">
+                      Joaquin Garcia
                     </p>
 
+                    <div className="text-[11px] text-zinc-400 font-semibold pt-1">
+                      O BCP Cta. Corriente S/: <span className="font-mono text-white font-bold select-all">191-1875953-0-18</span> (COPIERMAX EIR.)
+                    </div>
+
                     {/* Purple highlight button matching image */}
-                    <div className="inline-flex bg-purple-500/10 border border-purple-500/20 text-purple-200 text-[11px] font-extrabold py-2 px-3.5 rounded-xl items-center gap-1.5">
-                      <span>📱</span> Envía el comprobante al +51 905 820 448
+                    <div className="inline-flex bg-purple-500/10 border border-purple-500/20 text-purple-200 text-[10px] font-extrabold py-2 px-3.5 rounded-xl items-center gap-1.5 mt-2">
+                      <span>📱</span> Envía tu comprobante al +51 905 820 448
                     </div>
                   </div>
 
