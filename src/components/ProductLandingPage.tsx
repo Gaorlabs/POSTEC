@@ -428,33 +428,36 @@ export default function ProductLandingPage() {
               </div>
             </div>
 
-            {/* Call to Actions - Seamless Desktop & Mobile Rhythm */}
-            <div className="space-y-4 pt-4 border-t border-zinc-100">
+            {/* Call to Actions - Elegant Scroll to Purchase Block */}
+            <div className="space-y-4 pt-4 border-t border-[#E5E5E7]">
               <div className="flex items-center justify-between pb-1">
                 <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest font-sans">Monto Unitario Web:</span>
-                <span className="text-xl font-extrabold text-[#10B981] font-sans">S/ {unitPrice.toFixed(2)} PEN <span className="text-[10px] text-zinc-400 font-semibold">(IGV Incl.)</span></span>
+                <span className="text-2xl font-black text-[#10B981] font-sans">S/ {unitPrice.toFixed(2)} PEN <span className="text-[10px] text-zinc-400 font-semibold">(IGV Incl.)</span></span>
               </div>
               
               <button 
-                onClick={() => setIsCheckoutOpen(true)}
+                onClick={() => {
+                  const el = document.getElementById('checkout-form-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
                 className="w-full bg-[#10B981] hover:bg-[#07a370] active:scale-[0.982] text-white py-4.5 px-6 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-xl shadow-emerald-500/15 font-black tracking-tight transition-all cursor-pointer font-sans"
               >
                 <span className="text-base md:text-lg flex items-center gap-1.5 justify-center">
-                  🛒 COMPRAR EN TIENDA ON-LINE
+                  🛒 COMPRAR EN TIENDA VIRTUAL
                 </span>
                 <span className="text-[11px] font-bold opacity-90 text-emerald-100">
-                  Aceptamos Yape y Cuentas BCP Directo
+                  Deslizar para Registrar Pedido (Yape / BCP)
                 </span>
               </button>
 
-              <div className="flex items-center justify-center gap-4 text-[11px] font-bold text-zinc-400">
+              <div className="flex items-center justify-center gap-4 text-[10px] font-bold text-zinc-400 font-sans">
                 <span className="flex items-center gap-1">📱 Pago con Yape</span>
                 <span className="text-zinc-300">•</span>
                 <span className="flex items-center gap-1">🏦 Depósito BCP</span>
               </div>
 
               <p className="text-center text-[10px] text-zinc-400 font-semibold leading-relaxed max-w-sm mx-auto font-sans">
-                Compra protegida. El despacho se programa hoy mismo tras finalizar su orden y se asiste para la conexión en minutos.
+                El despacho se programa de inmediato y se asiste para la conexión en minutos.
               </p>
             </div>
 
@@ -638,372 +641,284 @@ export default function ProductLandingPage() {
           </div>
         </div>
 
-        {/* SECCIÓN FINAL DE COMPRA - BOTÓN GIGANTE DE COBRO (Yape / BCP) */}
-        <div className="bg-white rounded-[2.5rem] border border-[#E5E5E7] p-8 md:p-12 shadow-2xl relative overflow-hidden text-center">
+        {/* SECCIÓN FINAL DE COMPRA - FORMULARIO ESTABLECIDO (Yape / BCP Directo) */}
+        <div id="checkout-form-section" className="scroll-mt-24 bg-white rounded-[2.5rem] border border-[#E5E5E7] p-8 md:p-12 shadow-2xl relative overflow-hidden">
           {/* Subtle Ambient Background Blob */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-40 bg-emerald-500/10 rounded-full blur-[90px] pointer-events-none" />
-          
-          <div className="max-w-2xl mx-auto space-y-6 relative z-10">
-            <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider border border-emerald-250">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
-              Oferta Garantizada vía Canal Online
-            </span>
-            
-            <h2 className="text-2xl md:text-3.5xl font-extrabold text-[#1D1D1F] tracking-tight leading-tight">
-              ¿Listo para potenciar la facturación de tu negocio?
-            </h2>
 
-            <p className="text-[#86868B] text-sm md:text-base font-medium leading-relaxed">
-              Consigue la Impresora de Boletas Térmicas <strong className="text-[#1D1D1F]">POS-STAR WP200</strong> al mejor precio de importación del Perú. Despacho inmediato de almacén y soporte de configuración total.
-            </p>
-
-            {/* Clear Payment Brand Badges */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 py-2 max-w-md mx-auto">
-              <div className="w-full bg-purple-500/5 border border-purple-500/20 rounded-2xl py-3 px-5 flex items-center justify-center gap-2 text-xs font-black text-purple-700">
-                <Smartphone size={16} />
-                📱 Paga con Cuenta YAPE
+          {orderStep === 'confirmed' ? (
+            /* SUCCESS CASE MESSAGE STATE */
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-6 space-y-6 max-w-2xl mx-auto relative z-10"
+            >
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-500/20">
+                <Check className="stroke-[3]" size={32} />
               </div>
-              <div className="w-full bg-indigo-500/5 border border-indigo-500/20 rounded-2xl py-3 px-5 flex items-center justify-center gap-2 text-xs font-black text-indigo-700">
-                🏦 Cuenta Corriente BCP
-              </div>
-            </div>
-
-            {/* Massive Call-to-Action Buy Button */}
-            <div className="pt-2">
-              <motion.button 
-                onClick={() => setIsCheckoutOpen(true)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full sm:w-auto bg-[#10B981] hover:bg-[#07a370] text-white hover:text-white font-sans font-black py-5 md:py-6 px-10 rounded-2.5rem flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 shadow-2xl shadow-emerald-500/25 text-lg md:text-xl tracking-tight transition-all cursor-pointer border-b-4 border-emerald-700"
-              >
-                <span>🛒 ADQUIRIR EQUIPO EN TIENDA VIRTUAL</span>
-                <span className="bg-emerald-950/30 text-emerald-100 text-xs px-3.5 py-1 rounded-full border border-white/10 font-bold uppercase tracking-wider">
-                  S/ {unitPrice.toFixed(2)} PEN (Yape / BCP)
-                </span>
-              </motion.button>
               
-              <div className="pt-4 flex items-center justify-center gap-2.5 text-[10px] text-zinc-450 font-bold uppercase tracking-wider">
-                <Lock size={12} className="text-[#10B981]" />
-                <span>Haz clic para iniciar el proceso de compra automática • Conexión de seguridad SSL</span>
+              <div className="space-y-3">
+                <h3 className="text-2xl font-black text-[#1D1D1F] tracking-tight leading-tight font-sans">
+                  ¡Pedido Recibido con Éxito!
+                </h3>
+                <p className="text-sm text-zinc-600 font-medium leading-relaxed max-w-md mx-auto font-sans">
+                  Tu comprobante ha sido despachado de forma oficial. Un especialista de soporte validará tu entrega y envío nacional de inmediato por WhatsApp.
+                </p>
+              </div>
+
+              {/* Dynamic printable receipt ticket */}
+              <div className="p-6 bg-[#F5F5F7] rounded-3xl border border-zinc-200 text-left text-xs font-semibold text-zinc-700 space-y-2.5 shadow-inner max-w-md mx-auto">
+                <div className="font-bold border-b border-dashed border-zinc-300 pb-2 text-center text-zinc-400 uppercase tracking-widest text-[9px] font-sans">Boleta Automatizada POS-TEC</div>
+                <div className="flex justify-between items-center pb-2 border-b border-zinc-200/60 font-sans">
+                  <span className="text-zinc-400 text-[10px] uppercase">Titular Comprador:</span>
+                  <span className="font-extrabold text-[#1D1D1F]">{clientName}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-zinc-200/60 font-sans">
+                  <span className="text-zinc-400 text-[10px] uppercase">Celular y WSP:</span>
+                  <span className="font-mono text-[#1D1D1F]">{clientPhone}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-zinc-200/60 font-sans">
+                  <span className="text-zinc-400 text-[10px] uppercase">Dirección de Despacho:</span>
+                  <span className="font-extrabold text-[#1D1D1F] text-right max-w-[220px] truncate">{deliveryAddress}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-zinc-200/60 font-sans">
+                  <span className="text-zinc-400 text-[10px] uppercase font-sans">Abonado vía:</span>
+                  <span className="font-bold text-[#1D1D1F] uppercase font-sans">Yape o Cuenta BCP</span>
+                </div>
+                <div className="flex justify-between items-center pt-1.5 border-t border-zinc-200 font-sans">
+                  <span className="text-zinc-500 text-[10px] uppercase">Monto Total Liquidado:</span>
+                  <span className="font-black text-emerald-600 text-sm">S/ {calculatedTotal.toFixed(2)} PEN</span>
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+                <button 
+                  onClick={() => {
+                    const messageText = `*📦 COPIA PEDIDO REGISTRADO - POS-TEC 📦*\n\n` +
+                                        `*Fecha:* ${new Date().toLocaleDateString()}\n` +
+                                        `*Cliente:* ${clientName}\n` +
+                                        `*Teléfono:* ${clientPhone}\n` +
+                                        `*Dirección de Entrega:* ${deliveryAddress}\n\n` +
+                                        `*Producto:* Impresora Térmica WP200\n` +
+                                        `*Cantidad:* ${quantity} unidad(es)\n` +
+                                        `*Total:* S/ ${calculatedTotal.toFixed(2)}\n\n` +
+                                        `*Método de Pago Requerido:* Yape o Transferencia BCP\n` +
+                                        `_Adjuntaré captura de constancia de pago por este chat de WhatsApp._`;
+                    const encoded = encodeURIComponent(messageText);
+                    window.open(`https://api.whatsapp.com/send?phone=51905820448&text=${encoded}`, '_blank');
+                  }}
+                  className="bg-[#10B981] hover:bg-[#07a370] text-white py-3.5 px-6 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer font-sans shadow-md shadow-emerald-500/10 animate-pulse"
+                >
+                  💬 Reabrir Chat con Asesor WSP
+                </button>
+                <button 
+                  onClick={() => { setOrderStep('idle'); }}
+                  className="bg-zinc-100 hover:bg-zinc-200 text-[#1D1D1F] py-3.5 px-6 rounded-xl font-bold text-xs transition-all cursor-pointer font-sans"
+                >
+                  Hacer Otro Pedido
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            /* CART + CHECKOUT STOREFLOW DIRECTLY INLINE */
+            <div className="relative z-10 space-y-8">
+              <div className="text-center max-w-2xl mx-auto space-y-3">
+                <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 font-bold text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full border border-emerald-200 font-sans">
+                  <Lock size={10} className="text-emerald-600 shrink-0" />
+                  Paso Final: Despacho de Almacén Directo
+                </span>
+                <h2 className="text-2xl md:text-3xl font-black text-[#1D1D1F] tracking-tight leading-tight font-sans">
+                  Formulario de Compra Rápida
+                </h2>
+                <p className="text-[#86868B] text-xs font-semibold font-sans">
+                  Completa tus datos de entrega nacional. El total de envío prioritario es <strong>totalmente gratis</strong>.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start text-left pt-2">
+                {/* COLUMN LEFT: Carrito de Compras (5 cols) */}
+                <div className="lg:col-span-5 bg-zinc-50 border border-zinc-200 rounded-3xl p-6 space-y-6">
+                  <div className="flex items-center justify-between border-b border-zinc-200/80 pb-3">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] flex items-center gap-1.5 font-sans">
+                      🛒 Resumen de Compra
+                    </h4>
+                    <span className="bg-[#1D1D1F] text-white font-black text-[10px] px-2.5 py-0.5 rounded-full select-none font-sans">
+                      x{quantity} {quantity === 1 ? 'unidad' : 'unidades'}
+                    </span>
+                  </div>
+
+                  {/* Cart Product Row */}
+                  <div className="bg-white border border-zinc-200 rounded-2xl p-4 flex gap-4 items-center">
+                    <div className="w-16 h-16 rounded-xl bg-zinc-50 overflow-hidden shrink-0 border border-zinc-200 relative">
+                      <img 
+                        src={productImages[0].url} 
+                        alt="WP200" 
+                        className="w-full h-full object-cover select-none" 
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block">{productInfo.brand}</span>
+                      <h5 className="font-extrabold text-xs text-[#1D1D1F] tracking-tight leading-tight font-sans">
+                        Impresora Térmica WP200 80mm
+                      </h5>
+                      <p className="text-xs font-black text-[#10B981]">
+                        S/ {unitPrice.toFixed(2)} <span className="text-[9px] text-[#86868B] font-semibold">(c/u)</span>
+                      </p>
+                    </div>
+
+                    {/* Integrated Counter Inside Product */}
+                    <div className="flex items-center gap-1 bg-[#F5F5F7] border border-zinc-200 rounded-full p-0.5 shadow-sm scale-90 origin-right shrink-0">
+                      <button 
+                        type="button"
+                        onClick={handleDecrement}
+                        className="w-7 h-7 rounded-full bg-white hover:bg-zinc-150 flex items-center justify-center text-[#1D1D1F] font-bold transition-all cursor-pointer border border-zinc-200/50"
+                        title="Disminuir"
+                      >
+                        <Minus size={11} />
+                      </button>
+                      <span className="w-5 text-center text-xs font-black text-[#1D1D1F] select-none font-sans">{quantity}</span>
+                      <button 
+                        type="button"
+                        onClick={handleIncrement}
+                        className="w-7 h-7 rounded-full bg-white hover:bg-zinc-150 flex items-center justify-center text-[#1D1D1F] font-bold transition-all cursor-pointer border border-zinc-200/50"
+                        title="Incrementar"
+                      >
+                        <Plus size={11} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Financial Invoice Details */}
+                  <div className="space-y-2 border-t border-zinc-200 pt-4 text-xs text-zinc-600 font-semibold font-sans">
+                    <div className="flex justify-between items-center text-zinc-500">
+                      <span>Valor de Compra Neto:</span>
+                      <span>S/ {calculatedSubtotal.toFixed(2)} PEN</span>
+                    </div>
+                    <div className="flex justify-between items-center text-zinc-500">
+                      <span>I.G.V. Nacional (18%):</span>
+                      <span>S/ {calculatedIGV.toFixed(2)} PEN</span>
+                    </div>
+                    <div className="flex justify-between items-center text-zinc-500 border-b border-zinc-200/65 pb-3">
+                      <span>Precio del Despacho:</span>
+                      <span className="text-emerald-600 font-bold uppercase tracking-wider font-sans">¡Envío Gratuito!</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 text-[#1D1D1F] font-sans">
+                      <span className="font-extrabold">Total Facturado Tienda:</span>
+                      <span className="text-xl font-black text-[#10B981] tracking-tighter sm:col-span-2">
+                        S/ {calculatedTotal.toFixed(2)} PEN
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Shop Reassurance Badge */}
+                  <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 text-left space-y-1">
+                    <span className="font-extrabold text-[10px] uppercase text-emerald-800 tracking-wide flex items-center gap-1 leading-none">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Beneficio Web Disponible Hoy
+                    </span>
+                    <p className="text-[10px] text-emerald-700 font-medium leading-relaxed font-sans">
+                      La tarifa promocional con envío rápido Priority Gratis a todo el país estará reservada temporalmente al registrar sus datos.
+                    </p>
+                  </div>
+                </div>
+
+                {/* COLUMN RIGHT: Formalización Despacho y Pago (7 cols) */}
+                <div className="lg:col-span-7 space-y-6">
+                  
+                  {/* STEP 1: Datos de Entrega */}
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-zinc-400 flex items-center gap-2 border-l-2 border-[#10B981] pl-2.5 font-sans">
+                      1. Información para la Entrega Directa
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5 sm:col-span-2 text-left">
+                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block font-sans">Nombre Completo del Comprador <span className="text-red-500">*</span></label>
+                        <input 
+                          type="text" 
+                          value={clientName}
+                          onChange={(e) => setClientName(e.target.value)}
+                          placeholder="Ej. Juan Pérez Alvarado" 
+                          className="w-full bg-[#F5F5F7]/40 border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981] transition-all font-sans"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5 text-left font-sans">
+                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block font-sans">Celular con WhatsApp <span className="text-red-500">*</span></label>
+                        <input 
+                          type="text" 
+                          value={clientPhone}
+                          onChange={(e) => setClientPhone(e.target.value)}
+                          placeholder="Ej. 989007409" 
+                          className="w-full bg-[#F5F5F7]/40 border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981] transition-all font-sans"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5 text-left font-sans">
+                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest block font-sans">Dirección Completa o Agencia <span className="text-red-500">*</span></label>
+                        <input 
+                          type="text" 
+                          value={deliveryAddress}
+                          onChange={(e) => setDeliveryAddress(e.target.value)}
+                          placeholder="Ej. Av. Arequipa 1234 / Agencia Shalom Chimbote" 
+                          className="w-full bg-[#F5F5F7]/40 border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981] transition-all font-sans"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* STEP 2: Elección de Forma de Pago Yape o BCP Simplificada */}
+                  <div className="space-y-4 bg-zinc-50 p-5 rounded-2xl border border-zinc-200 text-left">
+                    <h4 className="text-[11px] font-black uppercase tracking-wider text-zinc-500 flex items-center gap-1.5 font-sans">
+                      💳 Formas de Pago Aceptadas
+                    </h4>
+
+                    <div className="grid grid-cols-2 gap-3 font-sans">
+                      <div className="bg-purple-500/5 p-3 rounded-xl border border-purple-200/50 flex items-center justify-center gap-2 text-[11px] font-black text-purple-700 shadow-sm">
+                        📱 Yape Directo
+                      </div>
+                      <div className="bg-indigo-500/5 p-3 rounded-xl border border-indigo-200/50 flex items-center justify-center gap-2 text-[11px] font-black text-indigo-700 shadow-sm">
+                        🏦 Cuenta Corriente BCP
+                      </div>
+                    </div>
+
+                    <p className="text-[10.5px] text-zinc-650 leading-relaxed font-semibold font-sans">
+                      💡 <strong className="text-zinc-800">Proceso muy sencillo:</strong> Al hacer clic en el botón de abajo, se creará tu orden automática con envío gratuito a tu dirección y se abrirá nuestro WhatsApp oficial para que puedas enviar tu comprobante de Yape o BCP de forma rápida y segura. ¡Tu despacho se programa al instante!
+                    </p>
+                  </div>
+
+                  {/* SUBMIT BUTTON WITH SECURE SYMBOLS */}
+                  <div className="pt-4 border-t border-zinc-100 flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans">
+                    <span className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
+                      <Lock size={12} className="text-emerald-500 shrink-0" />
+                      Pedido rápido sin complicaciones con conexión segura.
+                    </span>
+
+                    <button 
+                      onClick={handleConfirmPurchase}
+                      disabled={orderStep === 'sending'}
+                      className="w-full md:w-auto bg-[#10B981] hover:bg-[#07a370] active:scale-[0.98] disabled:bg-zinc-300 text-white font-sans font-black py-4.5 px-8 rounded-2xl flex items-center justify-center gap-2 border border-emerald-600 text-sm tracking-tight transition-all shadow-lg shadow-emerald-500/15 cursor-pointer"
+                    >
+                      {orderStep === 'sending' ? (
+                        <span>Procesando pedido...</span>
+                      ) : (
+                        <>
+                          🛒 COMPRAR CON YAPE / BCP (S/ {calculatedTotal.toFixed(2)})
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
       </main>
 
-      {/* MODAL OVERLAY: FULL VIRTUAL STORE CHECKOUT PROCESS FLOW */}
-      <AnimatePresence>
-        {isCheckoutOpen && (
-          <div className="fixed inset-0 z-[9990] overflow-y-auto no-print flex items-center justify-center p-4">
-            
-            {/* Dark Blurred Glass Background Backdrop */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsCheckoutOpen(false)}
-              className="fixed inset-0 bg-zinc-950/70 backdrop-blur-md cursor-pointer"
-            />
 
-            {/* Modal Box Frame */}
-            <motion.div 
-              initial={{ opacity: 0, y: 50, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 30, scale: 0.95 }}
-              transition={{ type: "spring", damping: 25, stiffness: 180 }}
-              className="relative w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-[#E5E5E7] pointer-events-auto z-10 max-h-[92vh] flex flex-col"
-            >
-              {/* Visual Decorative Stripe */}
-              <div className="h-2 bg-gradient-to-r from-purple-500 via-[#10B981] to-[#005cbb]" />
-              
-              {/* Header inside Modal */}
-              <div className="px-6 md:px-10 pt-8 pb-4 flex items-center justify-between border-b border-zinc-100">
-                <div className="space-y-1">
-                  <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 font-bold text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full border border-emerald-250 font-sans">
-                    <Lock size={10} className="text-emerald-600 shrink-0" />
-                    Pasarela de Tienda Virtual Segura
-                  </span>
-                  <h3 className="text-xl md:text-2xl font-black text-[#1D1D1F] tracking-tight font-sans flex items-center gap-2">
-                    <ShoppingCart size={22} className="text-[#10B981]" />
-                    Resumen de Pedido y Caja
-                  </h3>
-                </div>
-                
-                {/* Close Button Button */}
-                <button 
-                  onClick={() => setIsCheckoutOpen(false)}
-                  className="text-zinc-400 hover:text-zinc-650 bg-[#F5F5F7] hover:bg-[#E5E5E7] p-2.5 rounded-full cursor-pointer transition-all duration-200 shrink-0 shadow-sm"
-                  title="Regresar a la Tienda"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Scrollable Modal Content View */}
-              <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8">
-                
-                {orderStep === 'confirmed' ? (
-                  /* SUCCESS CASE MESSAGE STATE */
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.96 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="text-center py-6 space-y-6 max-w-2xl mx-auto"
-                  >
-                    <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-500/20">
-                      <Check className="stroke-[3]" size={32} />
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <h3 className="text-2xl font-black text-[#1D1D1F] tracking-tight leading-tight font-sans">
-                        ¡Pedido Recibido con Éxito!
-                      </h3>
-                      <p className="text-sm text-zinc-600 font-bold leading-relaxed max-w-md mx-auto font-sans">
-                        Tu comprobante ha sido despachado de forma oficial. Un especialista de soporte validará tu entrega y envío nacional de inmediato por WhatsApp.
-                      </p>
-                    </div>
-
-                    {/* Dynamic printable receipt ticket */}
-                    <div className="p-5 bg-[#F5F5F7] rounded-2xl border border-zinc-200 text-left text-xs font-semibold text-zinc-700 space-y-2.5 shadow-inner">
-                      <div className="font-bold border-b border-dashed border-zinc-300 pb-2 text-center text-zinc-400 uppercase tracking-widest text-[9px] font-sans">Boleta Automatizada POS-TEC</div>
-                      <div className="flex justify-between items-center pb-2 border-b border-zinc-200/60">
-                        <span className="text-zinc-400 text-[10px] uppercase font-sans">Titular Comprador:</span>
-                        <span className="font-extrabold text-[#1D1D1F] font-sans">{clientName}</span>
-                      </div>
-                      <div className="flex justify-between items-center pb-2 border-b border-zinc-200/60">
-                        <span className="text-zinc-400 text-[10px] uppercase font-sans">Celular y WSP:</span>
-                        <span className="font-mono text-[#1D1D1F]">{clientPhone}</span>
-                      </div>
-                      <div className="flex justify-between items-center pb-2 border-b border-zinc-200/60">
-                        <span className="text-zinc-400 text-[10px] uppercase font-sans">Dirección de Despacho:</span>
-                        <span className="font-extrabold text-[#1D1D1F] text-right max-w-[220px] truncate font-sans">{deliveryAddress}</span>
-                      </div>
-                      <div className="flex justify-between items-center pb-2 border-b border-zinc-200/60">
-                        <span className="text-zinc-400 text-[10px] uppercase font-sans">Abonado vía:</span>
-                        <span className="font-bold text-zinc-905 uppercase font-sans">Pagar con Yape o Cuenta BCP</span>
-                      </div>
-                      <div className="flex justify-between items-center pt-1.5">
-                        <span className="text-zinc-450 text-[10px] uppercase font-sans">Monto Total Liquidado:</span>
-                        <span className="font-black text-emerald-600 text-sm font-sans">S/ {calculatedTotal.toFixed(2)} PEN</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
-                      <button 
-                        onClick={() => {
-                          const messageText = `*📦 COPIA PEDIDO REGISTRADO - POS-TEC 📦*\n\n` +
-                                              `*Fecha:* ${new Date().toLocaleDateString()}\n` +
-                                              `*Cliente:* ${clientName}\n` +
-                                              `*Teléfono:* ${clientPhone}\n` +
-                                              `*Dirección de Entrega:* ${deliveryAddress}\n\n` +
-                                              `*Producto:* Impresora Térmica WP200\n` +
-                                              `*Cantidad:* ${quantity} unidad(es)\n` +
-                                              `*Total:* S/ ${calculatedTotal.toFixed(2)}\n\n` +
-                                              `*Método de Pago Requerido:* Yape o Transferencia BCP\n` +
-                                              `_Adjuntaré captura de constancia de pago por este chat de WhatsApp._`;
-                          const encoded = encodeURIComponent(messageText);
-                          window.open(`https://api.whatsapp.com/send?phone=51905820448&text=${encoded}`, '_blank');
-                        }}
-                        className="bg-[#10B981] hover:bg-[#07a370] text-white py-3.5 px-6 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer font-sans shadow-md shadow-emerald-500/10"
-                      >
-                        💬 Reabrir Chat con Asesor WSP
-                      </button>
-                      <button 
-                        onClick={() => { setOrderStep('idle'); setIsCheckoutOpen(false); }}
-                        className="bg-zinc-100 hover:bg-zinc-200 text-[#1D1D1F] py-3.5 px-6 rounded-xl font-bold text-xs transition-all cursor-pointer font-sans"
-                      >
-                        Hacer Otro Pedido
-                      </button>
-                    </div>
-                  </motion.div>
-                ) : (
-                  /* CART + CHECKOUT STOREFLOW */
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start text-left">
-                    
-                    {/* COLUMN LEFT: Carrito de Compras (5 cols) */}
-                    <div className="lg:col-span-5 bg-zinc-50 border border-zinc-200 rounded-2xl p-5 space-y-5">
-                      <div className="flex items-center justify-between border-b border-zinc-200/85 pb-3">
-                        <h4 className="text-xs font-extrabold uppercase tracking-widest text-[#1D1D1F] flex items-center gap-1.5">
-                          🛒 Carrito de Compras
-                        </h4>
-                        <span className="bg-[#1D1D1F] text-white font-extrabold text-[10px] px-2 py-0.5 rounded-full select-none">
-                          x{quantity} {quantity === 1 ? 'ítem' : 'ítems'}
-                        </span>
-                      </div>
-
-                      {/* Cart Product Row */}
-                      <div className="bg-white border border-zinc-200/80 rounded-xl p-3.5 flex gap-3.5 items-center relative">
-                        <div className="w-16 h-16 rounded-lg bg-zinc-100 overflow-hidden relative shrink-0 border border-zinc-200">
-                          <img 
-                            src={productImages[0].url} 
-                            alt="WP200" 
-                            className="w-full h-full object-cover" 
-                            referrerPolicy="no-referrer"
-                          />
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider">{productInfo.brand}</span>
-                          <h5 className="font-extrabold text-xs text-[#1D1D1F] tracking-tight leading-tight">
-                            Impresora Térmica WP200 80mm
-                          </h5>
-                          <p className="text-xs font-black text-[#10B981]">
-                            S/ {unitPrice.toFixed(2)} <span className="text-[9px] text-[#86868B] font-semibold">(c/u)</span>
-                          </p>
-                        </div>
-
-                        {/* Integrated Counter Inside Product */}
-                        <div className="flex items-center gap-1 bg-zinc-50 border border-zinc-200/80 rounded-full p-0.5 shadow-sm scale-90 origin-right shrink-0">
-                          <button 
-                            type="button"
-                            onClick={handleDecrement}
-                            className="w-7 h-7 rounded-full bg-white hover:bg-zinc-100 flex items-center justify-center text-zinc-700 font-bold transition-all cursor-pointer"
-                            title="Disminuir"
-                          >
-                            <Minus size={12} />
-                          </button>
-                          <span className="w-5 text-center text-xs font-black text-[#1D1D1F] select-none">{quantity}</span>
-                          <button 
-                            type="button"
-                            onClick={handleIncrement}
-                            className="w-7 h-7 rounded-full bg-white hover:bg-zinc-100 flex items-center justify-center text-zinc-700 font-bold transition-all cursor-pointer"
-                            title="Incrementar"
-                          >
-                            <Plus size={12} />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Financial Invoice Details */}
-                      <div className="space-y-2 border-t border-zinc-200/85 pt-3.5 text-xs text-zinc-600 font-semibold">
-                        <div className="flex justify-between items-center text-zinc-500">
-                          <span>Valor de Compra Neto:</span>
-                          <span>S/ {calculatedSubtotal.toFixed(2)} PEN</span>
-                        </div>
-                        <div className="flex justify-between items-center text-zinc-500">
-                          <span>I.G.V. Nacional (18%):</span>
-                          <span>S/ {calculatedIGV.toFixed(2)} PEN</span>
-                        </div>
-                        <div className="flex justify-between items-center text-zinc-500 border-b border-zinc-200/60 pb-3">
-                          <span>Despacho Programado:</span>
-                          <span className="text-emerald-600 font-bold uppercase tracking-wider">¡Envío Gratuito!</span>
-                        </div>
-                        <div className="flex justify-between items-center pt-2 text-[#1D1D1F]">
-                          <span className="font-extrabold">Total Facturado Tienda:</span>
-                          <span className="text-xl font-black text-[#10B981] tracking-tighter">
-                            S/ {calculatedTotal.toFixed(2)} PEN
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Shop Reassurance Badge */}
-                      <div className="bg-emerald-50 rounded-xl p-3.5 border border-emerald-100 text-left space-y-1 pointer-events-none select-none">
-                        <span className="font-extrabold text-[10px] uppercase text-emerald-800 tracking-wide flex items-center gap-1 leading-none">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          Beneficio Web Disponible Hoy
-                        </span>
-                        <p className="text-[10px] text-emerald-700 font-medium leading-relaxed">
-                          La tarifa promo con envío Priority Gratis a todo el país estará reservada temporalmente al procesar esta orden.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* COLUMN RIGHT: Formalización Despacho y Pago (7 cols) */}
-                    <div className="lg:col-span-7 space-y-6">
-                      
-                      {/* STEP 1: Datos de Entrega */}
-                      <div className="space-y-4">
-                        <h4 className="text-xs font-black uppercase tracking-wider text-zinc-550 flex items-center gap-2 border-l-3 border-[#10B981] pl-2.5">
-                          1. Información para Entrega
-                        </h4>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-1.5 sm:col-span-2">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block font-sans">Nombre Completo del Titular <span className="text-red-500">*</span></label>
-                            <input 
-                              type="text" 
-                              value={clientName}
-                              onChange={(e) => setClientName(e.target.value)}
-                              placeholder="Ej. Juan Pérez Alvarado" 
-                              className="w-full bg-[#F5F5F7]/30 border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981] transition-all"
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block font-sans">Celular con WhatsApp <span className="text-red-500">*</span></label>
-                            <input 
-                              type="text" 
-                              value={clientPhone}
-                              onChange={(e) => setClientPhone(e.target.value)}
-                              placeholder="Ej. 989007409" 
-                              className="w-full bg-[#F5F5F7]/30 border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981] transition-all"
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-wider block font-sans">Dirección Completa o Agencia <span className="text-red-500">*</span></label>
-                            <input 
-                              type="text" 
-                              value={deliveryAddress}
-                              onChange={(e) => setDeliveryAddress(e.target.value)}
-                              placeholder="Ej. Av. Arequipa 1234 / Agencia Shalom Chimbote" 
-                              className="w-full bg-[#F5F5F7]/30 border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-900 font-bold placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#10B981] focus:border-[#10B981] transition-all"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* STEP 2: Elección de Forma de Pago Yape u BCP Simplificada */}
-                      <div className="space-y-4 bg-zinc-50 p-5 rounded-2xl border border-zinc-200 text-left">
-                        <h4 className="text-[11px] font-black uppercase tracking-wider text-zinc-500 flex items-center gap-1.5 font-sans">
-                          💳 Formas de Pago Aceptadas
-                        </h4>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-purple-500/5 p-3 rounded-xl border border-purple-200/50 flex items-center gap-2 text-[11px] font-black text-purple-700">
-                            📱 Yape Directo
-                          </div>
-                          <div className="bg-indigo-500/5 p-3 rounded-xl border border-indigo-200/50 flex items-center gap-2 text-[11px] font-black text-indigo-700">
-                            🏦 Cuenta BCP
-                          </div>
-                        </div>
-
-                        <p className="text-[10px] text-zinc-650 leading-relaxed font-semibold">
-                          💡 <strong className="text-zinc-800">Proceso muy sencillo:</strong> Al hacer clic en el botón de abajo, se creará tu orden automática con envío gratuito a tu dirección y se abrirá nuestro WhatsApp oficial para que puedas enviar tu comprobante de Yape o BCP de forma rápida y segura. ¡Tu despacho se programa al instante!
-                        </p>
-                      </div>
-
-                      {/* SUBMIT BUTTON WITH SECURE SYMBOLS */}
-                      <div className="pt-4 border-t border-zinc-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <span className="text-[10px] text-zinc-400 font-semibold flex items-center gap-1.5">
-                          <Lock size={12} className="text-emerald-500 shrink-0" />
-                          Pedido rápido sin complicaciones. Conexión SSL segura.
-                        </span>
-
-                        <button 
-                          onClick={handleConfirmPurchase}
-                          disabled={orderStep === 'sending'}
-                          className="w-full md:w-auto bg-[#10B981] hover:bg-[#07a370] disabled:bg-zinc-300 text-white font-sans font-black py-4.5 px-8 rounded-2xl flex items-center justify-center gap-2 border border-emerald-600 text-sm tracking-tight transition-all active:scale-[0.98] shadow-lg shadow-emerald-500/15 cursor-pointer"
-                        >
-                          {orderStep === 'sending' ? (
-                            <span>Procesando pedido...</span>
-                          ) : (
-                            <>
-                              🛒 COMPRAR CON YAPE / BCP (S/ {calculatedTotal.toFixed(2)})
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                    </div>
-
-                  </div>
-                )}
-
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Dynamic Lightbox Modal for zooming in on click */}
       <AnimatePresence>
