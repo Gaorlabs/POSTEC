@@ -54,6 +54,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/promocion" element={<ProductLandingPage />} />
+          <Route path="/campana" element={<ProductLandingPage />} />
           <Route path="/producto/pos-star-wp200" element={<ProductLandingPage />} />
         </Routes>
       </div>

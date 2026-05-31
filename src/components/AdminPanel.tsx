@@ -1396,7 +1396,7 @@ export default function AdminPanel() {
               </div>
               <div className="flex gap-2">
                 <a 
-                  href="/producto/pos-star-wp200" 
+                  href="/promocion" 
                   target="_blank" 
                   rel="noreferrer"
                   className="px-5 py-3 rounded-xl border border-apple-border/20 text-xs font-semibold hover:bg-apple-gray flex items-center gap-1.5 transition-colors"
