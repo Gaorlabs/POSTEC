@@ -30,45 +30,113 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { Logo } from './Logo';
-
-const productImages = [
-  {
-    url: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop",
-    title: "Diseño Frontal POS-STAR WP200",
-    desc: "Estructura robusta de grado industrial optimizada para espacios reducidos en mostradores y cajas."
-  },
-  {
-    url: "https://images.unsplash.com/photo-1563013544-824ae1d704d3?q=80&w=1000&auto=format&fit=crop",
-    title: "Carga Sencilla de Papel 80mm",
-    desc: "Compartimento de alimentación superior asistido por resortes. Cero atascos y cambio de rollo en 3 segundos."
-  },
-  {
-    url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1000&auto=format&fit=crop",
-    title: "Velocidad Extrema de 230mm/s",
-    desc: "Su cabezal de impresión térmica de alto rendimiento genera boletas y guías al instante con nitidez impecable."
-  },
-  {
-    url: "https://images.unsplash.com/photo-1556740758-90de374c12ad?q=80&w=1000&auto=format&fit=crop",
-    title: "Conexión Dual USB + RJ11",
-    desc: "Se conecta directamente a la PC/Laptop y acciona de forma automática la gaveta portamonedas en cada cobro."
-  },
-  {
-    url: "https://images.unsplash.com/photo-1472851294608-062f824d296e?q=80&w=1000&auto=format&fit=crop",
-    title: "Despacho Garantizado a Nivel Nacional",
-    desc: "Embalaje reforzado de fábrica listo para envíos express diarios por Olva, Shalom, Marvisur y más."
-  },
-  {
-    url: "https://images.unsplash.com/photo-1504274066651-8d31a536b11a?q=80&w=1000&auto=format&fit=crop",
-    title: "Cortador Automático de Acero",
-    desc: "Guillotina de acero aleado de alta precisión capaz de soportar hasta 1.5 millones de cortes limpios."
-  }
-];
+import { supabase } from '../lib/supabaseClient';
 
 export default function ProductLandingPage() {
+  const defaultProductInfo = {
+    name: "IMPRESORA TERMICA POS-STAR WP200 80MM USB+RJ11",
+    fullName: "IMPRESORA TERMICA POS-STAR WP200 80MM INTERFAZ USB + RJ11 VELOCIDAD 230MM/S",
+    price: 203.00,
+    brand: "POS-STAR",
+    type: "Impresora Térmica",
+    interface: "USB + RJ11",
+    paperSize: "80MM",
+    speed: "230MM/S",
+    shipping: "Envío a Todo el Perú",
+    deliveryTime: "De 12 a 72 horas",
+    offerType: "Precio solo Web",
+    driverUrl: "https://drive.google.com/drive/folders/1_ejemplo_id_carpeta_drivers",
+    manualUrl: "https://drive.google.com/file/d/1_ejemplo_id_manual_pdf/view",
+    yapePhone: "989 007 409",
+    yapePhoneRaw: "989007409",
+    yapeOwner: "Joaquín García",
+    bcpAccount: "191-1875953-0-18",
+    bcpAccountRaw: "1911875953018",
+    bcpCCI: "002-191-001875953018-53",
+    bcpCCIRaw: "00219100187595301853",
+    bcpOwner: "COPIERMAX EIR.",
+    whatsappPhone: "51905820448"
+  };
+
+  const defaultProductImages = [
+    {
+      url: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop",
+      title: "Diseño Frontal POS-STAR WP200",
+      desc: "Estructura robusta de grado industrial optimizada para espacios reducidos en mostradores y cajas."
+    },
+    {
+      url: "https://images.unsplash.com/photo-1563013544-824ae1d704d3?q=80&w=1000&auto=format&fit=crop",
+      title: "Carga Sencilla de Papel 80mm",
+      desc: "Compartimento de alimentación superior asistido por resortes. Cero atascos y cambio de rollo en 3 segundos."
+    },
+    {
+      url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1000&auto=format&fit=crop",
+      title: "Velocidad Extrema de 230mm/s",
+      desc: "Su cabezal de impresión térmica de alto rendimiento genera boletas y guías al instante con nitidez impecable."
+    },
+    {
+      url: "https://images.unsplash.com/photo-1556740758-90de374c12ad?q=80&w=1000&auto=format&fit=crop",
+      title: "Conexión Dual USB + RJ11",
+      desc: "Se conecta directamente a la PC/Laptop y acciona de forma automática la gaveta portamonedas en cada cobro."
+    },
+    {
+      url: "https://images.unsplash.com/photo-1472851294608-062f824d296e?q=80&w=1000&auto=format&fit=crop",
+      title: "Despacho Garantizado a Nivel Nacional",
+      desc: "Embalaje reforzado de fábrica listo para envíos express diarios por Olva, Shalom, Marvisur y más."
+    },
+    {
+      url: "https://images.unsplash.com/photo-1504274066651-8d31a536b11a?q=80&w=1000&auto=format&fit=crop",
+      title: "Cortador Automático de Acero",
+      desc: "Guillotina de acero aleado de alta precisión capaz de soportar hasta 1.5 millones de cortes limpios."
+    }
+  ];
+
+  const [productInfo, setProductInfo] = useState(defaultProductInfo);
+  const [productImages, setProductImages] = useState(defaultProductImages);
   const [quantity, setQuantity] = useState(1);
   const [isOrdered, setIsOrdered] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  // Dynamic configuration loader from database
+  useEffect(() => {
+    async function loadDynamicConfig() {
+      try {
+        const { data, error } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'lander_config')
+          .single();
+        if (!error && data && data.value) {
+          const val = data.value;
+          // merge defaults with fields that exist to avoid missing data crash
+          if (val.productInfo) {
+            setProductInfo(prev => ({ ...prev, ...val.productInfo }));
+          }
+          if (val.productImages && Array.isArray(val.productImages) && val.productImages.length > 0) {
+            setProductImages(val.productImages);
+          }
+          localStorage.setItem('lander_config', JSON.stringify(val));
+        } else {
+          const local = localStorage.getItem('lander_config');
+          if (local) {
+            const parsed = JSON.parse(local);
+            if (parsed.productInfo) setProductInfo(prev => ({ ...prev, ...parsed.productInfo }));
+            if (parsed.productImages) setProductImages(parsed.productImages);
+          }
+        }
+      } catch (err) {
+        console.warn("Fallo cargando config remota, usando local cache:", err);
+        const local = localStorage.getItem('lander_config');
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (parsed.productInfo) setProductInfo(prev => ({ ...prev, ...parsed.productInfo }));
+          if (parsed.productImages) setProductImages(parsed.productImages);
+        }
+      }
+    }
+    loadDynamicConfig();
+  }, []);
   
   // Keyboard navigation for Lightbox
   useEffect(() => {
@@ -84,7 +152,7 @@ export default function ProductLandingPage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLightboxOpen]);
+  }, [isLightboxOpen, productImages]);
   
   // Virtual Store States
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -117,22 +185,6 @@ export default function ProductLandingPage() {
   // Google Drive Help Guide States
   const [isDriveGuideOpen, setIsDriveGuideOpen] = useState(false);
   const [driveGuideTab, setDriveGuideTab] = useState<'driver' | 'manual'>('driver');
-
-  const productInfo = {
-    name: "IMPRESORA TERMICA POS-STAR WP200 80MM USB+RJ11",
-    fullName: "IMPRESORA TERMICA POS-STAR WP200 80MM INTERFAZ USB + RJ11 VELOCIDAD 230MM/S",
-    price: 203.00,
-    brand: "POS-STAR",
-    type: "Impresora Térmica",
-    interface: "USB + RJ11",
-    paperSize: "80MM",
-    speed: "230MM/S",
-    shipping: "Envío a Todo el Perú",
-    deliveryTime: "De 12 a 72 horas",
-    offerType: "Precio solo Web",
-    driverUrl: "https://drive.google.com/drive/folders/1_ejemplo_id_carpeta_drivers",
-    manualUrl: "https://drive.google.com/file/d/1_ejemplo_id_manual_pdf/view"
-  };
 
   const handleIncrement = () => setQuantity(prev => prev + 1);
   const handleDecrement = () => setQuantity(prev => Math.max(1, prev - 1));
@@ -193,6 +245,29 @@ export default function ProductLandingPage() {
 
     const message = paymentMethod === 'yape' ? yapeMsg : bcpMsg;
 
+    // Guardar pedido en Supabase para el panel CRM / Pedidos
+    try {
+      await supabase.from('orders').insert([
+        {
+          customer_name: clientName,
+          customer_whatsapp: clientPhone,
+          customer_address: deliveryAddress,
+          items: [
+            {
+              id: 9999,
+              name: productInfo.fullName,
+              price: productInfo.price,
+              quantity: quantity
+            }
+          ],
+          total: calculatedTotal,
+          status: 'pendiente'
+        }
+      ]);
+    } catch (dbErr) {
+      console.warn("No se pudo persistir el pedido en la BD de Supabase:", dbErr);
+    }
+
     // Optionally trigger n8n Webhook directly from localstorage
     const n8nWebhookUrl = localStorage.getItem('n8n_webhook_url') || '';
     if (n8nWebhookUrl) {
@@ -209,7 +284,7 @@ export default function ProductLandingPage() {
             yapeOperationCode: paymentMethod === 'yape' ? yapeOperationCode : 'bcp_transfer_pending',
             total: purchaseTotalText,
             quantity,
-            product: "Impresora Térmica POS-STAR WP200",
+            product: productInfo.fullName,
             date: formattedDate
           })
         });
@@ -222,7 +297,7 @@ export default function ProductLandingPage() {
     setTimeout(() => {
       setOrderStep('confirmed');
       const encodedText = encodeURIComponent(message);
-      const url = `https://api.whatsapp.com/send?phone=51905820448&text=${encodedText}`;
+      const url = `https://api.whatsapp.com/send?phone=${productInfo.whatsappPhone || '51905820448'}&text=${encodedText}`;
       window.open(url, '_blank');
       setIsOrdered(true);
     }, 1200);
@@ -946,10 +1021,10 @@ export default function ProductLandingPage() {
                           <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">1. Paga desde tu app Yape:</p>
                           <div className="bg-[#F8F6FC] rounded-lg p-3 text-xs font-black text-purple-950 flex flex-col gap-1 border border-purple-100/50">
                             <div className="flex items-center justify-between">
-                              <span className="text-[#8B5CF6] font-extrabold text-[13px]">📱 Celular Yape: 989 007 409</span>
+                              <span className="text-[#8B5CF6] font-extrabold text-[13px]">📱 Celular Yape: {productInfo.yapePhone || '989 007 409'}</span>
                               <button
                                 type="button"
-                                onClick={() => handleCopyToClipboard('989007409', 'yape')}
+                                onClick={() => handleCopyToClipboard(productInfo.yapePhoneRaw || '989007409', 'yape')}
                                 className="flex items-center gap-1.5 text-[10px] bg-purple-150 text-purple-700 hover:bg-purple-200 hover:text-purple-800 transition-all font-bold px-2 py-1 rounded-lg cursor-pointer"
                               >
                                 {copiedText === 'yape' ? (
@@ -963,7 +1038,7 @@ export default function ProductLandingPage() {
                                 )}
                               </button>
                             </div>
-                            <span className="text-zinc-600 font-semibold block text-[11px] mt-0.5">Titular de Cuenta: Joaquín García</span>
+                            <span className="text-zinc-600 font-semibold block text-[11px] mt-0.5">Titular de Cuenta: {productInfo.yapeOwner || 'Joaquín García'}</span>
                             <span className="text-[#6D28D9] font-black">Monto exacto: S/ {calculatedTotal.toFixed(2)} PEN</span>
                           </div>
                         </div>
@@ -993,10 +1068,10 @@ export default function ProductLandingPage() {
                             <div className="space-y-1">
                               <p className="font-extrabold text-[#111] text-[11px]">🏦 Cuenta Corriente BCP soles:</p>
                               <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-indigo-100/60">
-                                <span className="font-mono font-black text-indigo-700 text-xs">191-1875953-0-18</span>
+                                <span className="font-mono font-black text-indigo-700 text-xs">{productInfo.bcpAccount || '191-1875953-0-18'}</span>
                                 <button
                                   type="button"
-                                  onClick={() => handleCopyToClipboard('1911875953018', 'bcp')}
+                                  onClick={() => handleCopyToClipboard(productInfo.bcpAccountRaw || '1911875953018', 'bcp')}
                                   className="flex items-center gap-1 text-[9px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-850 px-1.5 py-0.5 rounded transition-all font-bold cursor-pointer"
                                 >
                                   {copiedText === 'bcp' ? (
@@ -1015,10 +1090,10 @@ export default function ProductLandingPage() {
                             <div className="space-y-1">
                               <p className="text-zinc-500 text-[9px] uppercase font-bold">CCI Interbancario BCP:</p>
                               <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-indigo-100/60 font-sans">
-                                <span className="font-mono text-zinc-700 text-[10px]">002-191-001875953018-53</span>
+                                <span className="font-mono text-zinc-700 text-[10px]">{productInfo.bcpCCI || '002-191-001875953018-53'}</span>
                                 <button
                                   type="button"
-                                  onClick={() => handleCopyToClipboard('00219100187595301853', 'cci')}
+                                  onClick={() => handleCopyToClipboard(productInfo.bcpCCIRaw || '00219100187595301853', 'cci')}
                                   className="flex items-center gap-1 text-[9px] bg-zinc-100 text-zinc-650 hover:bg-zinc-200 hover:text-zinc-800 px-1.5 py-0.5 rounded transition-all font-bold cursor-pointer"
                                 >
                                   {copiedText === 'cci' ? (
@@ -1034,7 +1109,7 @@ export default function ProductLandingPage() {
                               </div>
                             </div>
 
-                            <p className="text-[9px] text-zinc-500 mt-0.5">Beneficiario: <strong className="text-zinc-700 font-bold">COPIERMAX EIR.</strong></p>
+                            <p className="text-[9px] text-zinc-500 mt-0.5">Beneficiario: <strong className="text-zinc-700 font-bold">{productInfo.bcpOwner || 'COPIERMAX EIR.'}</strong></p>
                           </div>
                         </div>
 

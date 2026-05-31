@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabaseClient';
 import { Product, Order, Customer, Interaction } from '../types';
-import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail, Upload, Bell, BellOff, Search, Filter, Share2, Facebook, Instagram, Music, Send, Link, Copy, Download } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, ShoppingBag, ArrowLeft, Save, X, ExternalLink, RefreshCw, Zap, ChevronRight, Users, Settings, MessageCircle, Phone, Mail, Upload, Bell, BellOff, Search, Filter, Share2, Facebook, Instagram, Music, Send, Link, Copy, Download, Globe } from 'lucide-react';
 import { buildWhatsAppMessage } from '../lib/whatsapp';
 import { motion, AnimatePresence } from 'motion/react';
 import ProductModal from './ProductModal';
@@ -12,13 +12,74 @@ import AdminLogin from './AdminLogin';
 
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('admin_auth') === 'true');
-  const [activeTab, setActiveTab] = useState<'products' | 'combos' | 'orders' | 'crm' | 'settings' | 'labels'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'combos' | 'orders' | 'crm' | 'settings' | 'labels' | 'lander'>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [combos, setCombos] = useState<any[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [labels, setLabels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const defaultProductInfo = {
+    name: "IMPRESORA TERMICA POS-STAR WP200 80MM USB+RJ11",
+    fullName: "IMPRESORA TERMICA POS-STAR WP200 80MM INTERFAZ USB + RJ11 VELOCIDAD 230MM/S",
+    price: 203.00,
+    brand: "POS-STAR",
+    type: "Impresora Térmica",
+    interface: "USB + RJ11",
+    paperSize: "80MM",
+    speed: "230MM/S",
+    shipping: "Envío a Todo el Perú",
+    deliveryTime: "De 12 a 72 horas",
+    offerType: "Precio solo Web",
+    driverUrl: "https://drive.google.com/drive/folders/1_ejemplo_id_carpeta_drivers",
+    manualUrl: "https://drive.google.com/file/d/1_ejemplo_id_manual_pdf/view",
+    yapePhone: "989 007 409",
+    yapePhoneRaw: "989007409",
+    yapeOwner: "Joaquín García",
+    bcpAccount: "191-1875953-0-18",
+    bcpAccountRaw: "1911875953018",
+    bcpCCI: "002-191-001875953018-53",
+    bcpCCIRaw: "00219100187595301853",
+    bcpOwner: "COPIERMAX EIR.",
+    whatsappPhone: "51905820448"
+  };
+
+  const defaultProductImages = [
+    {
+      url: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop",
+      title: "Diseño Frontal POS-STAR WP200",
+      desc: "Estructura robusta de grado industrial optimizada para espacios reducidos en mostradores y cajas."
+    },
+    {
+      url: "https://images.unsplash.com/photo-1563013544-824ae1d704d3?q=80&w=1000&auto=format&fit=crop",
+      title: "Carga Sencilla de Papel 80mm",
+      desc: "Compartimento de alimentación superior asistido por resortes. Cero atascos y cambio de rollo en 3 segundos."
+    },
+    {
+      url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1000&auto=format&fit=crop",
+      title: "Velocidad Extrema de 230mm/s",
+      desc: "Su cabezal de impresión térmica de alto rendimiento genera boletas y guías al instante con nitidez impecable."
+    },
+    {
+      url: "https://images.unsplash.com/photo-1556740758-90de374c12ad?q=80&w=1000&auto=format&fit=crop",
+      title: "Conexión Dual USB + RJ11",
+      desc: "Se conecta directamente a la PC/Laptop y acciona de forma automática la gaveta portamonedas en cada cobro."
+    },
+    {
+      url: "https://images.unsplash.com/photo-1472851294608-062f824d296e?q=80&w=1000&auto=format&fit=crop",
+      title: "Despacho Garantizado a Nivel Nacional",
+      desc: "Embalaje reforzado de fábrica listo para envíos express diarios por Olva, Shalom, Marvisur y más."
+    },
+    {
+      url: "https://images.unsplash.com/photo-1504274066651-8d31a536b11a?q=80&w=1000&auto=format&fit=crop",
+      title: "Cortador Automático de Acero",
+      desc: "Guillotina de acero aleado de alta precisión capaz de soportar hasta 1.5 millones de cortes limpios."
+    }
+  ];
+
+  const [landerConfig, setLanderConfig] = useState<any>({ productInfo: defaultProductInfo, productImages: defaultProductImages });
+  const [savingLander, setSavingLander] = useState(false);
   
   // Product Modal State
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -57,6 +118,7 @@ export default function AdminPanel() {
     if (isAuthenticated) {
       fetchData();
       fetchSettings();
+      fetchLanderConfig();
       
       // Request notification permission
       if ("Notification" in window) {
@@ -170,6 +232,17 @@ export default function AdminPanel() {
       .eq('key', 'general')
       .single();
     if (!error && data) setSettings(data.value);
+  }
+
+  async function fetchLanderConfig() {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'lander_config')
+      .single();
+    if (!error && data && data.value) {
+      setLanderConfig(data.value);
+    }
   }
 
   const handleAddInteraction = async (e: React.FormEvent) => {
@@ -357,6 +430,88 @@ export default function AdminPanel() {
       fetchLabels();
     } catch (error) {
       console.error('Error deleting label:', error);
+    }
+  };
+
+  const handleSaveLanderConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingLander(true);
+    const formData = new FormData(e.currentTarget);
+    
+    const updatedLanderConfig = {
+      productInfo: {
+        name: formData.get('lander_name') as string,
+        fullName: formData.get('lander_fullName') as string,
+        price: parseFloat(formData.get('lander_price') as string) || 0,
+        brand: formData.get('lander_brand') as string,
+        type: formData.get('lander_type') as string,
+        interface: formData.get('lander_interface') as string,
+        paperSize: formData.get('lander_paperSize') as string,
+        speed: formData.get('lander_speed') as string,
+        shipping: formData.get('lander_shipping') as string,
+        deliveryTime: formData.get('lander_deliveryTime') as string,
+        offerType: formData.get('lander_offerType') as string,
+        driverUrl: formData.get('lander_driverUrl') as string,
+        manualUrl: formData.get('lander_manualUrl') as string,
+        yapePhone: formData.get('lander_yapePhone') as string,
+        yapePhoneRaw: formData.get('lander_yapePhoneRaw') as string,
+        yapeOwner: formData.get('lander_yapeOwner') as string,
+        bcpAccount: formData.get('lander_bcpAccount') as string,
+        bcpAccountRaw: formData.get('lander_bcpAccountRaw') as string,
+        bcpCCI: formData.get('lander_bcpCCI') as string,
+        bcpCCIRaw: formData.get('lander_bcpCCIRaw') as string,
+        bcpOwner: formData.get('lander_bcpOwner') as string,
+        whatsappPhone: formData.get('lander_whatsappPhone') as string
+      },
+      productImages: [
+        {
+          url: formData.get('img_url_0') as string,
+          title: formData.get('img_title_0') as string,
+          desc: formData.get('img_desc_0') as string
+        },
+        {
+          url: formData.get('img_url_1') as string,
+          title: formData.get('img_title_1') as string,
+          desc: formData.get('img_desc_1') as string
+        },
+        {
+          url: formData.get('img_url_2') as string,
+          title: formData.get('img_title_2') as string,
+          desc: formData.get('img_desc_2') as string
+        },
+        {
+          url: formData.get('img_url_3') as string,
+          title: formData.get('img_title_3') as string,
+          desc: formData.get('img_desc_3') as string
+        },
+        {
+          url: formData.get('img_url_4') as string,
+          title: formData.get('img_title_4') as string,
+          desc: formData.get('img_desc_4') as string
+        },
+        {
+          url: formData.get('img_url_5') as string,
+          title: formData.get('img_title_5') as string,
+          desc: formData.get('img_desc_5') as string
+        }
+      ]
+    };
+
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ key: 'lander_config', value: updatedLanderConfig }, { onConflict: 'key' });
+
+      if (error) throw error;
+      
+      setLanderConfig(updatedLanderConfig);
+      localStorage.setItem('lander_config', JSON.stringify(updatedLanderConfig));
+      alert('¡Plantilla Landing Page actualizada correctamente en vivo!');
+    } catch (error: any) {
+      console.error('Error saving lander config:', error);
+      alert(`Error al guardar la plantilla: ${error.message || 'Error desconocido'}`);
+    } finally {
+      setSavingLander(false);
     }
   };
 
@@ -551,6 +706,7 @@ export default function AdminPanel() {
             { id: 'combos', label: 'Combos', icon: Package },
             { id: 'orders', label: 'Pedidos', icon: ShoppingBag },
             { id: 'crm', label: 'CRM', icon: Users },
+            { id: 'lander', label: 'Plantilla Landing', icon: Globe },
             { id: 'labels', label: 'Etiquetas', icon: Zap },
             { id: 'settings', label: 'Configuración', icon: Settings },
           ].map(tab => (
@@ -1226,6 +1382,424 @@ export default function AdminPanel() {
                 </div>
               )}
             </div>
+          </motion.div>
+        ) : activeTab === 'lander' ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-10"
+          >
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-apple-border/10 pb-6">
+              <div>
+                <h2 className="text-2xl md:text-[2.5rem] font-bold tracking-tight leading-tight">Configuración de Plantilla Landing Page</h2>
+                <p className="text-apple-sub text-base md:text-lg mt-1 md:mt-2">Administra el producto de campaña, fotos del carrusel, cuentas bancarias y números de contacto sin tocar código.</p>
+              </div>
+              <div className="flex gap-2">
+                <a 
+                  href="/producto/pos-star-wp200" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="px-5 py-3 rounded-xl border border-apple-border/20 text-xs font-semibold hover:bg-apple-gray flex items-center gap-1.5 transition-colors"
+                >
+                  <ExternalLink size={14} /> Ver Landing Online
+                </a>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveLanderConfig} className="space-y-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                
+                {/* COLUMN 1: PRODUCT DETAILS */}
+                <div className="apple-card p-8 md:p-10 space-y-6 bg-white rounded-3xl border border-apple-border/5 shadow-md">
+                  <h3 className="text-lg font-black text-apple-dark border-b border-apple-border/10 pb-3 flex items-center gap-2">
+                    🛍️ Datos del Producto de Campaña
+                  </h3>
+                  
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Nombre Corto en Landing</label>
+                    <input 
+                      required
+                      name="lander_name" 
+                      type="text" 
+                      className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                      placeholder="Ej. IMPRESORA TERMICA POS-STAR WP200 80MM USB+RJ11" 
+                      defaultValue={landerConfig?.productInfo?.name || ''} 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Nombre Completo de Confirmación</label>
+                    <textarea 
+                      required
+                      name="lander_fullName" 
+                      rows={2}
+                      className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                      placeholder="Ej. IMPRESORA TERMICA POS-STAR WP200 80MM INTERFAZ USB + RJ11 VELOCIDAD 230MM/S" 
+                      defaultValue={landerConfig?.productInfo?.fullName || ''} 
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Precio Fijo en Web (S/.)</label>
+                      <input 
+                        required
+                        name="lander_price" 
+                        type="number" 
+                        step="0.01"
+                        className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                        placeholder="203.00" 
+                        defaultValue={landerConfig?.productInfo?.price || ''} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Marca</label>
+                      <input 
+                        required
+                        name="lander_brand" 
+                        type="text" 
+                        className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                        placeholder="Ej. POS-STAR" 
+                        defaultValue={landerConfig?.productInfo?.brand || ''} 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Categoría/Tipo</label>
+                      <input 
+                        required
+                        name="lander_type" 
+                        type="text" 
+                        className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                        placeholder="Ej. Impresora Térmica" 
+                        defaultValue={landerConfig?.productInfo?.type || ''} 
+                    />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Puertos / Interfaz</label>
+                      <input 
+                        required
+                        name="lander_interface" 
+                        type="text" 
+                        className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                        placeholder="Ej. USB + RJ11" 
+                        defaultValue={landerConfig?.productInfo?.interface || ''} 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Ancho de Papel</label>
+                      <input 
+                        required
+                        name="lander_paperSize" 
+                        type="text" 
+                        className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                        placeholder="Ej. 80MM" 
+                        defaultValue={landerConfig?.productInfo?.paperSize || ''} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Velocidad</label>
+                      <input 
+                        required
+                        name="lander_speed" 
+                        type="text" 
+                        className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                        placeholder="Ej. 230MM/S" 
+                        defaultValue={landerConfig?.productInfo?.speed || ''} 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Detalle de Envío</label>
+                      <input 
+                        required
+                        name="lander_shipping" 
+                        type="text" 
+                        className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                        placeholder="Ej. Envío a Todo el Perú" 
+                        defaultValue={landerConfig?.productInfo?.shipping || ''} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Tiempo de Entrega</label>
+                      <input 
+                        required
+                        name="lander_deliveryTime" 
+                        type="text" 
+                        className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                        placeholder="Ej. De 12 a 72 horas" 
+                        defaultValue={landerConfig?.productInfo?.deliveryTime || ''} 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Texto Leyenda de Oferta</label>
+                    <input 
+                      required
+                      name="lander_offerType" 
+                      type="text" 
+                      className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                      placeholder="Ej. Precio solo Web" 
+                      defaultValue={landerConfig?.productInfo?.offerType || ''} 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Enlace del Driver (Google Drive)</label>
+                    <input 
+                      required
+                      name="lander_driverUrl" 
+                      type="url" 
+                      className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                      placeholder="https://drive.google.com/..." 
+                      defaultValue={landerConfig?.productInfo?.driverUrl || ''} 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Enlace del Manual PDF (Google Drive)</label>
+                    <input 
+                      required
+                      name="lander_manualUrl" 
+                      type="url" 
+                      className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                      placeholder="https://drive.google.com/..." 
+                      defaultValue={landerConfig?.productInfo?.manualUrl || ''} 
+                    />
+                  </div>
+                </div>
+
+                {/* COLUMN 2: RECIPIENT BANK ACCOUNTS & CONTACT FOR LANDER */}
+                <div className="space-y-10">
+                  <div className="apple-card p-8 md:p-10 space-y-6 bg-white rounded-3xl border border-apple-border/5 shadow-md">
+                    <h3 className="text-lg font-black text-apple-dark border-b border-apple-border/10 pb-3 flex items-center gap-2 font-sans">
+                      💳 Recaudación y Contacto Directo
+                    </h3>
+
+                    {/* Yape Credentials block */}
+                    <div className="bg-purple-50/50 p-5 rounded-2xl border border-purple-100 space-y-4">
+                      <h4 className="text-xs font-black text-purple-900 uppercase tracking-widest flex items-center gap-1.5 font-sans">
+                        📱 Cuentas Yape Directo
+                      </h4>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase text-purple-700 block font-sans">Celular Yape (Visible)</label>
+                          <input 
+                            required
+                            name="lander_yapePhone" 
+                            type="text" 
+                            className="apple-input bg-white w-full px-3 py-2 text-xs font-sans font-bold" 
+                            placeholder="989 007 409" 
+                            defaultValue={landerConfig?.productInfo?.yapePhone || ''} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase text-purple-700 block font-sans">Celular Yape (Número Puro)</label>
+                          <input 
+                            required
+                            name="lander_yapePhoneRaw" 
+                            type="text" 
+                            className="apple-input bg-white w-full px-3 py-2 text-xs font-mono" 
+                            placeholder="989007409" 
+                            defaultValue={landerConfig?.productInfo?.yapePhoneRaw || ''} 
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase text-purple-700 block font-sans">Titular de Cuenta Yape</label>
+                        <input 
+                          required
+                          name="lander_yapeOwner" 
+                          type="text" 
+                          className="apple-input bg-white w-full px-3 py-2 text-xs font-sans font-semibold" 
+                          placeholder="Joaquín García" 
+                          defaultValue={landerConfig?.productInfo?.yapeOwner || ''} 
+                        />
+                      </div>
+                    </div>
+
+                    {/* BCP Credentials block */}
+                    <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100 space-y-4">
+                      <h4 className="text-xs font-black text-indigo-900 uppercase tracking-widest flex items-center gap-1.5 font-sans">
+                        🏦 Cuentas Corrientes BCP
+                      </h4>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2 font-sans">
+                          <label className="text-[10px] font-bold uppercase text-indigo-700 block font-sans">Nro de Cuenta BCP (Visible)</label>
+                          <input 
+                            required
+                            name="lander_bcpAccount" 
+                            type="text" 
+                            className="apple-input bg-white w-full px-3 py-2 text-xs font-mono" 
+                            placeholder="191-1875953-0-18" 
+                            defaultValue={landerConfig?.productInfo?.bcpAccount || ''} 
+                          />
+                        </div>
+                        <div className="space-y-2 font-sans">
+                          <label className="text-[10px] font-bold uppercase text-indigo-700 block font-sans">Nro BCP Puro (Copiar)</label>
+                          <input 
+                            required
+                            name="lander_bcpAccountRaw" 
+                            type="text" 
+                            className="apple-input bg-white w-full px-3 py-2 text-xs font-mono" 
+                            placeholder="1911875953018" 
+                            defaultValue={landerConfig?.productInfo?.bcpAccountRaw || ''} 
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase text-indigo-700 block font-sans">Nro CCI (Visible)</label>
+                          <input 
+                            required
+                            name="lander_bcpCCI" 
+                            type="text" 
+                            className="apple-input bg-white w-full px-3 py-2 text-xs font-mono" 
+                            placeholder="002-191-001875953018-53" 
+                            defaultValue={landerConfig?.productInfo?.bcpCCI || ''} 
+                          />
+                        </div>
+                        <div className="space-y-2 col-span-1">
+                          <label className="text-[10px] font-bold uppercase text-indigo-700 block font-sans">Nro CCI Puro (Copiar)</label>
+                          <input 
+                            required
+                            name="lander_bcpCCIRaw" 
+                            type="text" 
+                            className="apple-input bg-white w-full px-3 py-2 text-xs font-mono" 
+                            placeholder="00219100187595301853" 
+                            defaultValue={landerConfig?.productInfo?.bcpCCIRaw || ''} 
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 font-sans">
+                        <label className="text-[10px] font-bold uppercase text-indigo-700 block font-sans">Titular / Razón Social BCP</label>
+                        <input 
+                          required
+                          name="lander_bcpOwner" 
+                          type="text" 
+                          className="apple-input bg-white w-full px-3 py-2 text-xs font-sans font-semibold" 
+                          placeholder="COPIERMAX EIR." 
+                          defaultValue={landerConfig?.productInfo?.bcpOwner || ''} 
+                        />
+                      </div>
+                    </div>
+
+                    {/* WhatsApp Redirect settings */}
+                    <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100/60 space-y-3 font-sans">
+                      <h4 className="text-xs font-black text-emerald-900 uppercase tracking-widest flex items-center gap-1.5 font-sans">
+                        💬 Redirección y Notificación WhatsApp
+                      </h4>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase text-emerald-700 block font-sans">Número WhatsApp Destinatario (Con Código País)</label>
+                        <input 
+                          required
+                          name="lander_whatsappPhone" 
+                          type="text" 
+                          className="apple-input bg-white w-full px-4 py-3 text-xs font-sans font-bold" 
+                          placeholder="Ej. 51905820448" 
+                          defaultValue={landerConfig?.productInfo?.whatsappPhone || ''} 
+                        />
+                        <p className="text-[9px] text-zinc-400 font-semibold leading-relaxed">
+                          Ingresa el número al cual llegará el informe y confirmación de compra sin el caracter "+" (ej: 51905820448 para Perú).
+                        </p>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+              {/* CARD 3: CAROUSEL CHARACTERISTICS AND IMAGES (6 blocks) */}
+              <div className="apple-card p-8 md:p-10 space-y-6 bg-white rounded-3xl border border-apple-border/5 shadow-md">
+                <h3 className="text-lg font-black text-apple-dark border-b border-apple-border/10 pb-3 flex items-center gap-2 font-sans">
+                  🖼️ Fotos del Carrusel y Características Principales (Requerido 6 Bloques)
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[0, 1, 2, 3, 4, 5].map((index) => {
+                    const img = landerConfig?.productImages?.[index] || { url: '', title: '', desc: '' };
+                    return (
+                      <div key={index} className="bg-apple-gray/30 p-5 rounded-2xl border border-apple-border/10 space-y-4 text-left">
+                        <span className="text-[9px] font-black uppercase tracking-widest bg-apple-sub/10 text-apple-sub px-2 py-0.5 rounded">
+                          Bloque {index + 1}
+                        </span>
+
+                        <div className="space-y-2 font-sans">
+                          <label className="text-[10.5px] font-bold text-apple-sub uppercase tracking-wider block">URL de la Imagen</label>
+                          <input 
+                            required
+                            name={`img_url_${index}`}
+                            type="url"
+                            className="apple-input bg-white w-full px-3 py-2 text-xs text-zinc-700 font-medium"
+                            placeholder="https://images.unsplash.com/..."
+                            defaultValue={img.url}
+                          />
+                        </div>
+
+                        <div className="space-y-2 font-sans">
+                          <label className="text-[10.5px] font-bold text-apple-sub uppercase tracking-wider block">Título de Característica</label>
+                          <input 
+                            required
+                            name={`img_title_${index}`}
+                            type="text"
+                            className="apple-input bg-white w-full px-3 py-2 text-xs font-semibold text-apple-dark"
+                            placeholder="Ej. Velocidad Extrema de 230mm/s"
+                            defaultValue={img.title}
+                          />
+                        </div>
+
+                        <div className="space-y-2 font-sans">
+                          <label className="text-[10.5px] font-bold text-apple-sub uppercase tracking-wider block">Descripción Detallada</label>
+                          <textarea 
+                            required
+                            name={`img_desc_${index}`}
+                            rows={3}
+                            className="apple-input bg-white w-full px-3 py-2 text-xs leading-relaxed text-apple-sub font-medium"
+                            placeholder="Ej. Estructura robusta de grado industrial optimizada..."
+                            defaultValue={img.desc}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* SAVE THE WHOLE PRODUCT CAMPAIGN TEMPLATE */}
+              <div className="flex justify-end pt-5">
+                <button 
+                  type="submit" 
+                  disabled={savingLander}
+                  className="apple-button w-full md:w-auto px-10 py-5 text-base font-bold bg-apple-dark text-white rounded-2xl shadow-xl hover:bg-apple-dark/95 flex items-center justify-center gap-2 group transition-all"
+                >
+                  {savingLander ? (
+                    <>
+                      <RefreshCw className="animate-spin" size={18} /> Guardando Cambios...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={18} className="group-hover:scale-105 transition-transform" /> Guardar Cambios de Plantilla
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </form>
           </motion.div>
         ) : (
           <motion.div 
