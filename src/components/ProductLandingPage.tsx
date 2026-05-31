@@ -25,10 +25,13 @@ import {
   ChevronRight,
   X,
   Lock,
+  User,
   ShoppingCart,
   Download,
   ExternalLink,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Edit,
+  Save
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { supabase } from '../lib/supabaseClient';
@@ -106,6 +109,35 @@ export default function ProductLandingPage() {
   const [isOrdered, setIsOrdered] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  // Direct Live Visual Editor States
+  const [isVisualEditorActive, setIsVisualEditorActive] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [adminUsernameInput, setAdminUsernameInput] = useState('');
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [loginError, setLoginError] = useState(false);
+  const [isSavingVisual, setIsSavingVisual] = useState(false);
+  const [visualActiveTab, setVisualActiveTab] = useState<'info' | 'specs' | 'images' | 'payment'>('info');
+
+  const handleSaveVisualChanges = async () => {
+    setIsSavingVisual(true);
+    try {
+      const configToSave = { productInfo, productImages };
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ key: 'lander_config', value: configToSave }, { onConflict: 'key' });
+      
+      if (error) throw error;
+      
+      localStorage.setItem('lander_config', JSON.stringify(configToSave));
+      alert('¡Excelente! Los cambios visuales de tu landing de campaña se han guardado exitosamente en la base de datos.');
+    } catch (err: any) {
+      console.error(err);
+      alert('Fallo al guardar cambios en el servidor: ' + (err.message || err));
+    } finally {
+      setIsSavingVisual(false);
+    }
+  };
 
   // Dynamic configuration loader from database
   useEffect(() => {
@@ -317,7 +349,7 @@ export default function ProductLandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans overflow-x-hidden selection:bg-apple-accent/10">
+    <div className={`min-h-screen bg-[#F5F5F7] text-[#1D1D1F] font-sans overflow-x-hidden selection:bg-apple-accent/10 transition-all duration-300 ${isVisualEditorActive ? 'lg:pr-[420px]' : ''}`}>
       
       {/* Embedded High Fidelity CSS Print Override Ruleset */}
       <style>{`
@@ -1379,6 +1411,14 @@ export default function ProductLandingPage() {
               </div>
             </div>
             
+            <button 
+              type="button"
+              onClick={() => isVisualEditorActive ? setIsVisualEditorActive(false) : setIsLoginModalOpen(true)}
+              className="text-xs text-emerald-600 hover:text-emerald-700 transition-all flex items-center gap-1.5 bg-emerald-50 border border-emerald-200/50 hover:bg-emerald-100 hover:border-emerald-300 px-3 py-1.5 rounded-lg lg:font-bold font-semibold shrink-0 cursor-pointer whitespace-nowrap"
+            >
+              <Edit size={12} className="text-emerald-500" /> Editor Visual
+            </button>
+
             <Link 
               to="/admin" 
               className="text-xs text-zinc-500 hover:text-zinc-900 transition-all flex items-center gap-1.5 bg-zinc-50 border border-zinc-200/50 hover:bg-zinc-100 hover:border-zinc-300 px-3 py-1.5 rounded-lg lg:font-bold font-semibold shrink-0 cursor-pointer"
@@ -1388,6 +1428,573 @@ export default function ProductLandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Botón flotante para el Editor Visual Directo */}
+      <div className="fixed bottom-6 right-6 z-50 no-print flex flex-col gap-2 items-end">
+        {isVisualEditorActive ? (
+          <div className="flex gap-2">
+            <button
+              onClick={handleSaveVisualChanges}
+              disabled={isSavingVisual}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-full shadow-2xl flex items-center gap-2 text-sm transition-all active:scale-[0.97]"
+            >
+              <Save size={16} className={isSavingVisual ? "animate-spin" : ""} />
+              {isSavingVisual ? "Guardando..." : "Guardar Cambios"}
+            </button>
+            <button 
+              onClick={() => setIsVisualEditorActive(false)}
+              className="bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-3.5 px-5 rounded-full shadow-2xl flex items-center gap-2 text-sm transition-all"
+            >
+              <X size={16} />
+              Cerrar Editor
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setIsLoginModalOpen(true)}
+            className="bg-gradient-to-r from-apple-accent to-emerald-600 hover:brightness-110 text-white font-bold py-4 px-6 rounded-full shadow-2xl flex items-center gap-2 text-sm transition-all group active:scale-[0.97] border border-white/20"
+          >
+            <Edit size={16} className="group-hover:rotate-12 transition-transform" />
+            ✏️ Editar Visualmente
+          </button>
+        )}
+      </div>
+
+      {/* Login Modal para el editor visual */}
+      <AnimatePresence>
+        {isLoginModalOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 no-print font-sans">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl w-full max-w-md p-8 border border-zinc-205 shadow-2xl text-left"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2">
+                  <Lock className="text-apple-accent" size={18} />
+                  <h3 className="font-extrabold text-[#1D1D1F] text-lg tracking-tight">Acceso Editor Visual</h3>
+                </div>
+                <button onClick={() => { setIsLoginModalOpen(false); setLoginError(false); }} className="text-zinc-400 hover:text-zinc-650 p-1">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <p className="text-xs text-zinc-500 font-medium leading-relaxed mb-6">
+                Ingresa el usuario y la clave de administrador para desbloquear la edición visual automática de esta campaña directamente en la pantalla.
+              </p>
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const isUsernameValid = adminUsernameInput.toLowerCase().trim() === 'admin';
+                const isPasswordValid = adminPasswordInput === 'Pos.2026';
+                if (isUsernameValid && isPasswordValid) {
+                  setIsVisualEditorActive(true);
+                  setIsLoginModalOpen(false);
+                  setLoginError(false);
+                  setAdminUsernameInput('');
+                  setAdminPasswordInput('');
+                } else {
+                  setLoginError(true);
+                }
+              }} className="space-y-4">
+                <div className="space-y-1.5 font-sans">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Usuario Admin</label>
+                  <div className="relative">
+                    <input 
+                      type="text"
+                      value={adminUsernameInput}
+                      onChange={(e) => setAdminUsernameInput(e.target.value)}
+                      placeholder="Ej. admin"
+                      required
+                      className="w-full bg-zinc-50 border border-zinc-200 pl-10 pr-4 py-3 rounded-xl text-sm font-semibold outline-none focus:bg-white focus:ring-2 focus:ring-apple-accent/20 transition-all font-sans"
+                      autoFocus
+                    />
+                    <User size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 font-sans">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Clave de Acceso</label>
+                  <div className="relative">
+                    <input 
+                      type="password"
+                      value={adminPasswordInput}
+                      onChange={(e) => setAdminPasswordInput(e.target.value)}
+                      placeholder="Contraseña corporativa"
+                      required
+                      className="w-full bg-zinc-50 border border-zinc-200 pl-10 pr-4 py-3 rounded-xl text-sm font-semibold outline-none focus:bg-white focus:ring-2 focus:ring-apple-accent/20 transition-all font-sans"
+                    />
+                    <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                  </div>
+                </div>
+
+                {loginError && (
+                  <p className="text-xs font-bold text-red-500 ml-1">Usuario o contraseña incorrectos. Inténtalo de nuevo.</p>
+                )}
+
+                <div className="pt-2 flex justify-end gap-3 font-sans">
+                  <button 
+                    type="button"
+                    onClick={() => { setIsLoginModalOpen(false); setLoginError(false); setAdminUsernameInput(''); setAdminPasswordInput(''); }}
+                    className="px-5 py-2.5 rounded-xl border border-zinc-200 text-zinc-650 text-xs font-bold hover:bg-zinc-50 cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit"
+                    className="px-5 py-2.5 bg-apple-accent hover:bg-apple-accent/90 text-white rounded-xl text-xs font-bold shadow-md shadow-apple-accent/15 cursor-pointer"
+                  >
+                    Desbloquear Editor
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Visual Editor Sidebar Panel */}
+      {isVisualEditorActive && (
+        <div className="fixed top-0 right-0 h-screen w-full lg:w-[420px] bg-white border-l border-[#E5E5E7] shadow-2xl z-[999] flex flex-col font-sans no-print animate-in slide-in-from-right duration-300">
+          {/* Header */}
+          <div className="p-6 border-b border-zinc-100 flex items-center justify-between bg-zinc-50 shrink-0">
+            <div className="flex items-center gap-2">
+              <Edit size={16} className="text-[#10B981]" />
+              <h3 className="font-extrabold text-[#1D1D1F] text-sm tracking-tight">Editor Visual en Vivo</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={handleSaveVisualChanges}
+                disabled={isSavingVisual}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs flex items-center gap-1 shadow-sm shrink-0 transition-colors cursor-pointer"
+              >
+                <Save size={12} className={isSavingVisual ? "animate-spin" : ""} />
+                Guardar
+              </button>
+              <button 
+                onClick={() => setIsVisualEditorActive(false)}
+                className="text-zinc-400 hover:text-zinc-650 p-1 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Section Tabs */}
+          <div className="grid grid-cols-4 border-b border-zinc-100 bg-zinc-50 shrink-0 text-[10px] font-black uppercase text-center text-zinc-500">
+            <button 
+              type="button" 
+              onClick={() => setVisualActiveTab('info')}
+              className={`py-3 border-b-2 font-mono cursor-pointer ${visualActiveTab === 'info' ? 'border-[#10B981] text-[#10B981] bg-white' : 'border-transparent hover:bg-zinc-100'}`}
+            >
+              📝 Texto
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setVisualActiveTab('specs')}
+              className={`py-3 border-b-2 font-mono cursor-pointer ${visualActiveTab === 'specs' ? 'border-[#10B981] text-[#10B981] bg-white' : 'border-transparent hover:bg-zinc-100'}`}
+            >
+              ✅ Specs
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setVisualActiveTab('images')}
+              className={`py-3 border-b-2 font-mono cursor-pointer ${visualActiveTab === 'images' ? 'border-[#10B981] text-[#10B981] bg-white' : 'border-transparent hover:bg-zinc-100'}`}
+            >
+              🖼️ Fotos
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setVisualActiveTab('payment')}
+              className={`py-3 border-b-2 font-mono cursor-pointer ${visualActiveTab === 'payment' ? 'border-[#10B981] text-[#10B981] bg-white' : 'border-transparent hover:bg-zinc-100'}`}
+            >
+              💰 Pago
+            </button>
+          </div>
+
+          {/* Tab Panel Scroll container */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 text-left">
+            {visualActiveTab === 'info' && (
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Edición (Header Izq)</label>
+                  <input 
+                    type="text"
+                    value={productInfo.edition || ''}
+                    onChange={(e) => setProductInfo(prev => ({ ...prev, edition: e.target.value }))}
+                    placeholder="Ej. WP200 Pro-Edition"
+                    className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Nombre Corto</label>
+                  <input 
+                    type="text"
+                    value={productInfo.name || ''}
+                    onChange={(e) => setProductInfo(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Nombre del componente de proforma"
+                    className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Título de Venta (Principal)</label>
+                  <textarea 
+                    rows={3}
+                    value={productInfo.fullName || ''}
+                    onChange={(e) => setProductInfo(prev => ({ ...prev, fullName: e.target.value }))}
+                    className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20 resize-none font-sans"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Marca</label>
+                    <input 
+                      type="text"
+                      value={productInfo.brand || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, brand: e.target.value }))}
+                      className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Modelo</label>
+                    <input 
+                      type="text"
+                      value={productInfo.model || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, model: e.target.value }))}
+                      className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Precio Web S/.</label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      value={productInfo.price || 0}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                      className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Antiguo S/.</label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      value={productInfo.originalPrice || 269.00}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, originalPrice: parseFloat(e.target.value) || 0 }))}
+                      className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Etiqueta Desc.</label>
+                    <input 
+                      type="text"
+                      value={productInfo.discountText || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, discountText: e.target.value }))}
+                      className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Etiqueta Oferta (Badge)</label>
+                  <input 
+                    type="text"
+                    value={productInfo.offerType || ''}
+                    onChange={(e) => setProductInfo(prev => ({ ...prev, offerType: e.target.value }))}
+                    className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Zona Envío</label>
+                    <input 
+                      type="text"
+                      value={productInfo.shipping || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, shipping: e.target.value }))}
+                      className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Tiempos Envío</label>
+                    <input 
+                      type="text"
+                      value={productInfo.deliveryTime || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, deliveryTime: e.target.value }))}
+                      className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {visualActiveTab === 'specs' && (
+              <div className="space-y-4">
+                <div className="bg-[#10B981]/5 p-4 rounded-2xl border border-[#10B981]/15 text-[11px] font-sans font-semibold leading-relaxed text-emerald-850">
+                  💡 <strong className="font-bold">Formato del Check de Especificaciones:</strong> Puedes separar el texto con dos puntos (<strong className="font-extrabold text-[#10B981]">:</strong>) para resaltar de forma automáticamente en negritas la parte inicial del texto.
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Fila del Check 1</label>
+                  <textarea 
+                    rows={2}
+                    value={productInfo.spec1 || ''}
+                    onChange={(e) => setProductInfo(prev => ({ ...prev, spec1: e.target.value }))}
+                    className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20 resize-none font-sans"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Fila del Check 2</label>
+                  <textarea 
+                    rows={2}
+                    value={productInfo.spec2 || ''}
+                    onChange={(e) => setProductInfo(prev => ({ ...prev, spec2: e.target.value }))}
+                    className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20 resize-none font-sans"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Fila del Check 3</label>
+                  <textarea 
+                    rows={2}
+                    value={productInfo.spec3 || ''}
+                    onChange={(e) => setProductInfo(prev => ({ ...prev, spec3: e.target.value }))}
+                    className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20 resize-none font-sans"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Fila del Check 4</label>
+                  <textarea 
+                    rows={2}
+                    value={productInfo.spec4 || ''}
+                    onChange={(e) => setProductInfo(prev => ({ ...prev, spec4: e.target.value }))}
+                    className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20 resize-none font-sans"
+                  />
+                </div>
+              </div>
+            )}
+
+            {visualActiveTab === 'images' && (
+              <div className="space-y-6">
+                <div className="bg-zinc-50 p-3 rounded-xl text-[11px] text-zinc-400 font-semibold leading-relaxed">
+                  Puedes seleccionar cada foto en el carrusel de la izquierda de la pantalla para ver el título y descripción que estás editando. Hay 6 bloques de fotos configurables.
+                </div>
+                
+                {[0, 1, 2, 3, 4, 5].map((index) => {
+                  const img = productImages[index] || { url: '', title: '', desc: '' };
+                  return (
+                    <div key={index} className="bg-zinc-50/50 p-4 rounded-2xl border border-zinc-200/50 space-y-3 text-left">
+                      <span className="text-[9px] font-black uppercase bg-zinc-200 text-zinc-800 px-2 py-0.5 rounded">
+                        Foto {index + 1}
+                      </span>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-zinc-450 uppercase block">Enlace de Imagen (URL)</label>
+                        <input 
+                          type="text"
+                          value={img.url || ''}
+                          onChange={(e) => {
+                            const updated = [...productImages];
+                            updated[index] = { ...img, url: e.target.value };
+                            setProductImages(updated);
+                          }}
+                          placeholder="URL de imagen Unsplash u otra"
+                          className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-[11px] font-semibold outline-none focus:ring-1 focus:ring-[#10B981]/20"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-zinc-450 uppercase block">Título de la Foto</label>
+                        <input 
+                          type="text"
+                          value={img.title || ''}
+                          onChange={(e) => {
+                            const updated = [...productImages];
+                            updated[index] = { ...img, title: e.target.value };
+                            setProductImages(updated);
+                          }}
+                          placeholder="Resumen corto de la sección"
+                          className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-[11px] font-semibold outline-none focus:ring-1 focus:ring-[#10B981]/20"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-zinc-450 uppercase block">Detalle de la Foto</label>
+                        <textarea 
+                          rows={2}
+                          value={img.desc || ''}
+                          onChange={(e) => {
+                            const updated = [...productImages];
+                            updated[index] = { ...img, desc: e.target.value };
+                            setProductImages(updated);
+                          }}
+                          placeholder="Descripción complementaria"
+                          className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-[11px] font-semibold outline-none focus:ring-1 focus:ring-[#10B981]/20 resize-none font-sans"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {visualActiveTab === 'payment' && (
+              <div className="space-y-4">
+                <div className="bg-[#10B981]/5 p-4 rounded-xl border border-[#10B981]/10 text-xs font-semibold leading-relaxed">
+                  Configure sus teléfonos de recaudación Yape, cuentas bancarias BCP nacionales y códigos para la redirección de pedidos.
+                </div>
+
+                <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4">
+                  <h4 className="text-[10px] font-black uppercase text-purple-700 tracking-wider">📲 Recaudación Yape</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-zinc-450 uppercase block">Celular Yape (Visual)</label>
+                      <input 
+                        type="text"
+                        value={productInfo.yapePhone || ''}
+                        onChange={(e) => setProductInfo(prev => ({ ...prev, yapePhone: e.target.value }))}
+                        className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-zinc-450 uppercase block">Celular Yape (Copiar)</label>
+                      <input 
+                        type="text"
+                        value={productInfo.yapePhoneRaw || ''}
+                        onChange={(e) => setProductInfo(prev => ({ ...prev, yapePhoneRaw: e.target.value }))}
+                        className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-450 uppercase block">Titular Yape</label>
+                    <input 
+                      type="text"
+                      value={productInfo.yapeOwner || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, yapeOwner: e.target.value }))}
+                      className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4">
+                  <h4 className="text-[10px] font-black uppercase text-blue-700 tracking-wider">🏦 Recaudación BCP</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-zinc-450 uppercase block">Cuenta BCP (Visual)</label>
+                      <input 
+                        type="text"
+                        value={productInfo.bcpAccount || ''}
+                        onChange={(e) => setProductInfo(prev => ({ ...prev, bcpAccount: e.target.value }))}
+                        className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-zinc-450 uppercase block">Cuenta BCP (Copiar)</label>
+                      <input 
+                        type="text"
+                        value={productInfo.bcpAccountRaw || ''}
+                        onChange={(e) => setProductInfo(prev => ({ ...prev, bcpAccountRaw: e.target.value }))}
+                        className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-zinc-450 uppercase block">CCI BCP (Visual)</label>
+                      <input 
+                        type="text"
+                        value={productInfo.bcpCCI || ''}
+                        onChange={(e) => setProductInfo(prev => ({ ...prev, bcpCCI: e.target.value }))}
+                        className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-zinc-450 uppercase block">CCI BCP (Copiar)</label>
+                      <input 
+                        type="text"
+                        value={productInfo.bcpCCIRaw || ''}
+                        onChange={(e) => setProductInfo(prev => ({ ...prev, bcpCCIRaw: e.target.value }))}
+                        className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-450 uppercase block">Titular de Cuenta BCP</label>
+                    <input 
+                      type="text"
+                      value={productInfo.bcpOwner || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, bcpOwner: e.target.value }))}
+                      className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4">
+                  <h4 className="text-[10px] font-black uppercase text-emerald-700 tracking-wider">💬 Enlace & Soporte</h4>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-455 uppercase block">Nro WhatsApp Destinatario (ej. 51905820448)</label>
+                    <input 
+                      type="text"
+                      value={productInfo.whatsappPhone || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, whatsappPhone: e.target.value }))}
+                      className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-455 uppercase block">Enlace de Controladores (Drive)</label>
+                    <input 
+                      type="text"
+                      value={productInfo.driverUrl || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, driverUrl: e.target.value }))}
+                      className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none font-mono text-zinc-600"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-455 uppercase block">Enlace de Manual de Usuario (PDF Drive)</label>
+                    <input 
+                      type="text"
+                      value={productInfo.manualUrl || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, manualUrl: e.target.value }))}
+                      className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none font-mono text-zinc-600"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer Controls */}
+          <div className="p-6 border-t border-zinc-100 bg-zinc-50 shrink-0 space-y-3 font-sans">
+            <button 
+              type="button"
+              onClick={handleSaveVisualChanges}
+              disabled={isSavingVisual}
+              className="w-full bg-[#10B981] hover:bg-[#0aa16f] active:scale-[0.985] text-white py-3 px-4 rounded-xl text-xs font-extrabold shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <Save size={14} className={isSavingVisual ? "animate-spin" : ""} />
+              {isSavingVisual ? "Guardando Cambios..." : "Guardar Todo en la Base de Datos"}
+            </button>
+
+            <button 
+              type="button" 
+              onClick={() => setIsVisualEditorActive(false)}
+              className="w-full bg-white hover:bg-zinc-100 text-zinc-700 py-2.5 px-4 rounded-xl text-xs font-bold border border-zinc-200 transition-colors cursor-pointer"
+            >
+              Desactivar Modo Visual
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
