@@ -96,6 +96,23 @@ export default function ProductLandingPage() {
   // Customer states for Checkout matching proforma/webhook
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
+  const [copiedText, setCopiedText] = useState<'yape' | 'bcp' | 'cci' | null>(null);
+
+  const handleCopyToClipboard = (text: string, type: 'yape' | 'bcp' | 'cci') => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedText(type);
+      setTimeout(() => setCopiedText(null), 2000);
+    }).catch(() => {
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setCopiedText(type);
+      setTimeout(() => setCopiedText(null), 2000);
+    });
+  };
 
   // Google Drive Help Guide States
   const [isDriveGuideOpen, setIsDriveGuideOpen] = useState(false);
@@ -918,19 +935,36 @@ export default function ProductLandingPage() {
 
                     {/* Dynamic View showing directions */}
                     {paymentMethod === 'yape' ? (
-                      <div className="bg-white p-4 rounded-xl border border-purple-100 space-y-3">
+                      <div className="bg-white p-4 rounded-xl border border-purple-100 space-y-3 font-sans">
                         <div className="space-y-1">
                           <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">1. Paga desde tu app Yape:</p>
                           <div className="bg-[#F8F6FC] rounded-lg p-3 text-xs font-black text-purple-950 flex flex-col gap-1 border border-purple-100/50">
-                            <span className="text-purple-600 font-extrabold text-[13px]">📱 Celular Yape: 989 007 409</span>
-                            <span className="text-zinc-600">Titular de Cuenta: Joaquín García</span>
-                            <span className="text-purple-700">Monto exacto: S/ {calculatedTotal.toFixed(2)} PEN</span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[#8B5CF6] font-extrabold text-[13px]">📱 Celular Yape: 989 007 409</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyToClipboard('989007409', 'yape')}
+                                className="flex items-center gap-1.5 text-[10px] bg-purple-150 text-purple-700 hover:bg-purple-200 hover:text-purple-800 transition-all font-bold px-2 py-1 rounded-lg cursor-pointer"
+                              >
+                                {copiedText === 'yape' ? (
+                                  <>
+                                    <Check size={11} className="stroke-[3]" /> Copiado
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy size={11} /> Copiar Nro
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            <span className="text-zinc-600 font-semibold block text-[11px] mt-0.5">Titular de Cuenta: Joaquín García</span>
+                            <span className="text-[#6D28D9] font-black">Monto exacto: S/ {calculatedTotal.toFixed(2)} PEN</span>
                           </div>
                         </div>
 
                         <div className="space-y-1">
                           <label className="text-[10px] font-black text-purple-700 uppercase tracking-widest block">
-                            2. código o Nro de Operación Yape <span className="text-red-500">*</span>
+                            2. Código o Nro de Operación Yape <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
@@ -945,14 +979,55 @@ export default function ProductLandingPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="bg-white p-4 rounded-xl border border-indigo-100 space-y-3">
+                      <div className="bg-white p-4 rounded-xl border border-indigo-100 space-y-3 font-sans">
                         <div className="space-y-1 text-xs">
                           <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">1. Datos de Cuenta BCP:</p>
-                          <div className="bg-[#F2F5FA] rounded-lg p-3 font-semibold text-zinc-800 space-y-1 border border-indigo-100/50">
-                            <p className="font-extrabold text-[#111] text-[11px]">🏦 Cuenta Corriente BCP soles:</p>
-                            <p className="font-mono font-black text-indigo-700 text-xs">191-1875953-0-18</p>
-                            <p className="text-zinc-500 text-[9px] uppercase font-bold">CCI Interbancario BCP:</p>
-                            <p className="font-mono text-zinc-700 text-[10px]">002-191-001875953018-53</p>
+                          <div className="bg-[#F2F5FA] rounded-xl p-3.5 font-semibold text-zinc-800 space-y-2.5 border border-indigo-100/50 animate-fade-in">
+                            
+                            <div className="space-y-1">
+                              <p className="font-extrabold text-[#111] text-[11px]">🏦 Cuenta Corriente BCP soles:</p>
+                              <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-indigo-100/60">
+                                <span className="font-mono font-black text-indigo-700 text-xs">191-1875953-0-18</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyToClipboard('1911875953018', 'bcp')}
+                                  className="flex items-center gap-1 text-[9px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-850 px-1.5 py-0.5 rounded transition-all font-bold cursor-pointer"
+                                >
+                                  {copiedText === 'bcp' ? (
+                                    <>
+                                      <Check size={9} /> Copiado
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy size={9} /> Copiar
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <p className="text-zinc-500 text-[9px] uppercase font-bold">CCI Interbancario BCP:</p>
+                              <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-indigo-100/60 font-sans">
+                                <span className="font-mono text-zinc-700 text-[10px]">002-191-001875953018-53</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyToClipboard('00219100187595301853', 'cci')}
+                                  className="flex items-center gap-1 text-[9px] bg-zinc-100 text-zinc-650 hover:bg-zinc-200 hover:text-zinc-800 px-1.5 py-0.5 rounded transition-all font-bold cursor-pointer"
+                                >
+                                  {copiedText === 'cci' ? (
+                                    <>
+                                      <Check size={9} /> Copiado
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy size={9} /> Copiar
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+
                             <p className="text-[9px] text-zinc-500 mt-0.5">Beneficiario: <strong className="text-zinc-700 font-bold">COPIERMAX EIR.</strong></p>
                           </div>
                         </div>
