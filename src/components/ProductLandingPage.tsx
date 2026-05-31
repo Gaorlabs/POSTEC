@@ -119,6 +119,26 @@ export default function ProductLandingPage() {
   const [isSavingVisual, setIsSavingVisual] = useState(false);
   const [visualActiveTab, setVisualActiveTab] = useState<'info' | 'specs' | 'images' | 'payment'>('info');
 
+  // Logo Click Secret Gesture Tracker (Triple Tap in 2 seconds)
+  const [logoClicks, setLogoClicks] = useState<number>(0);
+  const [lastClickTime, setLastClickTime] = useState<number>(0);
+
+  const handleLogoClick = () => {
+    const now = Date.now();
+    if (now - lastClickTime < 2000) {
+      const newCount = logoClicks + 1;
+      if (newCount >= 3) {
+        setIsLoginModalOpen(true);
+        setLogoClicks(0);
+      } else {
+        setLogoClicks(newCount);
+      }
+    } else {
+      setLogoClicks(1);
+    }
+    setLastClickTime(now);
+  };
+
   const handleSaveVisualChanges = async () => {
     setIsSavingVisual(true);
     try {
@@ -414,7 +434,9 @@ export default function ProductLandingPage() {
             </div>
             <span className="text-sm font-bold tracking-tight text-[#1D1D1F]">{productInfo.edition || "WP200 Pro-Edition"}</span>
           </div>
-          <Logo className="h-8" />
+          <div onClick={handleLogoClick} className="cursor-pointer select-none active:opacity-80 transition-all rounded-lg p-1 hover:bg-zinc-50" title="Pos-Tec">
+            <Logo className="h-8" />
+          </div>
           <div className="block">
             <span className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
@@ -1411,13 +1433,7 @@ export default function ProductLandingPage() {
               </div>
             </div>
             
-            <button 
-              type="button"
-              onClick={() => isVisualEditorActive ? setIsVisualEditorActive(false) : setIsLoginModalOpen(true)}
-              className="text-xs text-emerald-600 hover:text-emerald-700 transition-all flex items-center gap-1.5 bg-emerald-50 border border-emerald-200/50 hover:bg-emerald-100 hover:border-emerald-300 px-3 py-1.5 rounded-lg lg:font-bold font-semibold shrink-0 cursor-pointer whitespace-nowrap"
-            >
-              <Edit size={12} className="text-emerald-500" /> Editor Visual
-            </button>
+
 
             <Link 
               to="/admin" 
@@ -1449,15 +1465,7 @@ export default function ProductLandingPage() {
               Cerrar Editor
             </button>
           </div>
-        ) : (
-          <button
-            onClick={() => setIsLoginModalOpen(true)}
-            className="bg-gradient-to-r from-apple-accent to-emerald-600 hover:brightness-110 text-white font-bold py-4 px-6 rounded-full shadow-2xl flex items-center gap-2 text-sm transition-all group active:scale-[0.97] border border-white/20"
-          >
-            <Edit size={16} className="group-hover:rotate-12 transition-transform" />
-            ✏️ Editar Visualmente
-          </button>
-        )}
+        ) : null}
       </div>
 
       {/* Login Modal para el editor visual */}
