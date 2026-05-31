@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Printer, 
@@ -1358,16 +1359,25 @@ export default function ProductLandingPage() {
       </AnimatePresence>
 
       {/* Trust banner */}
-      <footer className="bg-white border-t border-[#E5E5E7] py-8 text-center mt-20 relative z-10 no-print">
+      <footer className="bg-white border-t border-[#E5E5E7] py-8 text-center mt-20 relative z-10 no-print font-sans">
         <div className="max-w-[1200px] mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-[#86868B] font-medium">Importadores Directos de Tecnología POS para tu Negocio</p>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Pagos 100% seguros</span>
-            <div className="flex gap-1.5">
-              <div className="w-8 h-5 bg-[#F5F5F7] rounded border border-zinc-200" />
-              <div className="w-8 h-5 bg-[#F5F5F7] rounded border border-zinc-200" />
-              <div className="w-8 h-5 bg-[#F5F5F7] rounded border border-zinc-200" />
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Pagos 100% seguros</span>
+              <div className="flex gap-1.5">
+                <div className="w-8 h-5 bg-[#F5F5F7] rounded border border-zinc-200" />
+                <div className="w-8 h-5 bg-[#F5F5F7] rounded border border-zinc-200" />
+                <div className="w-8 h-5 bg-[#F5F5F7] rounded border border-zinc-200" />
+              </div>
             </div>
+            
+            <Link 
+              to="/admin" 
+              className="text-xs text-zinc-500 hover:text-zinc-900 transition-all flex items-center gap-1.5 bg-zinc-50 border border-zinc-200/50 hover:bg-zinc-100 hover:border-zinc-300 px-3 py-1.5 rounded-lg lg:font-bold font-semibold shrink-0 cursor-pointer"
+            >
+              <Lock size={12} className="text-zinc-400" /> Acceso Panel Admin
+            </Link>
           </div>
         </div>
       </footer>
