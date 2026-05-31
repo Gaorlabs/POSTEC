@@ -182,7 +182,7 @@ export default function ProductLandingPage() {
                     `*Dirección:* ${deliveryAddress}\n` +
                     `*Detalle:* ${quantity}x Impresora WP200 (S/ ${purchaseTotalText})\n` +
                     `*Método:* Yape (Op: ${yapeOperationCode})\n\n` +
-                    `_¡Hola! Acabo de registrar mi pedido por Yape con el código ingresado. Adjunto mi captura de pantalla._`;
+                    `_¡Hola! Acabo de registrar mi pedido por Yape con el código ingresado. Adjuntaré mi captura de pantalla en breve._`;
 
     const bcpMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
                    `*Cliente:* ${clientName} (${clientPhone})\n` +
@@ -720,16 +720,22 @@ export default function ProductLandingPage() {
               <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
                 <button 
                   onClick={() => {
-                    const messageText = `*📦 COPIA PEDIDO REGISTRADO - POS-TEC 📦*\n\n` +
-                                        `*Fecha:* ${new Date().toLocaleDateString()}\n` +
-                                        `*Cliente:* ${clientName}\n` +
-                                        `*Teléfono:* ${clientPhone}\n` +
-                                        `*Dirección de Entrega:* ${deliveryAddress}\n\n` +
-                                        `*Producto:* Impresora Térmica WP200\n` +
-                                        `*Cantidad:* ${quantity} unidad(es)\n` +
-                                        `*Total:* S/ ${calculatedTotal.toFixed(2)}\n\n` +
-                                        `*Método de Pago Requerido:* Yape o Transferencia BCP\n` +
-                                        `_Adjuntaré captura de constancia de pago por este chat de WhatsApp._`;
+                    const purchaseTotalText = calculatedTotal.toFixed(2);
+                    const yapeMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
+                                    `*Cliente:* ${clientName} (${clientPhone})\n` +
+                                    `*Dirección:* ${deliveryAddress}\n` +
+                                    `*Detalle:* ${quantity}x Impresora WP200 (S/ ${purchaseTotalText})\n` +
+                                    `*Método:* Yape (Op: ${yapeOperationCode})\n\n` +
+                                    `_¡Hola! Acabo de registrar mi pedido por Yape con el código ingresado. Adjuntaré mi captura de pantalla en breve._`;
+
+                    const bcpMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
+                                   `*Cliente:* ${clientName} (${clientPhone})\n` +
+                                   `*Dirección:* ${deliveryAddress}\n` +
+                                   `*Detalle:* ${quantity}x Impresora WP200 (S/ ${purchaseTotalText})\n` +
+                                   `*Método:* Transferencia BCP\n\n` +
+                                   `_¡Hola! He registrado mi pedido en su web y realizaré la transferencia bancaria. En breve les envío la captura de la operación por aquí._`;
+
+                    const messageText = paymentMethod === 'yape' ? yapeMsg : bcpMsg;
                     const encoded = encodeURIComponent(messageText);
                     window.open(`https://api.whatsapp.com/send?phone=51905820448&text=${encoded}`, '_blank');
                   }}
