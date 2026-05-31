@@ -142,6 +142,10 @@ export default function ProductLandingPage() {
       alert('Por favor complete su Dirección de Entrega para planificar el despacho.');
       return;
     }
+    if (paymentMethod === 'yape' && !yapeOperationCode.trim()) {
+      alert('Por favor introduzca el Código o Número de Operación de su Yape para validar la transacción.');
+      return;
+    }
 
     setOrderStep('sending');
 
@@ -155,17 +159,22 @@ export default function ProductLandingPage() {
 
     const purchaseTotalText = calculatedTotal.toFixed(2);
     
-    const message = `*📦 NUEVO PEDIDO - TIENDA VIRTUAL POS-TEC 📦*\n\n` +
-                    `*Fecha:* ${formattedDate}\n` +
-                    `*Cliente:* ${clientName}\n` +
-                    `*Celular / WhatsApp:* ${clientPhone}\n` +
-                    `*Dirección de Entrega:* ${deliveryAddress}\n\n` +
-                    `*Detalle del Equipo:*\n` +
-                    `• *Producto:* ${productInfo.fullName}\n` +
-                    `• *Cantidad:* ${quantity} unidad(es)\n` +
-                    `• *Monto a Pagar:* S/ ${purchaseTotalText} PEN (IGV Incluido)\n\n` +
-                    `*Forma de Pago Requerida:* Pagar con Yape o Transferencia Bancaria BCP\n\n` +
-                    `_Adjuntaré captura de mi Yape o transferencia BCP por este medio para validar mi pago de inmediato y proceder con el despacho del equipo._`;
+    // Conciso, preciso y amable conforme al flujo seleccionado
+    const yapeMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
+                    `*Cliente:* ${clientName} (${clientPhone})\n` +
+                    `*Dirección:* ${deliveryAddress}\n` +
+                    `*Detalle:* ${quantity}x Impresora WP200 (S/ ${purchaseTotalText})\n` +
+                    `*Método:* Yape (Op: ${yapeOperationCode})\n\n` +
+                    `_¡Hola! Acabo de registrar mi pedido por Yape con el código ingresado. Adjunto mi captura de pantalla._`;
+
+    const bcpMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
+                   `*Cliente:* ${clientName} (${clientPhone})\n` +
+                   `*Dirección:* ${deliveryAddress}\n` +
+                   `*Detalle:* ${quantity}x Impresora WP200 (S/ ${purchaseTotalText})\n` +
+                   `*Método:* Transferencia BCP\n\n` +
+                   `_¡Hola! He registrado mi pedido en su web y realizaré la transferencia bancaria. En breve les envío la captura de la operación por aquí._`;
+
+    const message = paymentMethod === 'yape' ? yapeMsg : bcpMsg;
 
     // Optionally trigger n8n Webhook directly from localstorage
     const n8nWebhookUrl = localStorage.getItem('n8n_webhook_url') || '';
@@ -179,8 +188,8 @@ export default function ProductLandingPage() {
             clientName,
             clientPhone,
             deliveryAddress,
-            paymentMethod: 'yape_bcp_whatsapp',
-            yapeOperationCode: 'whatsapp_transfer',
+            paymentMethod,
+            yapeOperationCode: paymentMethod === 'yape' ? yapeOperationCode : 'bcp_transfer_pending',
             total: purchaseTotalText,
             quantity,
             product: "Impresora Térmica POS-STAR WP200",
@@ -868,31 +877,98 @@ export default function ProductLandingPage() {
                     </div>
                   </div>
 
-                  {/* STEP 2: Elección de Forma de Pago Yape o BCP Simplificada */}
-                  <div className="space-y-4 bg-zinc-50 p-5 rounded-2xl border border-zinc-200 text-left">
+                  {/* STEP 2: Elección de Forma de Pago Interactive Yape / BCP */}
+                  <div className="space-y-4 bg-zinc-55/65 p-5 rounded-2xl border border-zinc-200 text-left font-sans">
                     <h4 className="text-[11px] font-black uppercase tracking-wider text-zinc-500 flex items-center gap-1.5 font-sans">
-                      💳 Formas de Pago Aceptadas
+                      💳 Selecciona tu Método de Pago <span className="text-red-500">*</span>
                     </h4>
 
-                    <div className="grid grid-cols-2 gap-3 font-sans">
-                      <div className="bg-purple-500/5 p-3 rounded-xl border border-purple-200/50 flex items-center justify-center gap-2 text-[11px] font-black text-purple-700 shadow-sm">
-                        📱 Yape Directo
-                      </div>
-                      <div className="bg-indigo-500/5 p-3 rounded-xl border border-indigo-200/50 flex items-center justify-center gap-2 text-[11px] font-black text-indigo-700 shadow-sm">
-                        🏦 Cuenta Corriente BCP
-                      </div>
+                    {/* Interactive Selector Tabs */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('yape')}
+                        className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
+                          paymentMethod === 'yape'
+                            ? 'bg-purple-600 border-purple-500 text-white shadow-md shadow-purple-500/10'
+                            : 'bg-white hover:bg-zinc-100 border-zinc-200 text-zinc-600'
+                        }`}
+                      >
+                        <span className="text-xs font-black flex items-center gap-1.5">📱 Yape Directo</span>
+                        <span className={`text-[9px] font-bold ${paymentMethod === 'yape' ? 'text-purple-200' : 'text-zinc-400'}`}>
+                          Abono celular inmediato
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('bcp')}
+                        className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
+                          paymentMethod === 'bcp'
+                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-500/10'
+                            : 'bg-white hover:bg-zinc-100 border-zinc-200 text-zinc-600'
+                        }`}
+                      >
+                        <span className="text-xs font-black flex items-center gap-1.5">🏦 Transferencia BCP</span>
+                        <span className={`text-[9px] font-bold ${paymentMethod === 'bcp' ? 'text-indigo-200' : 'text-zinc-400'}`}>
+                          Banca móvil o agente
+                        </span>
+                      </button>
                     </div>
 
-                    <p className="text-[10.5px] text-zinc-650 leading-relaxed font-semibold font-sans">
-                      💡 <strong className="text-zinc-800">Proceso muy sencillo:</strong> Al hacer clic en el botón de abajo, se creará tu orden automática con envío gratuito a tu dirección y se abrirá nuestro WhatsApp oficial para que puedas enviar tu comprobante de Yape o BCP de forma rápida y segura. ¡Tu despacho se programa al instante!
-                    </p>
+                    {/* Dynamic View showing directions */}
+                    {paymentMethod === 'yape' ? (
+                      <div className="bg-white p-4 rounded-xl border border-purple-100 space-y-3">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">1. Paga desde tu app Yape:</p>
+                          <div className="bg-[#F8F6FC] rounded-lg p-3 text-xs font-black text-purple-950 flex flex-col gap-1 border border-purple-100/50">
+                            <span className="text-purple-600 font-extrabold text-[13px]">📱 Celular Yape: 989 007 409</span>
+                            <span className="text-zinc-600">Titular de Cuenta: Joaquín García</span>
+                            <span className="text-purple-700">Monto exacto: S/ {calculatedTotal.toFixed(2)} PEN</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-purple-700 uppercase tracking-widest block">
+                            2. código o Nro de Operación Yape <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={yapeOperationCode}
+                            onChange={(e) => setYapeOperationCode(e.target.value)}
+                            placeholder="Ej. 129034 o número de cel"
+                            className="w-full bg-[#F5F5F7]/40 border border-purple-200/60 rounded-xl px-4 py-2.5 text-xs text-zinc-900 font-bold placeholder-purple-300 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600 transition-all font-sans"
+                          />
+                          <p className="text-[9px] text-zinc-400 font-semibold leading-normal">
+                            Ingresa el código o cel que yapeó para proceder con el despacho inmediato de almacén.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white p-4 rounded-xl border border-indigo-100 space-y-3">
+                        <div className="space-y-1 text-xs">
+                          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">1. Datos de Cuenta BCP:</p>
+                          <div className="bg-[#F2F5FA] rounded-lg p-3 font-semibold text-zinc-800 space-y-1 border border-indigo-100/50">
+                            <p className="font-extrabold text-[#111] text-[11px]">🏦 Cuenta Corriente BCP soles:</p>
+                            <p className="font-mono font-black text-indigo-700 text-xs">191-1875953-0-18</p>
+                            <p className="text-zinc-500 text-[9px] uppercase font-bold">CCI Interbancario BCP:</p>
+                            <p className="font-mono text-zinc-700 text-[10px]">002-191-001875953018-53</p>
+                            <p className="text-[9px] text-zinc-500 mt-0.5">Beneficiario: <strong className="text-zinc-700 font-bold">COPIERMAX EIR.</strong></p>
+                          </div>
+                        </div>
+
+                        <p className="text-[10.5px] text-zinc-500 font-semibold leading-relaxed">
+                          📌 <strong className="text-zinc-700">Flujo inmediato:</strong> Al hacer clic abajo, se enviará tu pedido preciso y amable por WhatsApp. Enseguida nos podrás enviar la captura de tu transferencia de tu banco. ¡Gracias!
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* SUBMIT BUTTON WITH SECURE SYMBOLS */}
                   <div className="pt-4 border-t border-zinc-100 flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans">
                     <span className="text-[10px] text-zinc-400 font-bold flex items-center gap-1.5">
                       <Lock size={12} className="text-emerald-500 shrink-0" />
-                      Pedido rápido sin complicaciones con conexión segura.
+                      Proceso protegido y programado en minutos.
                     </span>
 
                     <button 
@@ -904,7 +980,7 @@ export default function ProductLandingPage() {
                         <span>Procesando pedido...</span>
                       ) : (
                         <>
-                          🛒 COMPRAR CON YAPE / BCP (S/ {calculatedTotal.toFixed(2)})
+                          🛒 COMPRAR CON {paymentMethod === 'yape' ? 'YAPE' : 'BCP'} (S/ {calculatedTotal.toFixed(2)})
                         </>
                       )}
                     </button>
