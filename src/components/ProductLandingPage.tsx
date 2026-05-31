@@ -56,7 +56,15 @@ export default function ProductLandingPage() {
     bcpCCI: "002-191-001875953018-53",
     bcpCCIRaw: "00219100187595301853",
     bcpOwner: "COPIERMAX EIR.",
-    whatsappPhone: "51905820448"
+    whatsappPhone: "51905820448",
+    edition: "WP200 Pro-Edition",
+    model: "WP200",
+    originalPrice: 269.00,
+    discountText: "-24% Desc.",
+    spec1: "Marca de confianza: POS-STAR (Modelo industrial WP200 de alto rendimiento).",
+    spec2: "Tecnología: Térmica Directa (Cero costos en cartuchos de tinta).",
+    spec3: "Velocidad Profesional: 230 mm/s con sistema de autocorte garantizado.",
+    spec4: "Interfaces integradas: Entrada USB y puerto telefónico RJ11 para comandar gavetas portamonedas."
   };
 
   const defaultProductImages = [
@@ -233,14 +241,14 @@ export default function ProductLandingPage() {
     const yapeMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
                     `*Cliente:* ${clientName} (${clientPhone})\n` +
                     `*Dirección:* ${deliveryAddress}\n` +
-                    `*Detalle:* ${quantity}x Impresora WP200 (S/ ${purchaseTotalText})\n` +
+                    `*Detalle:* ${quantity}x ${productInfo.brand} ${productInfo.model || "WP200"} (S/ ${purchaseTotalText})\n` +
                     `*Método:* Yape (Op: ${yapeOperationCode})\n\n` +
                     `_¡Hola! Acabo de registrar mi pedido por Yape con el código ingresado. Adjuntaré mi captura de pantalla en breve._`;
 
     const bcpMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
                    `*Cliente:* ${clientName} (${clientPhone})\n` +
                    `*Dirección:* ${deliveryAddress}\n` +
-                   `*Detalle:* ${quantity}x Impresora WP200 (S/ ${purchaseTotalText})\n` +
+                   `*Detalle:* ${quantity}x ${productInfo.brand} ${productInfo.model || "WP200"} (S/ ${purchaseTotalText})\n` +
                    `*Método:* Transferencia BCP\n\n` +
                    `_¡Hola! He registrado mi pedido en su web y realizaré la transferencia bancaria. En breve les envío la captura de la operación por aquí._`;
 
@@ -372,7 +380,7 @@ export default function ProductLandingPage() {
             <div className="w-8 h-8 rounded-lg bg-apple-accent/10 flex items-center justify-center">
               <Printer className="w-4.5 h-4.5 text-apple-accent" />
             </div>
-            <span className="text-sm font-bold tracking-tight text-[#1D1D1F]">WP200 Pro-Edition</span>
+            <span className="text-sm font-bold tracking-tight text-[#1D1D1F]">{productInfo.edition || "WP200 Pro-Edition"}</span>
           </div>
           <Logo className="h-8" />
           <div className="block">
@@ -472,40 +480,39 @@ export default function ProductLandingPage() {
                   S/ {productInfo.price.toFixed(2)}
                 </span>
                 <span className="text-[#86868B] text-sm font-medium line-through mb-1.5">
-                  S/ 269.00
+                  S/ {(productInfo.originalPrice || 269.00).toFixed(2)}
                 </span>
                 <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase mb-2 tracking-wider">
-                  -24% Desc.
+                  {productInfo.discountText || "-24% Desc."}
                 </span>
               </div>
             </div>
 
             {/* Quick Specs Checklist */}
             <div className="border-t border-b border-[#E5E5E7] py-6 space-y-3.5">
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                <span className="text-[14px] md:text-[15px] font-medium text-zinc-700">
-                  <strong>Marca de confianza:</strong> {productInfo.brand} (Modelo industrial WP200 de alto rendimiento).
-                </span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                <span className="text-[14px] md:text-[15px] font-medium text-zinc-700">
-                  <strong>Tecnología:</strong> Térmica Directa (Cero costos en cartuchos de tinta).
-                </span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                <span className="text-[14px] md:text-[15px] font-medium text-zinc-700">
-                  <strong>Velocidad Profesional:</strong> 230 mm/s con sistema de autocorte garantizado.
-                </span>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                <span className="text-[14px] md:text-[15px] font-medium text-zinc-700">
-                  <strong>Interfaces integradas:</strong> Entrada USB y puerto telefónico RJ11 para comandar gavetas portamonedas.
-                </span>
-              </div>
+              {[
+                productInfo.spec1 || `Marca de confianza: ${productInfo.brand} (Modelo industrial WP200 de alto rendimiento).`,
+                productInfo.spec2 || "Tecnología: Térmica Directa (Cero costos en cartuchos de tinta).",
+                productInfo.spec3 || "Velocidad Profesional: 230 mm/s con sistema de autocorte garantizado.",
+                productInfo.spec4 || "Interfaces integradas: Entrada USB y puerto telefónico RJ11 para comandar gavetas portamonedas."
+              ].map((spec, i) => {
+                const parts = spec.split(':');
+                return (
+                  <div key={i} className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-[14px] md:text-[15px] font-medium text-zinc-700">
+                      {parts.length > 1 ? (
+                        <>
+                          <strong>{parts[0]}:</strong>
+                          {parts.slice(1).join(':')}
+                        </>
+                      ) : (
+                        spec
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Delivery/Shipping details */}
@@ -573,9 +580,9 @@ export default function ProductLandingPage() {
           <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
             <h4 className="text-lg font-black uppercase tracking-tight text-[#1D1D1F] flex items-center gap-2">
               <Cpu size={20} className="text-apple-accent" />
-              Especificaciones & Confianza POS-STAR
+              Especificaciones & Confianza {productInfo.brand}
             </h4>
-            <span className="text-xs text-zinc-450 font-bold hidden sm:inline">Modelo WP200 • Grado Industrial</span>
+            <span className="text-xs text-zinc-450 font-bold hidden sm:inline">Modelo {productInfo.model || "WP200"} • Grado Industrial</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
@@ -694,7 +701,7 @@ export default function ProductLandingPage() {
               <div className="pt-5 border-t border-dashed border-zinc-200 mt-5 flex flex-col sm:flex-row items-center sm:justify-between gap-3">
                 <span className="text-[11px] text-zinc-500 font-medium">Controladores oficiales incluidos y soporte de instalación remota.</span>
                 <span className="text-[10px] font-bold text-apple-accent uppercase tracking-widest flex items-center gap-1">
-                  <Globe size={11} /> POS-STAR ORIGINAL WP200
+                  <Globe size={11} /> {productInfo.brand} ORIGINAL {productInfo.model || "WP200"}
                 </span>
               </div>
             </div>
@@ -800,14 +807,14 @@ export default function ProductLandingPage() {
                     const yapeMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
                                     `*Cliente:* ${clientName} (${clientPhone})\n` +
                                     `*Dirección:* ${deliveryAddress}\n` +
-                                    `*Detalle:* ${quantity}x Impresora WP200 (S/ ${purchaseTotalText})\n` +
+                                    `*Detalle:* ${quantity}x ${productInfo.brand} ${productInfo.model || "WP200"} (S/ ${purchaseTotalText})\n` +
                                     `*Método:* Yape (Op: ${yapeOperationCode})\n\n` +
                                     `_¡Hola! Acabo de registrar mi pedido por Yape con el código ingresado. Adjuntaré mi captura de pantalla en breve._`;
 
                     const bcpMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
                                    `*Cliente:* ${clientName} (${clientPhone})\n` +
                                    `*Dirección:* ${deliveryAddress}\n` +
-                                   `*Detalle:* ${quantity}x Impresora WP200 (S/ ${purchaseTotalText})\n` +
+                                   `*Detalle:* ${quantity}x ${productInfo.brand} ${productInfo.model || "WP200"} (S/ ${purchaseTotalText})\n` +
                                    `*Método:* Transferencia BCP\n\n` +
                                    `_¡Hola! He registrado mi pedido en su web y realizaré la transferencia bancaria. En breve les envío la captura de la operación por aquí._`;
 
@@ -860,7 +867,7 @@ export default function ProductLandingPage() {
                     <div className="w-16 h-16 rounded-xl bg-zinc-50 overflow-hidden shrink-0 border border-zinc-200 relative">
                       <img 
                         src={productImages[0].url} 
-                        alt="WP200" 
+                        alt={productInfo.brand + " " + (productInfo.model || "")} 
                         className="w-full h-full object-cover select-none" 
                         referrerPolicy="no-referrer"
                       />
@@ -868,7 +875,7 @@ export default function ProductLandingPage() {
                     <div className="flex-1 space-y-1">
                       <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block">{productInfo.brand}</span>
                       <h5 className="font-extrabold text-xs text-[#1D1D1F] tracking-tight leading-tight font-sans">
-                        Impresora Térmica WP200 80mm
+                        {productInfo.name}
                       </h5>
                       <p className="text-xs font-black text-[#10B981]">
                         S/ {unitPrice.toFixed(2)} <span className="text-[9px] text-[#86868B] font-semibold">(c/u)</span>
@@ -1285,7 +1292,7 @@ export default function ProductLandingPage() {
                 {driveGuideTab === 'driver' ? (
                   <div className="space-y-4">
                     <p className="text-xs text-zinc-650 font-semibold leading-relaxed">
-                      Para que tus clientes descarguen el controlador (Driver) de la impresora <strong>POS-STAR WP200</strong>, sigue estos pasos sencillos:
+                      Para que tus clientes descarguen el controlador (Driver) de tu equipo <strong>{productInfo.brand} {productInfo.model || "WP200"}</strong>, sigue estos pasos sencillos:
                     </p>
 
                     <ol className="text-xs text-zinc-700 space-y-3.5 list-decimal list-inside font-semibold leading-relaxed">
@@ -1302,7 +1309,7 @@ export default function ProductLandingPage() {
                         Haz clic en el botón <span className="text-[#1D1D1F] font-bold">Copiar enlace</span> y presiona "Hecho".
                       </li>
                       <li>
-                        Abre el archivo de código <code className="bg-zinc-100 px-1.5 py-0.5 rounded text-zinc-800 font-mono text-[9px] font-medium">/src/components/ProductLandingPage.tsx</code> y actualiza la propiedad <code className="bg-zinc-100 px-1.5 py-0.5 rounded text-amber-800 font-mono text-[9px]">driverUrl</code> dentro del objeto <code className="bg-indigo-100 px-1.5 py-0.5 rounded text-indigo-900 font-mono text-[9px]">productInfo</code> (línea 111 de este archivo).
+                        Abre tu <span className="text-apple-accent font-bold">Panel de Administración</span>, ve a la pestaña <span className="text-[#10B981] font-bold">Landing de Campaña</span>, y pega este nuevo enlace en la casilla de controladores de Google Drive de manera visual.
                       </li>
                     </ol>
 
@@ -1331,7 +1338,7 @@ export default function ProductLandingPage() {
                         Haz clic en <span className="text-[#1D1D1F] font-bold">Copiar enlace</span>.
                       </li>
                       <li>
-                        Abre el archivo de código <code className="bg-zinc-100 px-1.5 py-0.5 rounded text-zinc-800 font-mono text-[9px] font-medium">/src/components/ProductLandingPage.tsx</code> y reemplaza la propiedad <code className="bg-zinc-100 px-1.5 py-0.5 rounded text-amber-800 font-mono text-[9px]">manualUrl</code> en el objeto <code className="bg-indigo-100 px-1.5 py-0.5 rounded text-indigo-900 font-mono text-[9px]">productInfo</code> (línea 112 de este archivo).
+                        Abre tu <span className="text-apple-accent font-bold">Panel de Administración</span>, ve a la pestaña <span className="text-[#10B981] font-bold">Landing de Campaña</span>, y pega este nuevo enlace en la casilla del Manual PDF de manera de forma visual de la misma manera.
                       </li>
                     </ol>
 

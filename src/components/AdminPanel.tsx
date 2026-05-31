@@ -42,7 +42,15 @@ export default function AdminPanel() {
     bcpCCI: "002-191-001875953018-53",
     bcpCCIRaw: "00219100187595301853",
     bcpOwner: "COPIERMAX EIR.",
-    whatsappPhone: "51905820448"
+    whatsappPhone: "51905820448",
+    edition: "WP200 Pro-Edition",
+    model: "WP200",
+    originalPrice: 269.00,
+    discountText: "-24% Desc.",
+    spec1: "Marca de confianza: POS-STAR (Modelo industrial WP200 de alto rendimiento).",
+    spec2: "Tecnología: Térmica Directa (Cero costos en cartuchos de tinta).",
+    spec3: "Velocidad Profesional: 230 mm/s con sistema de autocorte garantizado.",
+    spec4: "Interfaces integradas: Entrada USB y puerto telefónico RJ11 para comandar gavetas portamonedas."
   };
 
   const defaultProductImages = [
@@ -461,7 +469,15 @@ export default function AdminPanel() {
         bcpCCI: formData.get('lander_bcpCCI') as string,
         bcpCCIRaw: formData.get('lander_bcpCCIRaw') as string,
         bcpOwner: formData.get('lander_bcpOwner') as string,
-        whatsappPhone: formData.get('lander_whatsappPhone') as string
+        whatsappPhone: formData.get('lander_whatsappPhone') as string,
+        edition: formData.get('lander_edition') as string,
+        model: formData.get('lander_model') as string,
+        originalPrice: parseFloat(formData.get('lander_originalPrice') as string) || 0,
+        discountText: formData.get('lander_discountText') as string,
+        spec1: formData.get('lander_spec1') as string,
+        spec2: formData.get('lander_spec2') as string,
+        spec3: formData.get('lander_spec3') as string,
+        spec4: formData.get('lander_spec4') as string
       },
       productImages: [
         {
@@ -1574,6 +1590,114 @@ export default function AdminPanel() {
                       placeholder="https://drive.google.com/..." 
                       defaultValue={landerConfig?.productInfo?.manualUrl || ''} 
                     />
+                  </div>
+
+                  {/* Nuevos Campos Dinámicos de Campaña */}
+                  <div className="border-t border-apple-border/10 pt-6 space-y-6">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg inline-block">
+                      🏷️ Edición, Precios y Especificaciones Adicionales
+                    </h4>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Nombre de la Edición (Header)</label>
+                        <input 
+                          required
+                          name="lander_edition" 
+                          type="text" 
+                          className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                          placeholder="Ej. WP200 Pro-Edition" 
+                          defaultValue={landerConfig?.productInfo?.edition || ''} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Código de Modelo (Shorthand)</label>
+                        <input 
+                          required
+                          name="lander_model" 
+                          type="text" 
+                          className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                          placeholder="Ej. WP200" 
+                          defaultValue={landerConfig?.productInfo?.model || ''} 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Precio Comparativo/Original (S/.)</label>
+                        <input 
+                          required
+                          name="lander_originalPrice" 
+                          type="number" 
+                          step="0.01"
+                          className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                          placeholder="Ej. 269.00" 
+                          defaultValue={landerConfig?.productInfo?.originalPrice || ''} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Porcentaje/Texto de Descuento</label>
+                        <input 
+                          required
+                          name="lander_discountText" 
+                          type="text" 
+                          className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                          placeholder="Ej. -24% Desc." 
+                          defaultValue={landerConfig?.productInfo?.discountText || ''} 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Fila del Check de Valor 1 (Bolding automático con ":")</label>
+                        <input 
+                          required
+                          name="lander_spec1" 
+                          type="text" 
+                          className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                          placeholder="Ej. Marca de confianza: POS-STAR (Modelo de alto rendimiento)." 
+                          defaultValue={landerConfig?.productInfo?.spec1 || ''} 
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Fila del Check de Valor 2 (Bolding automático con ":")</label>
+                        <input 
+                          required
+                          name="lander_spec2" 
+                          type="text" 
+                          className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                          placeholder="Ej. Tecnología: Térmica Directa (Cero costos)." 
+                          defaultValue={landerConfig?.productInfo?.spec2 || ''} 
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Fila del Check de Valor 3 (Bolding automático con ":")</label>
+                        <input 
+                          required
+                          name="lander_spec3" 
+                          type="text" 
+                          className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                          placeholder="Ej. Velocidad Profesional: 230 mm/s con autocorte." 
+                          defaultValue={landerConfig?.productInfo?.spec3 || ''} 
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-apple-sub block ml-1">Fila del Check de Valor 4 (Bolding automático con ":")</label>
+                        <input 
+                          required
+                          name="lander_spec4" 
+                          type="text" 
+                          className="apple-input w-full px-4 py-3 text-sm focus:ring-2 focus:ring-apple-accent/25" 
+                          placeholder="Ej. Interfaces integradas: Entrada USB + RJ11." 
+                          defaultValue={landerConfig?.productInfo?.spec4 || ''} 
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
