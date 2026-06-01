@@ -245,6 +245,20 @@ export default function ProductModal({ isOpen, onClose, product, setProduct, onS
                 />
               </div>
 
+              {/* Checkbox de Pop-up de Venta Rápida */}
+              <div className="flex items-center gap-3 p-4 bg-apple-gray rounded-2xl select-none">
+                <input 
+                  type="checkbox" 
+                  id="show_in_popup"
+                  checked={product.show_in_popup || false}
+                  onChange={e => setProduct({...product, show_in_popup: e.target.checked})}
+                  className="w-5 h-5 rounded border-zinc-300 text-apple-accent focus:ring-apple-accent cursor-pointer"
+                />
+                <label htmlFor="show_in_popup" className="text-sm font-semibold text-apple-dark cursor-pointer">
+                  ⚡ Mostrar este producto en Pop-up de Venta Rápida (Página Principal)
+                </label>
+              </div>
+
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between items-center ml-1">

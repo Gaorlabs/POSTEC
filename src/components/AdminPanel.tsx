@@ -281,8 +281,9 @@ export default function AdminPanel() {
 
     try {
       // Clean up the object before sending to Supabase
-      const { id, created_at, ...updateData } = editingProduct as any;
+      const { id, created_at, show_in_popup, ...updateData } = editingProduct as any;
       
+      let savedProductId = id;
       if (id) {
         const { error } = await supabase
           .from('products')
@@ -290,11 +291,36 @@ export default function AdminPanel() {
           .eq('id', id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('products')
-          .insert([updateData]);
+          .insert([updateData])
+          .select('id')
+          .single();
         if (error) throw error;
+        if (data) {
+          savedProductId = data.id;
+        }
       }
+
+      // Sync the "show_in_popup" state into the general settings!
+      if (savedProductId) {
+        let updatedSettings = { ...(settings || {}) };
+        if (show_in_popup) {
+          updatedSettings.quick_sell_product_id = savedProductId;
+          updatedSettings.quick_sell_active = true;
+        } else if (settings?.quick_sell_product_id === savedProductId) {
+          updatedSettings.quick_sell_active = false;
+        }
+
+        const { error: settingsError } = await supabase
+          .from('settings')
+          .upsert({ key: 'general', value: updatedSettings });
+
+        if (!settingsError) {
+          setSettings(updatedSettings);
+        }
+      }
+
       setIsProductModalOpen(false);
       setEditingProduct(null);
       fetchProducts();
@@ -771,7 +797,7 @@ export default function AdminPanel() {
                 </div>
                 <button 
                   onClick={() => {
-                    setEditingProduct({ name: '', description: '', price: 0, category: 'Otros', image_url: '' });
+                    setEditingProduct({ name: '', description: '', price: 0, category: 'Otros', image_url: '', show_in_popup: false });
                     setIsProductModalOpen(true);
                   }}
                   className="apple-button w-full sm:w-auto flex items-center justify-center gap-2 shadow-lg shadow-apple-accent/20"
@@ -882,7 +908,8 @@ export default function AdminPanel() {
                               </button>
                               <button 
                                 onClick={() => {
-                                  setEditingProduct(product);
+                                  const isPromoPopup = settings?.quick_sell_product_id === product.id && settings?.quick_sell_active !== false;
+                                  setEditingProduct({ ...product, show_in_popup: isPromoPopup });
                                   setIsProductModalOpen(true);
                                 }}
                                 className="p-3 hover:bg-apple-gray rounded-full text-apple-sub hover:text-apple-accent transition-all"
@@ -953,7 +980,8 @@ export default function AdminPanel() {
                         </button>
                         <button 
                           onClick={() => {
-                            setEditingProduct(product);
+                            const isPromoPopup = settings?.quick_sell_product_id === product.id && settings?.quick_sell_active !== false;
+                            setEditingProduct({ ...product, show_in_popup: isPromoPopup });
                             setIsProductModalOpen(true);
                           }}
                           className="flex-1 py-2.5 bg-apple-gray text-apple-dark rounded-xl text-xs font-semibold flex items-center justify-center gap-2"
@@ -1948,6 +1976,9 @@ export default function AdminPanel() {
                 // Promo 2
                 promo2_active: formData.get('promo2_active') === 'true',
                 promo2_product_id: formData.get('promo2_product_id') ? parseInt(formData.get('promo2_product_id') as string) : null,
+                // Pop-up Venta Rápida
+                quick_sell_active: formData.get('quick_sell_active') === 'true',
+                quick_sell_product_id: formData.get('quick_sell_product_id') ? parseInt(formData.get('quick_sell_product_id') as string) : null,
               };
               
               const { error } = await supabase
@@ -2092,6 +2123,36 @@ export default function AdminPanel() {
                     </select>
                   </div>
                 </div>
+
+                {/* QUICK SELL POP-UP CONFIG CARD */}
+                <div className="p-5 bg-gradient-to-br from-orange-50/50 to-orange-50/10 rounded-3xl border border-orange-200 space-y-4 text-left">
+                  <div className="flex justify-between items-center border-b border-orange-200/60 pb-3">
+                    <span className="text-[11px] font-black uppercase text-orange-600 tracking-wider">⚡ Pop-up de Venta Rápida (Producto Estrella)</span>
+                    <select 
+                      name="quick_sell_active" 
+                      defaultValue={settings?.quick_sell_active === false ? 'false' : 'true'}
+                      className="text-xs font-bold border border-orange-200 bg-white rounded-lg px-2.5 py-1 text-orange-700 outline-none cursor-pointer"
+                    >
+                      <option value="true">Activo (Mostrar)</option>
+                      <option value="false">Inactivo (Ocultar)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase block">Seleccionar Producto Estrella para Venta Rápida</label>
+                    <select 
+                      name="quick_sell_product_id"
+                      defaultValue={settings?.quick_sell_product_id || ""}
+                      className="w-full bg-white border border-zinc-200 px-3 py-3 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                    >
+                      <option value="">-- Seleccionar de Catálogo --</option>
+                      {products.map(p => (
+                        <option key={p.id} value={p.id}>{p.brand ? `[${p.brand}] ` : ''}{p.name} - S/ {p.price}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
               </div>
 
               <button type="submit" className="apple-button w-full py-4 text-lg rounded-2xl shadow-lg shadow-apple-accent/20">

@@ -58,6 +58,8 @@ export default function HomePage() {
 
   // Real-time automatic pop-up promotional campaign on storefront
   const [isPromoPopupOpen, setIsPromoPopupOpen] = useState(false);
+  const [isQuickSellOpen, setIsQuickSellOpen] = useState(false);
+  const [quickSellProduct, setQuickSellProduct] = useState<Product | null>(null);
   const [selectedPromoItem, setSelectedPromoItem] = useState<{name: string, price: number, image_url: string, description: string} | null>(null);
   const [isQuickPurchaseOpen, setIsQuickPurchaseOpen] = useState(false);
   const [quickQuantity, setQuickQuantity] = useState(1);
@@ -68,14 +70,6 @@ export default function HomePage() {
     paymentMethod: 'yape', // 'yape' | 'bcp_transfer' | 'contra_entrega'
     yapeOperationCode: '',
   });
-
-  // Auto triggering promotional offer popup immediately on load
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsPromoPopupOpen(true);
-    }, 150); // 150ms delay for smooth perception
-    return () => clearTimeout(timer);
-  }, []);
 
   // Lightbox Keyboard Navigation
   useEffect(() => {
@@ -173,7 +167,7 @@ export default function HomePage() {
     }
   };
 
-  const [settings, setSettings] = useState<any>({ slides: [], logo_url: '' });
+  const [settings, setSettings] = useState<any>({ slides: [], logo_url: '', quick_sell_active: true });
 
   const defaultSlides = [
     {
@@ -260,6 +254,48 @@ export default function HomePage() {
       if (appleIcon) appleIcon.setAttribute('href', settings.logo_url);
     }
   }, [settings]);
+
+  // Load active quick-sell product and trigger popup
+  useEffect(() => {
+    if (products.length > 0) {
+      const qsProductId = settings?.quick_sell_product_id;
+      const isActive = settings?.quick_sell_active !== false;
+
+      let prodToUse = null;
+
+      if (qsProductId && isActive) {
+        prodToUse = products.find(p => Number(p.id) === Number(qsProductId));
+      }
+
+      // FALLBACK: If no quick-sell product is explicitly set in settings, or the settings are empty/not initialized yet,
+      // we fallback to the first active/created product in the catalog so there is always a high-converting popup on home screen!
+      if (!prodToUse && isActive) {
+        prodToUse = products[0]; // fallback to first product
+      }
+
+      if (prodToUse) {
+        setQuickSellProduct(prodToUse);
+        const timer = setTimeout(() => {
+          setIsQuickSellOpen(true);
+        }, 1200); // 1200ms delay for high-impact visual entrance
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [settings, products]);
+
+  // Auto triggering promotional offer popup on load if no quick sell is active
+  useEffect(() => {
+    const hasQuickSellExplicit = settings?.quick_sell_active !== false && settings?.quick_sell_product_id && products.some(p => Number(p.id) === Number(settings.quick_sell_product_id));
+    const hasQuickSellFallback = settings?.quick_sell_active !== false && (!settings?.quick_sell_product_id) && products.length > 0;
+    const hasAnyQuickSell = hasQuickSellExplicit || hasQuickSellFallback;
+
+    if (!hasAnyQuickSell) {
+      const timer = setTimeout(() => {
+        setIsPromoPopupOpen(true);
+      }, 150); // 150ms delay for smooth perception
+      return () => clearTimeout(timer);
+    }
+  }, [settings, products]);
 
   useEffect(() => {
     if (selectedProduct) {
@@ -1711,6 +1747,116 @@ export default function HomePage() {
               )}
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 🚨 POP-UP DE PRODUCTO STRELLA PARA VENTA RÁPIDA (QUICK SELL) */}
+      <AnimatePresence>
+        {isQuickSellOpen && quickSellProduct && (
+          <div className="fixed inset-0 z-[1050] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm no-print overflow-y-auto">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0"
+              onClick={() => setIsQuickSellOpen(false)}
+            />
+
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              transition={{ type: "spring", damping: 25, stiffness: 180 }}
+              className="relative w-full max-w-lg bg-white rounded-[2.5rem] border border-orange-200 p-6 md:p-8 shadow-2xl z-10 flex flex-col gap-6 font-sans select-none max-h-[90vh] overflow-y-auto text-left"
+            >
+              <button 
+                onClick={() => setIsQuickSellOpen(false)}
+                className="absolute top-5 right-5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 p-1.5 rounded-full cursor-pointer z-20 transition-all font-bold"
+                title="Cerrar oferta"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="text-center space-y-1.5 pt-2">
+                <span className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-600 font-extrabold text-[10px] tracking-widest uppercase px-3.5 py-1 rounded-full animate-pulse">
+                  ⚡ ¡OFERTA ESTRELLA DE VENTA RÁPIDA!
+                </span>
+                <h3 className="text-2xl font-black text-zinc-900 tracking-tight">
+                  ¡Liquidación Flash de Hoy!
+                </h3>
+                <div className="flex items-center justify-center gap-2 text-zinc-500 text-xs font-semibold">
+                  <span>La oferta expira en:</span>
+                  <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded font-mono text-[11px] font-black tracking-wider animate-pulse">09m : 42s</span>
+                </div>
+              </div>
+
+              {/* Product Display Card */}
+              <div className="border border-orange-200/50 bg-gradient-to-tr from-amber-50/20 to-orange-50/20 rounded-3xl p-4 flex flex-col gap-4">
+                <div className="aspect-[4/3] w-full rounded-2xl overflow-hidden bg-zinc-100 relative shadow-inner">
+                  <img 
+                    src={quickSellProduct.image_url || "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop"} 
+                    alt={quickSellProduct.name} 
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute top-3 right-3 bg-red-500 text-white font-extrabold font-mono text-[10px] tracking-widest px-3 py-1 rounded-full shadow-md">
+                    ¡AHORRA 30%!
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">{quickSellProduct.category}</span>
+                    {quickSellProduct.brand && (
+                      <span className="text-[10px] bg-zinc-100 text-zinc-650 font-bold px-2 py-0.5 rounded uppercase tracking-widest">{quickSellProduct.brand}</span>
+                    )}
+                  </div>
+                  <h4 className="text-lg font-extrabold text-zinc-900 leading-snug">{quickSellProduct.name}</h4>
+                  <p className="text-xs text-zinc-500 font-medium leading-relaxed line-clamp-2">{quickSellProduct.description}</p>
+                </div>
+
+                {/* Benefits list */}
+                <div className="space-y-1.5 border-t border-zinc-200/60 pt-3">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700">
+                    <span className="text-emerald-500">✓</span>
+                    <span>Envío prioritario Express GRATUITO a todo Lima</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700">
+                    <span className="text-emerald-500">✓</span>
+                    <span>Garantía de originalidad oficial de postec</span>
+                  </div>
+                </div>
+
+                {/* Pricing area */}
+                <div className="flex items-baseline justify-between border-t border-zinc-200/60 pt-3">
+                  <span className="text-xs font-bold text-zinc-400">Precio de Liquidación:</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-zinc-455 line-through text-xs font-bold font-mono">S/ {(quickSellProduct.price * 1.35).toFixed(2)}</span>
+                    <span className="text-2xl font-black text-[#00C853] font-mono">S/ {quickSellProduct.price.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Huge checkout trigger button */}
+              <button 
+                onClick={() => {
+                  setSelectedPromoItem({
+                    name: quickSellProduct.name,
+                    price: quickSellProduct.price,
+                    image_url: quickSellProduct.image_url || '',
+                    description: quickSellProduct.description
+                  });
+                  setQuickQuantity(1);
+                  setIsQuickPurchaseOpen(true);
+                  setIsQuickSellOpen(false);
+                }}
+                className="w-full bg-gradient-to-r from-[#00C853] to-emerald-600 hover:from-[#00A844] hover:to-emerald-700 text-white font-sans font-black py-4 px-6 rounded-2xl shadow-xl flex items-center justify-center gap-2.5 hover:scale-[1.02] active:scale-98 transition-all tracking-tight cursor-pointer animate-none text-base border-t border-white/20"
+              >
+                <Sparkles size={18} className="animate-pulse text-yellow-300" />
+                <span>⚡ COMPRE RÁPIDO EN UN CLIC AQUÍ</span>
+              </button>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
