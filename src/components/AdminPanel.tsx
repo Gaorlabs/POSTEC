@@ -234,22 +234,54 @@ export default function AdminPanel() {
   }
 
   async function fetchSettings() {
-    const { data, error } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('key', 'general')
-      .single();
-    if (!error && data) setSettings(data.value);
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'general')
+        .single();
+      if (!error && data) {
+        setSettings(data.value);
+        localStorage.setItem('settings_general', JSON.stringify(data.value));
+      } else {
+        const local = localStorage.getItem('settings_general');
+        if (local) {
+          setSettings(JSON.parse(local));
+        }
+      }
+    } catch (err) {
+      const local = localStorage.getItem('settings_general');
+      if (local) {
+        try {
+          setSettings(JSON.parse(local));
+        } catch (e) {}
+      }
+    }
   }
 
   async function fetchLanderConfig() {
-    const { data, error } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('key', 'lander_config')
-      .single();
-    if (!error && data && data.value) {
-      setLanderConfig(data.value);
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'lander_config')
+        .single();
+      if (!error && data && data.value) {
+        setLanderConfig(data.value);
+        localStorage.setItem('settings_lander_config', JSON.stringify(data.value));
+      } else {
+        const local = localStorage.getItem('settings_lander_config');
+        if (local) {
+          setLanderConfig(JSON.parse(local));
+        }
+      }
+    } catch (err) {
+      const local = localStorage.getItem('settings_lander_config');
+      if (local) {
+        try {
+          setLanderConfig(JSON.parse(local));
+        } catch (e) {}
+      }
     }
   }
 
@@ -312,12 +344,19 @@ export default function AdminPanel() {
           updatedSettings.quick_sell_active = false;
         }
 
-        const { error: settingsError } = await supabase
-          .from('settings')
-          .upsert({ key: 'general', value: updatedSettings });
+        try {
+          const { error: settingsError } = await supabase
+            .from('settings')
+            .upsert({ key: 'general', value: updatedSettings });
 
-        if (!settingsError) {
+          if (settingsError) throw settingsError;
+
           setSettings(updatedSettings);
+          localStorage.setItem('settings_general', JSON.stringify(updatedSettings));
+        } catch (err) {
+          console.warn('No se pudo guardar la configuración en Supabase, usando LocalStorage de respaldo:', err);
+          setSettings(updatedSettings);
+          localStorage.setItem('settings_general', JSON.stringify(updatedSettings));
         }
       }
 
@@ -548,10 +587,14 @@ export default function AdminPanel() {
       
       setLanderConfig(updatedLanderConfig);
       localStorage.setItem('lander_config', JSON.stringify(updatedLanderConfig));
+      localStorage.setItem('settings_lander_config', JSON.stringify(updatedLanderConfig));
       alert('¡Plantilla Landing Page actualizada correctamente en vivo!');
     } catch (error: any) {
-      console.error('Error saving lander config:', error);
-      alert(`Error al guardar la plantilla: ${error.message || 'Error desconocido'}`);
+      console.warn('Falta crear la tabla "settings" en Supabase. Se guardará en LocalStorage de respaldo.', error);
+      setLanderConfig(updatedLanderConfig);
+      localStorage.setItem('lander_config', JSON.stringify(updatedLanderConfig));
+      localStorage.setItem('settings_lander_config', JSON.stringify(updatedLanderConfig));
+      alert('⚠️ Configuración de Plantilla guardada en tu navegador (LocalStorage-Respaldo) porque falta crear la tabla "settings" en tu panel de Supabase. Copia el SQL de supabase_setup.sql en tu consola de Supabase para guardar de forma permanente.');
     } finally {
       setSavingLander(false);
     }
@@ -1981,14 +2024,21 @@ export default function AdminPanel() {
                 quick_sell_product_id: formData.get('quick_sell_product_id') ? parseInt(formData.get('quick_sell_product_id') as string) : null,
               };
               
-              const { error } = await supabase
-                .from('settings')
-                .upsert({ key: 'general', value: newSettings });
+              try {
+                const { error } = await supabase
+                  .from('settings')
+                  .upsert({ key: 'general', value: newSettings });
+                  
+                if (error) throw error;
                 
-              if (error) alert('Error al guardar configuración');
-              else {
-                alert('Configuración guardada correctamente');
+                localStorage.setItem('settings_general', JSON.stringify(newSettings));
+                alert('Configuración guardada correctamente en la Base de Datos');
                 setSettings(newSettings);
+              } catch (error: any) {
+                console.warn('No se pudo guardar en Supabase (falta la tabla "settings" o mala conexión), usando LocalStorage como respaldo.', error);
+                localStorage.setItem('settings_general', JSON.stringify(newSettings));
+                setSettings(newSettings);
+                alert('⚠️ Guardado en tu navegador (LocalStorage-Respaldo) porque falta crear la tabla "settings" en tu panel de Supabase o hay un problema de conexión. Copia el script SQL de supabase_setup.sql en la consola de Supabase para fijar de forma permanente.');
               }
             }} className="apple-card p-6 md:p-8 space-y-6">
               <div className="space-y-2">

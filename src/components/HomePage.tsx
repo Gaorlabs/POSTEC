@@ -316,12 +316,29 @@ export default function HomePage() {
   }
 
   async function fetchSettings() {
-    const { data, error } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('key', 'general')
-      .single();
-    if (!error && data) setSettings(data.value);
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'general')
+        .single();
+      if (!error && data) {
+        setSettings(data.value);
+        localStorage.setItem('settings_general', JSON.stringify(data.value));
+      } else {
+        const local = localStorage.getItem('settings_general');
+        if (local) {
+          setSettings(JSON.parse(local));
+        }
+      }
+    } catch (err) {
+      const local = localStorage.getItem('settings_general');
+      if (local) {
+        try {
+          setSettings(JSON.parse(local));
+        } catch (e) {}
+      }
+    }
   }
 
   async function fetchProducts() {
@@ -1767,77 +1784,49 @@ export default function HomePage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 30 }}
               transition={{ type: "spring", damping: 25, stiffness: 180 }}
-              className="relative w-full max-w-lg bg-white rounded-[2.5rem] border border-orange-200 p-6 md:p-8 shadow-2xl z-10 flex flex-col gap-6 font-sans select-none max-h-[90vh] overflow-y-auto text-left"
+              className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl z-10 flex flex-col gap-5 font-sans select-none max-h-[95vh] overflow-y-auto text-left border border-zinc-100"
             >
               <button 
                 onClick={() => setIsQuickSellOpen(false)}
-                className="absolute top-5 right-5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 p-1.5 rounded-full cursor-pointer z-20 transition-all font-bold"
+                className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 p-1.5 rounded-full cursor-pointer z-20 transition-all font-bold"
                 title="Cerrar oferta"
               >
                 <X size={20} />
               </button>
 
-              <div className="text-center space-y-1.5 pt-2">
-                <span className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-600 font-extrabold text-[10px] tracking-widest uppercase px-3.5 py-1 rounded-full animate-pulse">
-                  ⚡ ¡OFERTA ESTRELLA DE VENTA RÁPIDA!
-                </span>
-                <h3 className="text-2xl font-black text-zinc-900 tracking-tight">
-                  ¡Liquidación Flash de Hoy!
+              {/* Imagen del producto */}
+              <div className="aspect-square w-full rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-100 flex items-center justify-center p-2">
+                <img 
+                  src={quickSellProduct.image_url || "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop"} 
+                  alt={quickSellProduct.name} 
+                  className="w-full h-full object-contain"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              {/* Nombre e información básica */}
+              <div className="space-y-1">
+                <h3 className="text-xl font-black text-zinc-900 leading-tight tracking-tight">
+                  {quickSellProduct.name}
                 </h3>
-                <div className="flex items-center justify-center gap-2 text-zinc-500 text-xs font-semibold">
-                  <span>La oferta expira en:</span>
-                  <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded font-mono text-[11px] font-black tracking-wider animate-pulse">09m : 42s</span>
+              </div>
+
+              {/* Precio */}
+              <div className="flex items-baseline justify-between border-t border-zinc-100 pt-4">
+                <span className="text-sm font-bold text-zinc-500">Precio especial:</span>
+                <div className="flex items-baseline gap-2">
+                  {quickSellProduct.original_price && (
+                    <span className="text-zinc-405 line-through text-xs font-semibold font-mono">
+                      S/ {Number(quickSellProduct.original_price).toFixed(2)}
+                    </span>
+                  )}
+                  <span className="text-2xl font-black text-[#00C853] font-mono">
+                    S/ {quickSellProduct.price.toFixed(2)}
+                  </span>
                 </div>
               </div>
 
-              {/* Product Display Card */}
-              <div className="border border-orange-200/50 bg-gradient-to-tr from-amber-50/20 to-orange-50/20 rounded-3xl p-4 flex flex-col gap-4">
-                <div className="aspect-[4/3] w-full rounded-2xl overflow-hidden bg-zinc-100 relative shadow-inner">
-                  <img 
-                    src={quickSellProduct.image_url || "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop"} 
-                    alt={quickSellProduct.name} 
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute top-3 right-3 bg-red-500 text-white font-extrabold font-mono text-[10px] tracking-widest px-3 py-1 rounded-full shadow-md">
-                    ¡AHORRA 30%!
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">{quickSellProduct.category}</span>
-                    {quickSellProduct.brand && (
-                      <span className="text-[10px] bg-zinc-100 text-zinc-650 font-bold px-2 py-0.5 rounded uppercase tracking-widest">{quickSellProduct.brand}</span>
-                    )}
-                  </div>
-                  <h4 className="text-lg font-extrabold text-zinc-900 leading-snug">{quickSellProduct.name}</h4>
-                  <p className="text-xs text-zinc-500 font-medium leading-relaxed line-clamp-2">{quickSellProduct.description}</p>
-                </div>
-
-                {/* Benefits list */}
-                <div className="space-y-1.5 border-t border-zinc-200/60 pt-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700">
-                    <span className="text-emerald-500">✓</span>
-                    <span>Envío prioritario Express GRATUITO a todo Lima</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700">
-                    <span className="text-emerald-500">✓</span>
-                    <span>Garantía de originalidad oficial de postec</span>
-                  </div>
-                </div>
-
-                {/* Pricing area */}
-                <div className="flex items-baseline justify-between border-t border-zinc-200/60 pt-3">
-                  <span className="text-xs font-bold text-zinc-400">Precio de Liquidación:</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-zinc-455 line-through text-xs font-bold font-mono">S/ {(quickSellProduct.price * 1.35).toFixed(2)}</span>
-                    <span className="text-2xl font-black text-[#00C853] font-mono">S/ {quickSellProduct.price.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Huge checkout trigger button */}
+              {/* Botón Comprar Ahora */}
               <button 
                 onClick={() => {
                   setSelectedPromoItem({
@@ -1850,10 +1839,9 @@ export default function HomePage() {
                   setIsQuickPurchaseOpen(true);
                   setIsQuickSellOpen(false);
                 }}
-                className="w-full bg-gradient-to-r from-[#00C853] to-emerald-600 hover:from-[#00A844] hover:to-emerald-700 text-white font-sans font-black py-4 px-6 rounded-2xl shadow-xl flex items-center justify-center gap-2.5 hover:scale-[1.02] active:scale-98 transition-all tracking-tight cursor-pointer animate-none text-base border-t border-white/20"
+                className="w-full bg-gradient-to-r from-[#00C853] to-emerald-600 hover:from-[#00A844] hover:to-emerald-700 text-white font-sans font-black py-4 px-6 rounded-2xl shadow-xl flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-99 transition-all cursor-pointer text-base"
               >
-                <Sparkles size={18} className="animate-pulse text-yellow-300" />
-                <span>⚡ COMPRE RÁPIDO EN UN CLIC AQUÍ</span>
+                <span>Comprar Ahora</span>
               </button>
             </motion.div>
           </div>
