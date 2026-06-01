@@ -243,6 +243,20 @@ export default function ProductLandingPage() {
     }
     loadDynamicConfig();
   }, []);
+
+  // Dynamically update link sharing preview tags based on general settings from DB
+  useEffect(() => {
+    if (generalSettings?.logo_url) {
+      const ogImage = document.querySelector('meta[property="og:image"]');
+      if (ogImage) ogImage.setAttribute('content', generalSettings.logo_url);
+      
+      const twitterImage = document.querySelector('meta[name="twitter:image"]');
+      if (twitterImage) twitterImage.setAttribute('content', generalSettings.logo_url);
+
+      const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+      if (appleIcon) appleIcon.setAttribute('href', generalSettings.logo_url);
+    }
+  }, [generalSettings]);
   
   // Keyboard navigation for Lightbox
   useEffect(() => {

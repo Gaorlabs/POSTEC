@@ -247,6 +247,20 @@ export default function HomePage() {
     fetchSettings();
   }, []);
 
+  // Dynamically update link sharing preview tags based on general settings from DB
+  useEffect(() => {
+    if (settings?.logo_url) {
+      const ogImage = document.querySelector('meta[property="og:image"]');
+      if (ogImage) ogImage.setAttribute('content', settings.logo_url);
+      
+      const twitterImage = document.querySelector('meta[name="twitter:image"]');
+      if (twitterImage) twitterImage.setAttribute('content', settings.logo_url);
+
+      const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+      if (appleIcon) appleIcon.setAttribute('href', settings.logo_url);
+    }
+  }, [settings]);
+
   useEffect(() => {
     if (selectedProduct) {
       setSelectedImage(selectedProduct.image_url);
