@@ -427,7 +427,8 @@ export default function HomePage() {
           customer_address: quickPurchaseForm.address,
           items: items,
           total: total,
-          status: 'pendiente'
+          status: 'pendiente',
+          payment_method: quickPurchaseForm.paymentMethod
         }])
         .select();
 
@@ -441,22 +442,25 @@ export default function HomePage() {
       const formattedDate = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
       const paymentText = quickPurchaseForm.paymentMethod === 'yape' 
         ? `Yape (Op: ${quickPurchaseForm.yapeOperationCode})`
-        : quickPurchaseForm.paymentMethod === 'bcp_transfer'
-        ? 'Transferencia BCP'
+        : (quickPurchaseForm.paymentMethod === 'bcp_transfer' || quickPurchaseForm.paymentMethod === 'bcp')
+        ? 'Cuenta BCP'
         : 'Pago contra entrega';
 
       const cleanNumber = settings?.whatsapp 
         ? (settings.whatsapp.startsWith('+') ? settings.whatsapp : `+${settings.whatsapp}`)
         : '+51936302456';
 
-      const msg = `*📦 COMPRA RÁPIDA - POS-TEC 📦*\n\n` +
-                  `*Orden:* #${newOrder.id}\n` +
-                  `*Fecha:* ${formattedDate}\n` +
-                  `*Cliente:* ${quickPurchaseForm.name} (${quickPurchaseForm.whatsapp})\n` +
-                  `*Dirección:* ${quickPurchaseForm.address}\n` +
-                  `*Detalle:* ${quickQuantity}x ${selectedPromoItem.name} (S/ ${total.toFixed(2)})\n` +
-                  `*Método de Pago:* ${paymentText}\n\n` +
-                  `_¡Hola! Acabo de registrar mi compra rápida por la web. Adjuntaré mi comprobante o estaré atento a la coordinación de mi envío prioritario gratuito._`;
+      const msg = `Hola, acabo de realizar un pedido en la tienda. En breve envío la captura del pago.
+
+*Mis datos:*
+👤 Nombre: ${quickPurchaseForm.name}
+📍 Entrega: ${quickPurchaseForm.address}
+💳 Pago por: ${paymentText}
+
+*Pedido #${newOrder.id}:*
+• ${quickQuantity}x ${selectedPromoItem.name}
+
+💰 *Total a pagar: S/.${total.toFixed(2)}*`;
 
       const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber.replace(/\s+/g, '')}&text=${encodeURIComponent(msg)}`;
       window.open(whatsappUrl, '_blank');
@@ -2265,19 +2269,6 @@ export default function HomePage() {
                         className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-medium outline-none text-zinc-850 focus:bg-white focus:ring-2 focus:ring-zinc-400 focus:border-transparent transition-all font-mono"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase block ml-1">Método de Envío/Pago</label>
-                      <select 
-                        required
-                        value={quickPurchaseForm.paymentMethod}
-                        onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, paymentMethod: e.target.value })}
-                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-bold outline-none text-zinc-700 cursor-pointer focus:bg-white focus:ring-2 focus:ring-zinc-400"
-                      >
-                        <option value="yape">Yape / Plin (Inmediato)</option>
-                        <option value="bcp_transfer">Transferencia BCP</option>
-                        <option value="contra_entrega">Pago Contra Entrega (Lima)</option>
-                      </select>
-                    </div>
                   </div>
 
                   <div className="space-y-1">
@@ -2293,46 +2284,100 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Bloque interactivo de pago según el método seleccionado */}
-                {quickPurchaseForm.paymentMethod === 'yape' && (
-                  <div className="bg-emerald-50/50 p-3.5 rounded-2xl border border-emerald-100 flex flex-col gap-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[11px] font-bold text-emerald-800">📲 Pagar mediante Yape / Plin</span>
-                      <span className="text-[9px] font-bold text-white bg-apple-accent px-2 py-0.5 rounded-full">Envío Prioritario</span>
-                    </div>
-                    <p className="text-[10px] text-zinc-500 leading-relaxed font-semibold">
-                      Realice el Yapeo de <strong>S/ {(selectedPromoItem.price * quickQuantity).toFixed(2)}</strong> al número <strong>936 302 456</strong> (Próspero Flores). Ingrese abajo el código de operación para despacho優先.
-                    </p>
-                    <input 
-                      type="text"
-                      maxLength={8}
-                      placeholder="Código de Operación (8 dígitos)"
-                      value={quickPurchaseForm.yapeOperationCode}
-                      onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, yapeOperationCode: e.target.value.replace(/\D/g, '') })}
-                      className="w-full bg-white border border-emerald-250/60 rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none text-emerald-800 text-center tracking-wider focus:ring-2 focus:ring-apple-accent"
-                    />
+                {/* Selector de Método de Pago Unificado */}
+                <div className="space-y-3 pt-4 border-t border-zinc-100 text-left">
+                  <label className="text-[11px] font-black uppercase text-zinc-500 block">
+                    Selecciona Método de Pago
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setQuickPurchaseForm({ ...quickPurchaseForm, paymentMethod: 'yape' })}
+                      className={`flex flex-col items-center justify-center py-3 px-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        quickPurchaseForm.paymentMethod === 'yape'
+                          ? 'border-purple-600 bg-purple-50/50 text-purple-950 font-bold'
+                          : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600'
+                      }`}
+                    >
+                      <span className="text-lg">📱</span>
+                      <span className="text-xs">Yape / Plin</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQuickPurchaseForm({ ...quickPurchaseForm, paymentMethod: 'bcp' })}
+                      className={`flex flex-col items-center justify-center py-3 px-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        quickPurchaseForm.paymentMethod === 'bcp_transfer' || quickPurchaseForm.paymentMethod === 'bcp'
+                          ? 'border-indigo-600 bg-indigo-50/50 text-indigo-950 font-bold'
+                          : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600'
+                      }`}
+                    >
+                      <span className="text-lg">🏦</span>
+                      <span className="text-xs">Cuenta BCP</span>
+                    </button>
                   </div>
-                )}
 
-                {quickPurchaseForm.paymentMethod === 'bcp_transfer' && (
-                  <div className="bg-orange-50/50 p-3.5 rounded-2xl border border-orange-100 flex flex-col gap-2">
-                    <span className="text-[11px] font-bold text-orange-800 font-sans">🏦 Cuentas BCP para Transferencia</span>
-                    <p className="text-[10px] text-zinc-500 leading-relaxed font-semibold">
-                      • BCP Soles: 191-94858302-0-12<br />
-                      • CCI: 002-191194858302012015<br />
-                      Monto: <strong>S/ {(selectedPromoItem.price * quickQuantity).toFixed(2)}</strong>. Adjunte captura de pago por el enlace de WhatsApp al finalizar.
-                    </p>
-                  </div>
-                )}
+                  {/* Detalles del Pago Elegido */}
+                  <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-100 space-y-3 text-left">
+                    {quickPurchaseForm.paymentMethod === 'yape' ? (
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold text-purple-600 block uppercase">Celular Yape / Plin</span>
+                        <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-zinc-200">
+                          <span className="font-mono text-zinc-800 font-bold text-sm">
+                            {settings?.yape_phone || '989007409'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyToClipboard(settings?.yape_phone || '989007409', 'yape')}
+                            className="text-[11px] font-bold text-purple-600 hover:text-purple-800 cursor-pointer"
+                          >
+                            {copiedText === 'yape' ? 'Copiado' : 'Copiar'}
+                          </button>
+                        </div>
+                        <div className="text-[11px] text-zinc-500">
+                          Beneficiario: <strong className="text-zinc-705 font-bold">{settings?.yape_owner || 'Joaquín García'}</strong>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold text-indigo-600 block uppercase">Número de Cuenta BCP</span>
+                          <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-zinc-200">
+                            <span className="font-mono text-zinc-800 font-bold text-xs">
+                              {settings?.bcp_account || '191-1875953-0-18'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyToClipboard((settings?.bcp_account || '191-1875953-0-18').replace(/[^0-9]/g, ''), 'bcp')}
+                              className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                            >
+                              {copiedText === 'bcp' ? 'Copiado' : 'Copiar'}
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold text-zinc-500 block uppercase">N° Cuenta Interbancaria (CCI)</span>
+                          <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-zinc-200">
+                            <span className="font-mono text-zinc-700 text-[11px]">
+                              {settings?.bcp_cci || '002-191-001875953018-53'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyToClipboard((settings?.bcp_cci || '002-191-001875953018-53').replace(/[^0-9]/g, ''), 'cci')}
+                              className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 cursor-pointer"
+                            >
+                              {copiedText === 'cci' ? 'Copiado' : 'Copiar'}
+                            </button>
+                          </div>
+                        </div>
 
-                {quickPurchaseForm.paymentMethod === 'contra_entrega' && (
-                  <div className="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-100 flex flex-col gap-1">
-                    <span className="text-[11px] font-bold text-blue-800">🤝 Pago Contra Entrega habilitado</span>
-                    <p className="text-[10px] text-zinc-500 leading-relaxed font-semibold">
-                      Válido solo en Lima Metropolitana. Abone la totalidad de <strong>S/ {(selectedPromoItem.price * quickQuantity).toFixed(2)}</strong> en efectivo o Yape al motorizado al momento de la recepción.
-                    </p>
+                        <div className="text-[11px] text-zinc-500">
+                          Titular: <strong className="text-zinc-705 font-bold">{settings?.bcp_owner || 'COPIERMAX EIRL'}</strong>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
 
                 {/* Subtotal real-time block */}
                 <div className="flex justify-between items-center border-t border-zinc-100 pt-3">

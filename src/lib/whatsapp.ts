@@ -16,19 +16,17 @@ export function buildWhatsAppMessage(
 
   const paymentText = paymentMethod === 'yape' ? 'Yape' : paymentMethod === 'bcp' ? 'Cuenta BCP' : 'No especificado';
 
-  const message = `🛒 *NUEVO PEDIDO #${orderId}*
+  const message = `Hola, acabo de realizar un pedido en la tienda. En breve envío la captura del pago.
 
-👤 Cliente: ${customerName}
-📱 WhatsApp: ${customerWhatsapp}
-📍 Dirección: ${customerAddress}
-💳 Método de Pago: ${paymentText}
+*Mis datos:*
+👤 Nombre: ${customerName}
+📍 Entrega: ${customerAddress}
+💳 Pago por: ${paymentText}
 
-*Productos:*
+*Pedido #${orderId}:*
 ${itemsText}
 
-💰 *TOTAL: S/.${total.toFixed(2)}*
-
-_Pedido realizado desde la tienda online_`;
+💰 *Total a pagar: S/.${total.toFixed(2)}*`;
 
   const cleanNumber = (targetWhatsapp || import.meta.env.VITE_WHATSAPP_NUMBER || '905820448').trim().replace(/[^0-9]/g, '');
   const destination = cleanNumber.startsWith('51') ? cleanNumber : `51${cleanNumber}`;

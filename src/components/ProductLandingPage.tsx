@@ -359,19 +359,27 @@ export default function ProductLandingPage() {
     const fullItemName = selectedLanderItem ? selectedLanderItem.name : productInfo.fullName;
     
     // Conciso, preciso y amable conforme al flujo seleccionado
-    const yapeMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
-                    `*Cliente:* ${clientName} (${clientPhone})\n` +
-                    `*Dirección:* ${deliveryAddress}\n` +
-                    `*Detalle:* ${quantity}x ${itemName} (S/ ${purchaseTotalText})\n` +
-                    `*Método:* Yape (Op: ${yapeOperationCode})\n\n` +
-                    `_¡Hola! Acabo de registrar mi pedido por Yape con el código ingresado. Adjuntaré mi captura de pantalla en breve._`;
+    const yapeMsg = `Hola, acabo de realizar un pedido en la tienda. En breve envío la captura del pago por Yape (Op: ${yapeOperationCode}).
 
-    const bcpMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
-                   `*Cliente:* ${clientName} (${clientPhone})\n` +
-                   `*Dirección:* ${deliveryAddress}\n` +
-                   `*Detalle:* ${quantity}x ${itemName} (S/ ${purchaseTotalText})\n` +
-                   `*Método:* Transferencia BCP\n\n` +
-                   `_¡Hola! He registrado mi pedido en su web y realizaré la transferencia bancaria. En breve les envío la captura de la operación por aquí._`;
+*Mis datos:*
+👤 Nombre: ${clientName}
+📍 Entrega: ${deliveryAddress}
+
+*Pedido:*
+• ${quantity}x ${itemName}
+
+💰 *Total a pagar: S/.${purchaseTotalText}*`;
+
+    const bcpMsg = `Hola, acabo de realizar un pedido en la tienda. En breve envío la captura de la transferencia BCP.
+
+*Mis datos:*
+👤 Nombre: ${clientName}
+📍 Entrega: ${deliveryAddress}
+
+*Pedido:*
+• ${quantity}x ${itemName}
+
+💰 *Total a pagar: S/.${purchaseTotalText}*`;
 
     const message = paymentMethod === 'yape' ? yapeMsg : bcpMsg;
 
@@ -391,7 +399,8 @@ export default function ProductLandingPage() {
             }
           ],
           total: calculatedTotal,
-          status: 'pendiente'
+          status: 'pendiente',
+          payment_method: paymentMethod
         }
       ]);
     } catch (dbErr) {
@@ -924,19 +933,27 @@ export default function ProductLandingPage() {
                 <button 
                   onClick={() => {
                     const purchaseTotalText = calculatedTotal.toFixed(2);
-                    const yapeMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
-                                    `*Cliente:* ${clientName} (${clientPhone})\n` +
-                                    `*Dirección:* ${deliveryAddress}\n` +
-                                    `*Detalle:* ${quantity}x ${productInfo.brand} ${productInfo.model || "WP200"} (S/ ${purchaseTotalText})\n` +
-                                    `*Método:* Yape (Op: ${yapeOperationCode})\n\n` +
-                                    `_¡Hola! Acabo de registrar mi pedido por Yape con el código ingresado. Adjuntaré mi captura de pantalla en breve._`;
+                    const yapeMsg = `Hola, acabo de realizar un pedido en la tienda. En breve envío la captura del pago por Yape (Op: ${yapeOperationCode}).
 
-                    const bcpMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
-                                   `*Cliente:* ${clientName} (${clientPhone})\n` +
-                                   `*Dirección:* ${deliveryAddress}\n` +
-                                   `*Detalle:* ${quantity}x ${productInfo.brand} ${productInfo.model || "WP200"} (S/ ${purchaseTotalText})\n` +
-                                   `*Método:* Transferencia BCP\n\n` +
-                                   `_¡Hola! He registrado mi pedido en su web y realizaré la transferencia bancaria. En breve les envío la captura de la operación por aquí._`;
+*Mis datos:*
+👤 Nombre: ${clientName}
+📍 Entrega: ${deliveryAddress}
+
+*Pedido:*
+• ${quantity}x ${productInfo.brand} ${productInfo.model || "WP200"}
+
+💰 *Total a pagar: S/.${purchaseTotalText}*`;
+
+                    const bcpMsg = `Hola, acabo de realizar un pedido en la tienda. En breve envío la captura de la transferencia BCP.
+
+*Mis datos:*
+👤 Nombre: ${clientName}
+📍 Entrega: ${deliveryAddress}
+
+*Pedido:*
+• ${quantity}x ${productInfo.brand} ${productInfo.model || "WP200"}
+
+💰 *Total a pagar: S/.${purchaseTotalText}*`;
 
                     const messageText = paymentMethod === 'yape' ? yapeMsg : bcpMsg;
                     const encoded = encodeURIComponent(messageText);
