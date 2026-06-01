@@ -711,15 +711,6 @@ export default function ProductLandingPage() {
                     <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
                       📁 Descarga de Recursos y Soporte Técnico
                     </h4>
-                    <button 
-                      onClick={() => {
-                        setDriveGuideTab('driver');
-                        setIsDriveGuideOpen(true);
-                      }}
-                      className="text-[10px] font-bold text-apple-accent hover:underline flex items-center gap-1 cursor-pointer hover:opacity-85"
-                    >
-                      💡 Tutorial: ¿Cómo subir con Google Drive?
-                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -727,13 +718,6 @@ export default function ProductLandingPage() {
                       href={productInfo.driverUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => {
-                        if (productInfo.driverUrl.includes('_ejemplo_')) {
-                          e.preventDefault();
-                          setDriveGuideTab('driver');
-                          setIsDriveGuideOpen(true);
-                        }
-                      }}
                       className="flex items-center gap-3 p-3.5 bg-[#F5F5F7] hover:bg-[#EAEAEF] rounded-2xl border border-zinc-200/40 transition-all hover:scale-[1.01] active:scale-[0.99] group text-left cursor-pointer"
                     >
                       <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-xl group-hover:bg-emerald-200 transition-colors">
@@ -742,9 +726,8 @@ export default function ProductLandingPage() {
                       <div className="flex-1 min-w-0">
                         <span className="text-[11px] font-black text-[#1D1D1F] block leading-snug font-sans flex items-center gap-1">
                           Controladores (Drivers) Windows
-                          {productInfo.driverUrl.includes('_ejemplo_') && <span className="text-[8px] font-bold bg-amber-150 text-amber-800 px-1.5 py-0.2 rounded-full shrink-0">Configura</span>}
                         </span>
-                        <span className="text-[9px] text-zinc-500 block truncate font-sans">Compatible Win 10 & 11 • Auto-instalador</span>
+                        <span className="text-[9px] text-zinc-500 block truncate font-sans">Compatible Win 10 & 11 • Descarga directa</span>
                       </div>
                     </a>
 
@@ -752,13 +735,6 @@ export default function ProductLandingPage() {
                       href={productInfo.manualUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => {
-                        if (productInfo.manualUrl.includes('_ejemplo_')) {
-                          e.preventDefault();
-                          setDriveGuideTab('manual');
-                          setIsDriveGuideOpen(true);
-                        }
-                      }}
                       className="flex items-center gap-3 p-3.5 bg-[#F5F5F7] hover:bg-[#EAEAEF] rounded-2xl border border-zinc-200/40 transition-all hover:scale-[1.01] active:scale-[0.99] group text-left cursor-pointer"
                     >
                       <div className="p-2.5 bg-indigo-100 text-indigo-800 rounded-xl group-hover:bg-indigo-200 transition-colors">
@@ -767,7 +743,6 @@ export default function ProductLandingPage() {
                       <div className="flex-1 min-w-0">
                         <span className="text-[11px] font-black text-[#1D1D1F] block leading-snug font-sans flex items-center gap-1">
                           Manual de Usuario Oficial PDF
-                          {productInfo.manualUrl.includes('_ejemplo_') && <span className="text-[8px] font-bold bg-amber-150 text-amber-800 px-1.5 py-0.2 rounded-full shrink-0">Configura</span>}
                         </span>
                         <span className="text-[9px] text-zinc-500 block truncate font-sans">Guía de instalación con comandos ESC/POS</span>
                       </div>
