@@ -399,8 +399,7 @@ export default function ProductLandingPage() {
             }
           ],
           total: calculatedTotal,
-          status: 'pendiente',
-          payment_method: paymentMethod
+          status: 'pendiente'
         }
       ]);
     } catch (dbErr) {

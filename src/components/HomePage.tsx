@@ -427,8 +427,7 @@ export default function HomePage() {
           customer_address: quickPurchaseForm.address,
           items: items,
           total: total,
-          status: 'pendiente',
-          payment_method: quickPurchaseForm.paymentMethod
+          status: 'pendiente'
         }])
         .select();
 
@@ -486,7 +485,6 @@ export default function HomePage() {
       items: cart,
       total: cartTotal,
       status: 'pendiente',
-      payment_method: orderForm.paymentMethod,
       created_at: new Date().toISOString()
     };
 
