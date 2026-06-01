@@ -385,23 +385,32 @@ export default function ProductLandingPage() {
 
     // Guardar pedido en Supabase para el panel CRM / Pedidos
     try {
-      await supabase.from('orders').insert([
+      const { data, error } = await supabase.from('orders').insert([
         {
           customer_name: clientName,
           customer_whatsapp: clientPhone,
           customer_address: deliveryAddress,
-          items: [
-            {
-              id: selectedLanderItem ? 9998 : 9999,
-              name: fullItemName,
-              price: unitPrice,
-              quantity: quantity
-            }
-          ],
           total: calculatedTotal,
-          status: 'pendiente'
+          status: 'pendiente',
+          payment_method: paymentMethod
         }
-      ]);
+      ]).select();
+      
+      if (!error && data && data[0]) {
+        await supabase.from('customers').insert([{
+           name: clientName,
+           whatsapp: clientPhone,
+           email: `${clientPhone.trim()}@cliente.com`,
+           notes: `Landing Page: ${fullItemName}`,
+        }]);
+        
+        await supabase.from('order_items').insert([{
+           order_id: data[0].id,
+           product_id: selectedLanderItem ? 9998 : 9999,
+           quantity: quantity,
+           price_at_time: unitPrice
+        }]);
+      }
     } catch (dbErr) {
       console.warn("No se pudo persistir el pedido en la BD de Supabase:", dbErr);
     }

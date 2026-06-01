@@ -425,9 +425,9 @@ export default function HomePage() {
           customer_name: quickPurchaseForm.name,
           customer_whatsapp: quickPurchaseForm.whatsapp,
           customer_address: quickPurchaseForm.address,
-          items: items,
           total: total,
-          status: 'pendiente'
+          status: 'pendiente',
+          payment_method: quickPurchaseForm.paymentMethod
         }])
         .select();
 
@@ -435,6 +435,23 @@ export default function HomePage() {
 
       const newOrder = data[0];
       setOrderSuccess(newOrder.id);
+      
+      // Keep CRM updated
+      await supabase.from('customers').insert([{
+        name: quickPurchaseForm.name,
+        whatsapp: quickPurchaseForm.whatsapp,
+        email: `${quickPurchaseForm.whatsapp.trim()}@cliente.com`,
+        notes: `Cliente de compra rápida: ${selectedPromoItem.name}`,
+      }]);
+
+      // Save order items relacionalmente
+      await supabase.from('order_items').insert([{
+         order_id: newOrder.id,
+         product_id: 9999, // Promo combo product
+         quantity: quickQuantity,
+         price_at_time: selectedPromoItem.price
+      }]);
+      
       setIsQuickPurchaseOpen(false);
 
       // Build elegant, high-conversion WhatsApp message for the Quick Purchase
@@ -463,9 +480,9 @@ export default function HomePage() {
 
       const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber.replace(/\s+/g, '')}&text=${encodeURIComponent(msg)}`;
       window.open(whatsappUrl, '_blank');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error submitting quick purchase:', err);
-      alert('Ocurrió un error al procesar su compra rápida. Por favor intente de nuevo.');
+      alert(`Ocurrió un error al procesar su compra rápida. Por favor intente de nuevo. Error: ${err.message || 'Desconocido'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -497,14 +514,31 @@ export default function HomePage() {
           customer_name: orderForm.name,
           customer_whatsapp: orderForm.whatsapp,
           customer_address: orderForm.address,
-          items: cart,
           total: cartTotal,
-          status: 'pendiente'
+          status: 'pendiente',
+          payment_method: orderForm.paymentMethod
         }])
         .select();
 
       if (!error && data && data[0]) {
         actualOrderId = data[0].id;
+        
+        // Update CRM
+        await supabase.from('customers').insert([{
+           name: orderForm.name,
+           whatsapp: orderForm.whatsapp,
+           email: `${orderForm.whatsapp.trim()}@cliente.com`,
+           notes: `Cliente de carrito.`,
+        }]);
+        
+        // Insert order items
+        const orderItemsToInsert = cart.map(item => ({
+          order_id: actualOrderId,
+          product_id: item.id,
+          quantity: item.quantity,
+          price_at_time: item.price
+        }));
+        await supabase.from('order_items').insert(orderItemsToInsert);
       } else {
         console.warn('Insert fallido, respaldando pedido en LocalStorage.', error);
         const local = localStorage.getItem('local_orders');

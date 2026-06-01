@@ -216,8 +216,28 @@ export default function AdminPanel() {
 
   async function fetchOrders() {
     try {
-      const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-      let dbOrders = data || [];
+      const { data, error } = await supabase.from('orders')
+        .select(`
+          *,
+          order_items (
+            quantity,
+            price_at_time,
+            product_id,
+            products ( name )
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      let dbOrders = data ? data.map((order: any) => ({
+        ...order,
+        items: order.order_items ? order.order_items.map((oi: any) => ({
+           id: oi.product_id,
+           name: oi.products ? oi.products.name : 'Producto',
+           price: oi.price_at_time,
+           quantity: oi.quantity
+        })) : []
+      })) : [];
+
       const local = localStorage.getItem('local_orders');
       if (local) {
         try {
@@ -396,12 +416,24 @@ export default function AdminPanel() {
     if (!editingOrder) return;
 
     try {
-      const { id, created_at, ...updateData } = editingOrder as any;
+      const { id, created_at, items, order_items, ...updateData } = editingOrder as any;
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('orders')
-        .insert([{ ...updateData, status: 'pendiente' }]);
+        .insert([{ ...updateData, status: 'pendiente' }])
+        .select();
       if (error) throw error;
+      
+      if (data && data[0] && items && items.length > 0) {
+        const orderId = data[0].id;
+        const newOrderItems = items.map((item: any) => ({
+           order_id: orderId,
+           product_id: item.id,
+           quantity: item.quantity,
+           price_at_time: item.price
+        }));
+        await supabase.from('order_items').insert(newOrderItems);
+      }
       
       setIsOrderModalOpen(false);
       setEditingOrder(null);
