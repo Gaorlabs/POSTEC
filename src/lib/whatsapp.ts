@@ -37,7 +37,7 @@ ${itemsText}
 
 export function buildProductInquiryMessage(productId: number, productName: string): string {
   const message = `Hola Pos-Tec, me interesa este producto: [ID: ${productId}] ${productName}. Deseo más información.`;
-  const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '';
+  const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '905820448';
   const encodedMessage = encodeURIComponent(message);
   
   return `https://wa.me/51${whatsappNumber}?text=${encodedMessage}`;
@@ -56,7 +56,7 @@ Total estimado: S/.${total.toFixed(2)}
 
 Quedo atento a su respuesta.`;
 
-  const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '';
+  const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '905820448';
   const encodedMessage = encodeURIComponent(message);
   
   return `https://wa.me/51${whatsappNumber}?text=${encodedMessage}`;

@@ -464,7 +464,7 @@ export default function HomePage() {
 
       const cleanNumber = settings?.whatsapp 
         ? (settings.whatsapp.startsWith('+') ? settings.whatsapp : `+${settings.whatsapp}`)
-        : '+51936302456';
+        : '+51905820448';
 
       const msg = `Hola, acabo de realizar un pedido en la tienda. En breve envío la captura del pago.
 
