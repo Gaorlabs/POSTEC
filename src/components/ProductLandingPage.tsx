@@ -64,6 +64,8 @@ export default function ProductLandingPage() {
     model: "WP200",
     originalPrice: 269.00,
     discountText: "-24% Desc.",
+    headerBadgeText: "Oferta Disponible",
+    headerWhatsappText: "905 820 448",
     spec1: "Marca de confianza: POS-STAR (Modelo industrial WP200 de alto rendimiento).",
     spec2: "Tecnología: Térmica Directa (Cero costos en cartuchos de tinta).",
     spec3: "Velocidad Profesional: 230 mm/s con sistema de autocorte garantizado.",
@@ -426,21 +428,43 @@ export default function ProductLandingPage() {
       </div>
 
       {/* Header (No Regresar Link, strictly premium display) */}
-      <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-[#E5E5E7] py-4 px-6 z-50">
-        <div className="max-w-[1200px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-apple-accent/10 flex items-center justify-center">
-              <Printer className="w-4.5 h-4.5 text-apple-accent" />
+      <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-[#E5E5E7] py-3 px-4 md:px-6 z-50">
+        <div className="max-w-[1200px] mx-auto flex items-center justify-between gap-2">
+          {/* Top-Left: Edition text (editable) */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-apple-accent/10 flex items-center justify-center text-apple-accent shrink-0 font-sans">
+              <Printer size={14} className="sm:w-4.5 sm:h-4.5" />
             </div>
-            <span className="text-sm font-bold tracking-tight text-[#1D1D1F]">{productInfo.edition || "WP200 Pro-Edition"}</span>
+            <span className="text-xs sm:text-sm font-bold tracking-tight text-[#1D1D1F] truncate max-w-[120px] sm:max-w-none font-sans">
+              {productInfo.edition || "WP200 Pro-Edition"}
+            </span>
           </div>
-          <div onClick={handleLogoClick} className="cursor-pointer select-none active:opacity-80 transition-all rounded-lg p-1 hover:bg-zinc-50" title="Pos-Tec">
-            <Logo className="h-8" />
+
+          {/* Center: Triple tap Logo */}
+          <div onClick={handleLogoClick} className="cursor-pointer select-none active:opacity-80 transition-all rounded-lg p-1 hover:bg-zinc-50 shrink-0" title="Pos-Tec (Triple click para editor)">
+            <Logo className="h-6 sm:h-8" />
           </div>
-          <div className="block">
-            <span className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
-              Oferta Disponible
+
+          {/* Right: Rich Interactive Badges & WhatsApp Link (all editable) */}
+          <div className="flex items-center gap-2">
+            {/* WhatsApp Contact Badge */}
+            {productInfo.headerWhatsappText && (
+              <a 
+                href={`https://api.whatsapp.com/send?phone=${productInfo.whatsappPhone || '51905820448'}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 bg-emerald-500 text-white hover:bg-emerald-600 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold shadow-md shadow-emerald-500/10 transition-all cursor-pointer whitespace-nowrap"
+              >
+                <div className="w-1.5 h-1.5 bg-white rounded-full relative flex items-center justify-center shrink-0">
+                  <span className="absolute w-full h-full bg-white rounded-full animate-ping opacity-75" />
+                </div>
+                <span className="font-sans font-black">Wsp: {productInfo.headerWhatsappText}</span>
+              </a>
+            )}
+
+            {/* General Offer Badge */}
+            <span className="hidden leading-none md:inline-flex items-center bg-zinc-100 border border-zinc-200 text-zinc-700 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider font-sans whitespace-nowrap">
+              {productInfo.headerBadgeText || "Oferta Disponible"}
             </span>
           </div>
         </div>
@@ -1634,6 +1658,29 @@ export default function ProductLandingPage() {
                     placeholder="Ej. WP200 Pro-Edition"
                     className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">WhatsApp Header</label>
+                    <input 
+                      type="text"
+                      value={productInfo.headerWhatsappText || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, headerWhatsappText: e.target.value }))}
+                      placeholder="Ej. 905 820 448"
+                      className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block ml-1">Badge Header Der</label>
+                    <input 
+                      type="text"
+                      value={productInfo.headerBadgeText || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, headerBadgeText: e.target.value }))}
+                      placeholder="Ej. Oferta Disponible"
+                      className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none focus:bg-white focus:ring-1 focus:ring-[#10B981]/20"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
