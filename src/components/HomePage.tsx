@@ -21,7 +21,14 @@ export default function HomePage() {
     name: '',
     whatsapp: '',
     address: '',
+    paymentMethod: 'yape' as 'yape' | 'bcp',
   });
+  const [copiedText, setCopiedText] = useState<'yape' | 'bcp' | 'cci' | null>(null);
+  const handleCopyToClipboard = (text: string, type: 'yape' | 'bcp' | 'cci') => {
+    navigator.clipboard.writeText(text);
+    setCopiedText(type);
+    setTimeout(() => setCopiedText(null), 2000);
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState<number | null>(null);
   const [currentTab, setCurrentTab] = useState<'Tienda' | 'Soporte y Controladores' | 'Combos'>('Tienda');
@@ -466,6 +473,21 @@ export default function HomePage() {
     if (cart.length === 0) return;
     
     setIsSubmitting(true);
+    const tempOrderId = Math.floor(100000 + Math.random() * 900000);
+    const newOrderObj = {
+      id: tempOrderId,
+      customer_name: orderForm.name,
+      customer_whatsapp: orderForm.whatsapp,
+      customer_address: orderForm.address,
+      items: cart,
+      total: cartTotal,
+      status: 'pendiente',
+      payment_method: orderForm.paymentMethod,
+      created_at: new Date().toISOString()
+    };
+
+    let actualOrderId = tempOrderId;
+
     try {
       const { data, error } = await supabase
         .from('orders')
@@ -479,26 +501,47 @@ export default function HomePage() {
         }])
         .select();
 
-      if (error) throw error;
+      if (!error && data && data[0]) {
+        actualOrderId = data[0].id;
+      } else {
+        console.warn('Insert fallido, respaldando pedido en LocalStorage.', error);
+        const local = localStorage.getItem('local_orders');
+        const list = local ? JSON.parse(local) : [];
+        list.push(newOrderObj);
+        localStorage.setItem('local_orders', JSON.stringify(list));
+      }
+    } catch (err) {
+      console.warn('Ocurrió un error al guardar en la base de datos de Supabase. El pedido se guardó como respaldo en LocalStorage para no perder al cliente.', err);
+      const local = localStorage.getItem('local_orders');
+      const list = local ? JSON.parse(local) : [];
+      list.push(newOrderObj);
+      localStorage.setItem('local_orders', JSON.stringify(list));
+    }
 
-      const newOrder = data[0];
-      setOrderSuccess(newOrder.id);
+    try {
+      setOrderSuccess(actualOrderId);
       
       const whatsappUrl = buildWhatsAppMessage(
-        newOrder.id,
+        actualOrderId,
         orderForm.name,
         orderForm.whatsapp,
         orderForm.address,
         cart,
-        cartTotal
+        cartTotal,
+        orderForm.paymentMethod,
+        settings?.whatsapp
       );
       window.open(whatsappUrl, '_blank');
       
       setCart([]);
-      setOrderForm({ name: '', whatsapp: '', address: '' });
-    } catch (error) {
-      console.error('Error creating order:', error);
-      alert('Error al procesar el pedido. Por favor intente de nuevo.');
+      setOrderForm({ 
+        name: '', 
+        whatsapp: '', 
+        address: '', 
+        paymentMethod: 'yape' 
+      });
+    } catch (e) {
+      console.error('Error post-checkout:', e);
     } finally {
       setIsSubmitting(false);
     }
@@ -1310,29 +1353,106 @@ export default function HomePage() {
                           onChange={e => setOrderForm({...orderForm, address: e.target.value})}
                           className="w-full bg-apple-gray border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-apple-accent transition-all h-24 resize-none"
                         />
-                        <button 
-                          disabled={isSubmitting}
-                          className="apple-button w-full py-4 text-lg mt-4"
-                        >
-                          {isSubmitting ? 'Procesando...' : 'Pagar'}
-                        </button>
-                        
-                        <div className="relative py-4">
-                          <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-apple-gray"></div>
+                        {/* Selector de Método de Pago */}
+                        <div className="space-y-3 pt-4 border-t border-zinc-100 text-left">
+                          <label className="text-[11px] font-black uppercase text-zinc-500 block">
+                            Selecciona Método de Pago
+                          </label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setOrderForm({ ...orderForm, paymentMethod: 'yape' })}
+                              className={`flex flex-col items-center justify-center py-3 px-4 rounded-xl border-2 transition-all cursor-pointer ${
+                                orderForm.paymentMethod === 'yape'
+                                  ? 'border-purple-600 bg-purple-50/50 text-purple-950 font-bold'
+                                  : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600'
+                              }`}
+                            >
+                              <span className="text-lg">📱</span>
+                              <span className="text-xs">Yape / Plin</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setOrderForm({ ...orderForm, paymentMethod: 'bcp' })}
+                              className={`flex flex-col items-center justify-center py-3 px-4 rounded-xl border-2 transition-all cursor-pointer ${
+                                orderForm.paymentMethod === 'bcp'
+                                  ? 'border-indigo-600 bg-indigo-50/50 text-indigo-950 font-bold'
+                                  : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600'
+                              }`}
+                            >
+                              <span className="text-lg">🏦</span>
+                              <span className="text-xs">Cuenta BCP</span>
+                            </button>
                           </div>
-                          <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-white px-2 text-zinc-400">O también</span>
+
+                          {/* Detalles del Pago Elegido */}
+                          <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-100 space-y-3 text-left">
+                            {orderForm.paymentMethod === 'yape' ? (
+                              <div className="space-y-1.5">
+                                <span className="text-[10px] font-bold text-purple-600 block uppercase">Celular Yape / Plin</span>
+                                <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-zinc-200">
+                                  <span className="font-mono text-zinc-800 font-bold text-sm">
+                                    {settings?.yape_phone || '989007409'}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyToClipboard(settings?.yape_phone || '989007409', 'yape')}
+                                    className="text-[11px] font-bold text-purple-600 hover:text-purple-800 cursor-pointer"
+                                  >
+                                    {copiedText === 'yape' ? 'Copiado' : 'Copiar'}
+                                  </button>
+                                </div>
+                                <div className="text-[11px] text-zinc-500">
+                                  Beneficiario: <strong className="text-zinc-705 font-bold">{settings?.yape_owner || 'Joaquín García'}</strong>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold text-indigo-600 block uppercase">Número de Cuenta BCP</span>
+                                  <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-zinc-200">
+                                    <span className="font-mono text-zinc-800 font-bold text-xs">
+                                      {settings?.bcp_account || '191-1875953-0-18'}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCopyToClipboard((settings?.bcp_account || '191-1875953-0-18').replace(/[^0-9]/g, ''), 'bcp')}
+                                      className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                                    >
+                                      {copiedText === 'bcp' ? 'Copiado' : 'Copiar'}
+                                    </button>
+                                  </div>
+                                </div>
+                                
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold text-zinc-500 block uppercase">N° Cuenta Interbancaria (CCI)</span>
+                                  <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-lg border border-zinc-200">
+                                    <span className="font-mono text-zinc-700 text-[11px]">
+                                      {settings?.bcp_cci || '002-191-001875953018-53'}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCopyToClipboard((settings?.bcp_cci || '002-191-001875953018-53').replace(/[^0-9]/g, ''), 'cci')}
+                                      className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 cursor-pointer"
+                                    >
+                                      {copiedText === 'cci' ? 'Copiado' : 'Copiar'}
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="text-[11px] text-zinc-500">
+                                  Titular: <strong className="text-zinc-705 font-bold">{settings?.bcp_owner || 'COPIERMAX EIRL'}</strong>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
 
                         <button 
-                          type="button"
-                          onClick={handleRequestCartQuote}
-                          className="w-full bg-apple-dark text-white py-4 rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center gap-3"
+                          disabled={isSubmitting}
+                          className="apple-button w-full py-4 text-lg mt-4"
                         >
-                          <Send size={20} />
-                          SOLICITAR COTIZACIÓN
+                          {isSubmitting ? 'Procesando...' : 'Comprar Ahora'}
                         </button>
                       </form>
                     </div>
@@ -1654,7 +1774,7 @@ export default function HomePage() {
                     className="w-full bg-apple-dark text-white py-4 rounded-xl font-bold hover:bg-black transition-all active:scale-[0.98] mb-8 flex items-center justify-center gap-3 shadow-xl shadow-black/10"
                   >
                     <Send size={20} />
-                    CONSULTAR Y COTIZAR POR WHATSAPP
+                    COMPRAR O CONSULTAR POR WHATSAPP
                   </button>
 
                   <div className="pt-6 border-t border-apple-border/10 mb-8">

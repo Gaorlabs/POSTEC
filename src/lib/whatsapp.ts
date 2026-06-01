@@ -6,17 +6,22 @@ export function buildWhatsAppMessage(
   customerWhatsapp: string,
   customerAddress: string,
   items: OrderItem[],
-  total: number
+  total: number,
+  paymentMethod?: 'yape' | 'bcp',
+  targetWhatsapp?: string
 ): string {
   const itemsText = items
     .map((item) => `• ${item.quantity}x ${item.name} — S/.${item.price.toFixed(2)}`)
     .join('\n');
+
+  const paymentText = paymentMethod === 'yape' ? 'Yape' : paymentMethod === 'bcp' ? 'Cuenta BCP' : 'No especificado';
 
   const message = `🛒 *NUEVO PEDIDO #${orderId}*
 
 👤 Cliente: ${customerName}
 📱 WhatsApp: ${customerWhatsapp}
 📍 Dirección: ${customerAddress}
+💳 Método de Pago: ${paymentText}
 
 *Productos:*
 ${itemsText}
@@ -25,10 +30,11 @@ ${itemsText}
 
 _Pedido realizado desde la tienda online_`;
 
-  const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '';
+  const cleanNumber = (targetWhatsapp || import.meta.env.VITE_WHATSAPP_NUMBER || '905820448').trim().replace(/[^0-9]/g, '');
+  const destination = cleanNumber.startsWith('51') ? cleanNumber : `51${cleanNumber}`;
   const encodedMessage = encodeURIComponent(message);
   
-  return `https://wa.me/51${whatsappNumber}?text=${encodedMessage}`;
+  return `https://wa.me/${destination}?text=${encodedMessage}`;
 }
 
 export function buildProductInquiryMessage(productId: number, productName: string): string {

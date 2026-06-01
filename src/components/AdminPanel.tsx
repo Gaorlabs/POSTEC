@@ -215,8 +215,26 @@ export default function AdminPanel() {
   }
 
   async function fetchOrders() {
-    const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-    if (!error) setOrders(data || []);
+    try {
+      const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      let dbOrders = data || [];
+      const local = localStorage.getItem('local_orders');
+      if (local) {
+        try {
+          const localOrders = JSON.parse(local);
+          const uniqueLocal = localOrders.filter((lo: any) => !dbOrders.some((dbo: any) => dbo.id === lo.id));
+          dbOrders = [...uniqueLocal, ...dbOrders];
+        } catch (e) {}
+      }
+      setOrders(dbOrders);
+    } catch (err) {
+      const local = localStorage.getItem('local_orders');
+      if (local) {
+        try {
+          setOrders(JSON.parse(local));
+        } catch (e) {}
+      }
+    }
   }
 
   async function fetchCustomers() {
@@ -2012,6 +2030,11 @@ export default function AdminPanel() {
                 instagram: formData.get('instagram'),
                 tiktok: formData.get('tiktok'),
                 logo_url: formData.get('logo_url'),
+                yape_phone: formData.get('yape_phone'),
+                yape_owner: formData.get('yape_owner'),
+                bcp_account: formData.get('bcp_account'),
+                bcp_cci: formData.get('bcp_cci'),
+                bcp_owner: formData.get('bcp_owner'),
                 slides: (formData.get('slides') as string).split(',').map(s => s.trim()).filter(s => s !== ''),
                 // Promo 1
                 promo1_active: formData.get('promo1_active') === 'true',
@@ -2068,6 +2091,43 @@ export default function AdminPanel() {
               <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Número de WhatsApp</label>
                 <input name="whatsapp" type="text" className="apple-input text-lg py-4" placeholder="+51..." defaultValue={settings?.whatsapp || ''} />
+              </div>
+
+              {/* CONFIGURACIÓN DE PAGO (YAPE Y BCP) */}
+              <div className="border border-zinc-200 bg-zinc-50/50 p-6 rounded-2xl space-y-4">
+                <span className="text-[12px] font-black uppercase text-zinc-600 tracking-wider block">💳 Cuentas de Cobro (Yape / BCP)</span>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Datos Yape */}
+                  <div className="space-y-3">
+                    <span className="text-[11px] font-bold uppercase text-purple-600 tracking-wider block border-b border-purple-100 pb-1">📱 Pago Yape / Plin</span>
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-zinc-500">Celular</label>
+                      <input name="yape_phone" type="text" className="apple-input bg-white py-2" placeholder="Ej. 989007409" defaultValue={settings?.yape_phone || ''} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-zinc-500">Titular</label>
+                      <input name="yape_owner" type="text" className="apple-input bg-white py-2" placeholder="Ej. Joaquín García" defaultValue={settings?.yape_owner || ''} />
+                    </div>
+                  </div>
+
+                  {/* Datos BCP */}
+                  <div className="space-y-3">
+                    <span className="text-[11px] font-bold uppercase text-indigo-600 tracking-wider block border-b border-indigo-100 pb-1">🏦 Pago Cuenta BCP</span>
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-zinc-500">N° Cuenta BCP</label>
+                      <input name="bcp_account" type="text" className="apple-input bg-white py-2" placeholder="Ej. 191-1875953-0-18" defaultValue={settings?.bcp_account || ''} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-zinc-500">CCI</label>
+                      <input name="bcp_cci" type="text" className="apple-input bg-white py-2" placeholder="Ej. 002-191-001875953018-53" defaultValue={settings?.bcp_cci || ''} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-bold text-zinc-500">Titular / Empresa</label>
+                      <input name="bcp_owner" type="text" className="apple-input bg-white py-2" placeholder="Ej. COPIERMAX EIRL" defaultValue={settings?.bcp_owner || ''} />
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="space-y-2">
                 <label className="text-[13px] font-bold uppercase tracking-widest text-apple-sub ml-1">Facebook URL</label>
