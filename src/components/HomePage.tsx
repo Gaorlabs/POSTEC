@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Logo } from './Logo';
-import { ShoppingCart, X, Plus, Minus, Send, Package, Search, ChevronRight, ChevronLeft, Globe, Zap, ShieldCheck, ArrowRight, Printer, Banknote, Fingerprint, Barcode, Monitor, Laptop, ScrollText, Store, LayoutGrid, CreditCard, Cpu, Menu, Share2, Link, Facebook, Twitter } from 'lucide-react';
+import { ShoppingCart, X, Plus, Minus, Send, Package, Search, ChevronRight, ChevronLeft, Globe, Zap, ShieldCheck, ArrowRight, Printer, Banknote, Fingerprint, Barcode, Monitor, Laptop, ScrollText, Store, LayoutGrid, CreditCard, Cpu, Menu, Share2, Link, Facebook, Twitter, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { Product, OrderItem } from '../types';
 import { buildWhatsAppMessage, buildProductInquiryMessage, buildCartQuoteMessage } from '../lib/whatsapp';
@@ -34,6 +34,67 @@ export default function HomePage() {
   const [copied, setCopied] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const productsRef = useRef<HTMLDivElement>(null);
+
+  // Lightbox enlarged preview state
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [lightboxImageIndex, setLightboxImageIndex] = useState(0);
+
+  const getProductImages = (product: Product | null) => {
+    if (!product) return [];
+    const list: string[] = [];
+    if (product.image_url) list.push(product.image_url);
+    if (product.image_urls && Array.isArray(product.image_urls)) {
+      product.image_urls.forEach(url => {
+        if (url && !list.includes(url)) {
+          list.push(url);
+        }
+      });
+    }
+    if (list.length === 0) {
+      list.push(`https://picsum.photos/seed/${product?.id || 0}/1200/800`);
+    }
+    return list;
+  };
+
+  // Real-time automatic pop-up promotional campaign on storefront
+  const [isPromoPopupOpen, setIsPromoPopupOpen] = useState(false);
+  const [selectedPromoItem, setSelectedPromoItem] = useState<{name: string, price: number, image_url: string, description: string} | null>(null);
+  const [isQuickPurchaseOpen, setIsQuickPurchaseOpen] = useState(false);
+  const [quickQuantity, setQuickQuantity] = useState(1);
+  const [quickPurchaseForm, setQuickPurchaseForm] = useState({
+    name: '',
+    whatsapp: '',
+    address: '',
+    paymentMethod: 'yape', // 'yape' | 'bcp_transfer' | 'contra_entrega'
+    yapeOperationCode: '',
+  });
+
+  // Auto triggering promotional offer popup immediately on load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsPromoPopupOpen(true);
+    }, 150); // 150ms delay for smooth perception
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Lightbox Keyboard Navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isLightboxOpen || !selectedProduct) return;
+      const imgs = getProductImages(selectedProduct);
+      if (imgs.length === 0) return;
+      
+      if (e.key === 'Escape') {
+        setIsLightboxOpen(false);
+      } else if (e.key === 'ArrowRight') {
+        setLightboxImageIndex(prev => (prev + 1) % imgs.length);
+      } else if (e.key === 'ArrowLeft') {
+        setLightboxImageIndex(prev => (prev - 1 + imgs.length) % imgs.length);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLightboxOpen, selectedProduct, lightboxImageIndex]);
 
   useEffect(() => {
     Typebot.initBubble({
@@ -269,6 +330,68 @@ export default function HomePage() {
     if (cart.length === 0) return;
     const whatsappUrl = buildCartQuoteMessage(cart, cartTotal);
     window.open(whatsappUrl, '_blank');
+  };
+
+  const handleQuickPurchaseSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPromoItem) return;
+    setIsSubmitting(true);
+    try {
+      const items = [{
+        id: 9999,
+        name: selectedPromoItem.name,
+        price: selectedPromoItem.price,
+        quantity: quickQuantity
+      }];
+      const total = selectedPromoItem.price * quickQuantity;
+
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([{
+          customer_name: quickPurchaseForm.name,
+          customer_whatsapp: quickPurchaseForm.whatsapp,
+          customer_address: quickPurchaseForm.address,
+          items: items,
+          total: total,
+          status: 'pendiente'
+        }])
+        .select();
+
+      if (error) throw error;
+
+      const newOrder = data[0];
+      setOrderSuccess(newOrder.id);
+      setIsQuickPurchaseOpen(false);
+
+      // Build elegant, high-conversion WhatsApp message for the Quick Purchase
+      const formattedDate = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
+      const paymentText = quickPurchaseForm.paymentMethod === 'yape' 
+        ? `Yape (Op: ${quickPurchaseForm.yapeOperationCode})`
+        : quickPurchaseForm.paymentMethod === 'bcp_transfer'
+        ? 'Transferencia BCP'
+        : 'Pago contra entrega';
+
+      const cleanNumber = settings?.whatsapp 
+        ? (settings.whatsapp.startsWith('+') ? settings.whatsapp : `+${settings.whatsapp}`)
+        : '+51936302456';
+
+      const msg = `*📦 COMPRA RÁPIDA - POS-TEC 📦*\n\n` +
+                  `*Orden:* #${newOrder.id}\n` +
+                  `*Fecha:* ${formattedDate}\n` +
+                  `*Cliente:* ${quickPurchaseForm.name} (${quickPurchaseForm.whatsapp})\n` +
+                  `*Dirección:* ${quickPurchaseForm.address}\n` +
+                  `*Detalle:* ${quickQuantity}x ${selectedPromoItem.name} (S/ ${total.toFixed(2)})\n` +
+                  `*Método de Pago:* ${paymentText}\n\n` +
+                  `_¡Hola! Acabo de registrar mi compra rápida por la web. Adjuntaré mi comprobante o estaré atento a la coordinación de mi envío prioritario gratuito._`;
+
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanNumber.replace(/\s+/g, '')}&text=${encodeURIComponent(msg)}`;
+      window.open(whatsappUrl, '_blank');
+    } catch (err) {
+      console.error('Error submitting quick purchase:', err);
+      alert('Ocurrió un error al procesar su compra rápida. Por favor intente de nuevo.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCheckout = async (e: React.FormEvent) => {
@@ -1328,13 +1451,26 @@ export default function HomePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                 {/* Image Section */}
                 <div className="flex flex-col gap-4">
-                  <div className="bg-apple-gray rounded-3xl p-8 flex items-center justify-center aspect-square">
+                  <div 
+                    className="bg-apple-gray rounded-3xl p-8 flex items-center justify-center aspect-square cursor-zoom-in relative group"
+                    onClick={() => {
+                      const imgs = getProductImages(selectedProduct);
+                      const currentIdx = imgs.indexOf(selectedImage || selectedProduct.image_url || '');
+                      setLightboxImageIndex(currentIdx >= 0 ? currentIdx : 0);
+                      setIsLightboxOpen(true);
+                    }}
+                  >
                     <img 
                       src={selectedImage || selectedProduct.image_url || `https://picsum.photos/seed/${selectedProduct.id}/1200/800`}
                       alt={selectedProduct.name}
-                      className="max-h-full object-contain transition-all duration-300"
+                      className="max-h-full object-contain transition-all duration-300 group-hover:scale-[1.02]"
                       referrerPolicy="no-referrer"
                     />
+                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-3xl pointer-events-none">
+                      <span className="bg-white/90 text-apple-dark text-[11px] font-black px-3.5 py-2 rounded-full shadow-lg backdrop-blur-sm flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
+                        🔍 Ampliar Vista
+                      </span>
+                    </div>
                   </div>
                   <div className="grid grid-cols-5 gap-2">
                     {/* Main Image Thumbnail */}
@@ -1530,16 +1666,529 @@ export default function HomePage() {
               
               {selectedProduct.image_urls && selectedProduct.image_urls.length > 0 && (
                 <div className="mt-12">
-                  <h3 className="text-lg font-semibold mb-4">Más fotos</h3>
+                  <h3 className="text-lg font-semibold mb-4">Más fotos <span className="text-xs font-semibold text-apple-sub">(Haga clic en cualquier foto para ampliar)</span></h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {selectedProduct.image_urls.map((url, i) => (
-                      <img key={i} src={url} alt={`${selectedProduct.name} ${i}`} className="rounded-xl border border-apple-border/20" referrerPolicy="no-referrer" />
+                      <div 
+                        key={i} 
+                        className="rounded-xl overflow-hidden border border-apple-border/20 cursor-zoom-in relative group aspect-[4/3] bg-apple-gray flex items-center justify-center p-2"
+                        onClick={() => {
+                          const imgs = getProductImages(selectedProduct);
+                          const idx = imgs.indexOf(url);
+                          setLightboxImageIndex(idx >= 0 ? idx : 0);
+                          setIsLightboxOpen(true);
+                        }}
+                      >
+                        <img 
+                          src={url} 
+                          alt={`${selectedProduct.name} ${i}`} 
+                          className="max-h-full max-w-full object-contain transition-transform duration-550 group-hover:scale-105" 
+                          referrerPolicy="no-referrer" 
+                        />
+                        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                          <span className="bg-white/95 text-apple-dark text-[9px] font-black px-2.5 py-1 rounded-lg shadow-md tracking-wider">
+                            🔍 AMPLIAR
+                          </span>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* =========================================================================
+          SISTEMA DE POPUPS DE OFERTAS & COMPRA RÁPIDA - PÁGINA PRINCIPAL
+          ========================================================================= */}
+      
+      {/* =========================================================================
+          SISTEMA DE POPUPS DE OFERTAS & COMPRA RÁPIDA - PÁGINA PRINCIPAL
+          ========================================================================= */}
+      
+      {/* Botón flotante para Ofertas Especiales en la esquina inferior izquierda (Home Page) */}
+      {(() => {
+        const promoProduct1 = settings?.promo1_product_id ? products.find(p => p.id === parseInt(settings.promo1_product_id)) : null;
+        const promoProduct2 = settings?.promo2_product_id ? products.find(p => p.id === parseInt(settings.promo2_product_id)) : null;
+        const hasPromo1 = (settings?.promo1_active !== false) && promoProduct1;
+        const hasPromo2 = (settings?.promo2_active !== false) && promoProduct2;
+        const totalActivePromos = (hasPromo1 ? 1 : 0) + (hasPromo2 ? 1 : 0);
+
+        if (!hasPromo1 && !hasPromo2) return null;
+
+        return (
+          <>
+            <div className="fixed bottom-6 left-6 z-40 no-print">
+              <button 
+                onClick={() => setIsPromoPopupOpen(true)}
+                className="bg-gradient-to-r from-[#00C853] to-emerald-600 hover:from-[#00A844] hover:to-emerald-700 text-white font-sans font-black py-3 px-5 rounded-full shadow-2xl flex items-center gap-2 hover:scale-105 active:scale-95 transition-all text-xs tracking-tight border-2 border-white cursor-pointer animate-none"
+                title="Ver Ofertas Especiales"
+              >
+                <Sparkles size={14} className="animate-pulse text-yellow-300" />
+                <span>⚡ OFERTAS FLASH ({totalActivePromos})</span>
+                <span className="bg-white text-apple-accent px-1.5 py-0.2 rounded-full text-[9px] font-black font-mono">{totalActivePromos}</span>
+              </button>
+            </div>
+
+            {/* Modal Principal de Promoción de Ofertas (2 Combos/Productos) */}
+            <AnimatePresence>
+              {isPromoPopupOpen && (
+                <div className="fixed inset-0 z-[1050] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm no-print overflow-y-auto">
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0"
+                    onClick={() => setIsPromoPopupOpen(false)}
+                  />
+
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                    transition={{ type: "spring", damping: 25, stiffness: 180 }}
+                    className="relative w-full max-w-3xl bg-white rounded-[2rem] border border-zinc-200 p-6 md:p-8 shadow-2xl z-10 flex flex-col gap-6 font-sans select-none max-h-[90vh] overflow-y-auto text-left"
+                  >
+                    <button 
+                      onClick={() => setIsPromoPopupOpen(false)}
+                      className="absolute top-5 right-5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 p-1.5 rounded-full cursor-pointer z-20 transition-all font-bold"
+                      title="Cerrar oferta"
+                    >
+                      <X size={20} />
+                    </button>
+
+                    <div className="text-center space-y-1">
+                      <span className="inline-flex items-center gap-1 bg-apple-accent/10 text-apple-accent font-black text-[10px] tracking-widest uppercase px-3 py-1 rounded-full animate-bounce">
+                        ⚡ OFERTA EXCLUSIVA DE HOY
+                      </span>
+                      <h3 className="text-xl md:text-2xl font-black text-[#1D1D1F] tracking-tight">
+                        ¡Desbloquea Ofertas VIP por Tiempo Limitado!
+                      </h3>
+                      <p className="text-xs text-zinc-500 font-medium">
+                        Añade un producto recomendado o complementa tu negocio hoy mismo con envío prioritario gratis.
+                      </p>
+                    </div>
+
+                    {/* Promo Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                      {/* Promo Card 1 */}
+                      {hasPromo1 && promoProduct1 && (
+                        <div className="border border-zinc-200 hover:border-apple-accent/40 rounded-2xl p-4 flex flex-col justify-between bg-zinc-50/50 hover:bg-white transition-all shadow-sm group">
+                          <div className="space-y-3">
+                            <div className="aspect-[4/3] w-full rounded-xl overflow-hidden bg-zinc-100 relative shadow-inner">
+                              <img 
+                                src={promoProduct1.image_url || "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop"} 
+                                alt={promoProduct1.name} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="absolute top-2 right-2 bg-apple-accent text-white font-black text-[10px] px-2.5 py-1 rounded-full shadow-sm">
+                                Recomendado
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-1 text-left">
+                              <h4 className="font-extrabold text-[#1D1D1F] text-xs sm:text-sm tracking-tight leading-snug">
+                                {promoProduct1.brand ? `[${promoProduct1.brand}] ` : ''}{promoProduct1.name}
+                              </h4>
+                              <p className="text-[11px] text-zinc-500 font-semibold leading-relaxed line-clamp-2">
+                                {promoProduct1.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-4 border-t border-zinc-150/60 mt-4 space-y-3">
+                            <div className="flex justify-between items-end">
+                              <span className="text-[9px] text-zinc-400 font-black uppercase">Precio Oferta:</span>
+                              <div className="text-right flex flex-col">
+                                <span className="text-lg font-black text-apple-accent tracking-tighter block leading-none font-mono">
+                                  S/ {Number(promoProduct1.price).toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                setSelectedPromoItem({
+                                  name: promoProduct1.name,
+                                  price: Number(promoProduct1.price),
+                                  image_url: promoProduct1.image_url || "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop",
+                                  description: promoProduct1.description || ""
+                                });
+                                setIsPromoPopupOpen(false);
+                                setIsQuickPurchaseOpen(true);
+                                setQuickQuantity(1);
+                              }}
+                              className="w-full py-2.5 bg-apple-accent hover:bg-[#00A844] text-white font-black text-xs rounded-xl shadow-lg shadow-apple-accent/10 cursor-pointer text-center text-ellipsis overflow-hidden whitespace-nowrap transition-all"
+                            >
+                              ¡Comprar con 1 Clic!
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Promo Card 2 */}
+                      {hasPromo2 && promoProduct2 && (
+                        <div className="border border-zinc-200 hover:border-apple-accent/40 rounded-2xl p-4 flex flex-col justify-between bg-zinc-50/50 hover:bg-white transition-all shadow-sm group">
+                          <div className="space-y-3">
+                            <div className="aspect-[4/3] w-full rounded-xl overflow-hidden bg-zinc-100 relative shadow-inner">
+                              <img 
+                                src={promoProduct2.image_url || "https://images.unsplash.com/photo-1563013544-824ae1d704d3?q=80&w=1000&auto=format&fit=crop"} 
+                                alt={promoProduct2.name} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="absolute top-2 right-2 bg-apple-accent text-white font-black text-[10px] px-2.5 py-1 rounded-full shadow-sm">
+                                Tendencia
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-1 text-left">
+                              <h4 className="font-extrabold text-[#1D1D1F] text-xs sm:text-sm tracking-tight leading-snug">
+                                {promoProduct2.brand ? `[${promoProduct2.brand}] ` : ''}{promoProduct2.name}
+                              </h4>
+                              <p className="text-[11px] text-zinc-500 font-semibold leading-relaxed line-clamp-2">
+                                {promoProduct2.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-4 border-t border-zinc-150/60 mt-4 space-y-3">
+                            <div className="flex justify-between items-end">
+                              <span className="text-[9px] text-zinc-400 font-black uppercase">Precio Oferta:</span>
+                              <div className="text-right flex flex-col">
+                                <span className="text-lg font-black text-apple-accent tracking-tighter block leading-none font-mono">
+                                  S/ {Number(promoProduct2.price).toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                setSelectedPromoItem({
+                                  name: promoProduct2.name,
+                                  price: Number(promoProduct2.price),
+                                  image_url: promoProduct2.image_url || "https://images.unsplash.com/photo-1563013544-824ae1d704d3?q=80&w=1000&auto=format&fit=crop",
+                                  description: promoProduct2.description || ""
+                                });
+                                setIsPromoPopupOpen(false);
+                                setIsQuickPurchaseOpen(true);
+                                setQuickQuantity(1);
+                              }}
+                              className="w-full py-2.5 bg-apple-accent hover:bg-[#00A844] text-white font-black text-xs rounded-xl shadow-lg shadow-apple-accent/10 cursor-pointer text-center text-ellipsis overflow-hidden whitespace-nowrap transition-all"
+                            >
+                              ¡Comprar con 1 Clic!
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer info text */}
+                    <p className="text-[10px] text-zinc-400 font-semibold leading-relaxed pt-2">
+                      * Las ofertas especiales de hoy se despachan en una sola encomienda express asegurada. Puede declinar estas ofertas de alta demanda haciendo clic en la X de arriba o en el fondo.
+                    </p>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+          </>
+        );
+      })()}
+
+      {/* Modal De Compra Rápida (Formulario Optimizado de 1 Clic con Soporte Yape/BCP/Contra-entrega) */}
+      <AnimatePresence>
+        {isQuickPurchaseOpen && selectedPromoItem && (
+          <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm no-print overflow-y-auto">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0"
+              onClick={() => setIsQuickPurchaseOpen(false)}
+            />
+
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 35 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 35 }}
+              className="relative w-full max-w-lg bg-white rounded-3xl border border-zinc-200 p-6 md:p-8 shadow-2xl z-10 flex flex-col gap-5 font-sans max-h-[92vh] overflow-y-auto text-left"
+            >
+              <button 
+                onClick={() => setIsQuickPurchaseOpen(false)}
+                className="absolute top-5 right-5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 p-1.5 rounded-full cursor-pointer z-20 transition-all font-bold"
+                title="Cerrar formulario"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="border-b border-zinc-100 pb-3">
+                <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full inline-block mb-1.5 tracking-wider">
+                  ⚡ PROCESO DE DESPACHO EXPRESS PRIORITARIO
+                </span>
+                <h3 className="text-xl font-bold tracking-tight text-[#1D1D1F]">
+                  Compra Rápida en 1 Clic
+                </h3>
+              </div>
+
+              {/* Mini card del producto seleccionado */}
+              <div className="flex gap-4 p-3 bg-zinc-50 border border-zinc-200/60 rounded-2xl items-center">
+                <img 
+                  src={selectedPromoItem.image_url} 
+                  alt={selectedPromoItem.name} 
+                  className="w-16 h-16 rounded-lg object-cover border border-zinc-200 shrink-0" 
+                  referrerPolicy="no-referrer"
+                />
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-xs font-bold text-zinc-800 line-clamp-1 leading-snug">{selectedPromoItem.name}</h4>
+                  <p className="text-[10px] text-zinc-400 font-semibold line-clamp-1 mt-0.5">{selectedPromoItem.description}</p>
+                  <span className="text-xs font-extrabold text-[#00C853] block mt-1 font-mono">S/ {selectedPromoItem.price.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <form onSubmit={handleQuickPurchaseSubmit} className="space-y-4">
+                {/* Selector de cantidad */}
+                <div className="flex justify-between items-center bg-zinc-50/50 p-2.5 px-4 border border-zinc-100 rounded-2xl">
+                  <span className="text-xs font-bold text-zinc-500">Cantidad:</span>
+                  <div className="flex items-center gap-3 bg-white border border-zinc-200 rounded-xl px-2 py-1 shadow-sm">
+                    <button 
+                      type="button"
+                      onClick={() => setQuickQuantity(prev => Math.max(1, prev - 1))} 
+                      className="text-zinc-650 hover:text-zinc-900 font-black p-1 text-xs"
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span className="text-xs font-black w-6 text-center text-zinc-800 font-mono">{quickQuantity}</span>
+                    <button 
+                      type="button"
+                      onClick={() => setQuickQuantity(prev => prev + 1)} 
+                      className="text-zinc-650 hover:text-zinc-900 font-black p-1 text-xs"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Datos del Cliente */}
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase block ml-1">Nombre Completo</label>
+                    <input 
+                      type="text"
+                      required
+                      placeholder="Ej. Juan Pérez"
+                      value={quickPurchaseForm.name}
+                      onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, name: e.target.value })}
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-medium outline-none text-zinc-850 focus:bg-white focus:ring-2 focus:ring-zinc-400 focus:border-transparent transition-all"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase block ml-1">Número de WhatsApp</label>
+                      <input 
+                        type="tel"
+                        required
+                        placeholder="Ej. 9XXXXXXXX"
+                        value={quickPurchaseForm.whatsapp}
+                        onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, whatsapp: e.target.value })}
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-medium outline-none text-zinc-850 focus:bg-white focus:ring-2 focus:ring-zinc-400 focus:border-transparent transition-all font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase block ml-1">Método de Envío/Pago</label>
+                      <select 
+                        required
+                        value={quickPurchaseForm.paymentMethod}
+                        onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, paymentMethod: e.target.value })}
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-bold outline-none text-zinc-700 cursor-pointer focus:bg-white focus:ring-2 focus:ring-zinc-400"
+                      >
+                        <option value="yape">Yape / Plin (Inmediato)</option>
+                        <option value="bcp_transfer">Transferencia BCP</option>
+                        <option value="contra_entrega">Pago Contra Entrega (Lima)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase block ml-1">Dirección Exacta de Envío</label>
+                    <textarea 
+                      required
+                      placeholder="Escriba su dirección completa, departamento u oficina, distrito y ciudad."
+                      rows={2}
+                      value={quickPurchaseForm.address}
+                      onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, address: e.target.value })}
+                      className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-medium outline-none text-zinc-850 focus:bg-white focus:ring-2 focus:ring-zinc-400 focus:border-transparent transition-all resize-none font-sans"
+                    />
+                  </div>
+                </div>
+
+                {/* Bloque interactivo de pago según el método seleccionado */}
+                {quickPurchaseForm.paymentMethod === 'yape' && (
+                  <div className="bg-emerald-50/50 p-3.5 rounded-2xl border border-emerald-100 flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] font-bold text-emerald-800">📲 Pagar mediante Yape / Plin</span>
+                      <span className="text-[9px] font-bold text-white bg-apple-accent px-2 py-0.5 rounded-full">Envío Prioritario</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 leading-relaxed font-semibold">
+                      Realice el Yapeo de <strong>S/ {(selectedPromoItem.price * quickQuantity).toFixed(2)}</strong> al número <strong>936 302 456</strong> (Próspero Flores). Ingrese abajo el código de operación para despacho優先.
+                    </p>
+                    <input 
+                      type="text"
+                      maxLength={8}
+                      placeholder="Código de Operación (8 dígitos)"
+                      value={quickPurchaseForm.yapeOperationCode}
+                      onChange={e => setQuickPurchaseForm({ ...quickPurchaseForm, yapeOperationCode: e.target.value.replace(/\D/g, '') })}
+                      className="w-full bg-white border border-emerald-250/60 rounded-xl px-3 py-2 text-xs font-mono font-bold outline-none text-emerald-800 text-center tracking-wider focus:ring-2 focus:ring-apple-accent"
+                    />
+                  </div>
+                )}
+
+                {quickPurchaseForm.paymentMethod === 'bcp_transfer' && (
+                  <div className="bg-orange-50/50 p-3.5 rounded-2xl border border-orange-100 flex flex-col gap-2">
+                    <span className="text-[11px] font-bold text-orange-800 font-sans">🏦 Cuentas BCP para Transferencia</span>
+                    <p className="text-[10px] text-zinc-500 leading-relaxed font-semibold">
+                      • BCP Soles: 191-94858302-0-12<br />
+                      • CCI: 002-191194858302012015<br />
+                      Monto: <strong>S/ {(selectedPromoItem.price * quickQuantity).toFixed(2)}</strong>. Adjunte captura de pago por el enlace de WhatsApp al finalizar.
+                    </p>
+                  </div>
+                )}
+
+                {quickPurchaseForm.paymentMethod === 'contra_entrega' && (
+                  <div className="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-100 flex flex-col gap-1">
+                    <span className="text-[11px] font-bold text-blue-800">🤝 Pago Contra Entrega habilitado</span>
+                    <p className="text-[10px] text-zinc-500 leading-relaxed font-semibold">
+                      Válido solo en Lima Metropolitana. Abone la totalidad de <strong>S/ {(selectedPromoItem.price * quickQuantity).toFixed(2)}</strong> en efectivo o Yape al motorizado al momento de la recepción.
+                    </p>
+                  </div>
+                )}
+
+                {/* Subtotal real-time block */}
+                <div className="flex justify-between items-center border-t border-zinc-100 pt-3">
+                  <span className="text-xs font-black text-zinc-500">Monto Final:</span>
+                  <span className="text-base font-black text-zinc-900 font-mono">S/ {(selectedPromoItem.price * quickQuantity).toFixed(2)}</span>
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-apple-accent hover:bg-[#00A844] text-white font-black text-xs py-3.5 rounded-xl shadow-lg shadow-apple-accent/10 cursor-pointer text-center text-ellipsis transition-all flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? 'Procesando Orden Prioritaria...' : '🔥 COMPLETAR COMPRA RÁPIDA'}
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Lightbox Preview Modal (Full-Screen Immersive) */}
+      <AnimatePresence>
+        {isLightboxOpen && selectedProduct && (
+          <div className="fixed inset-0 z-[1050] flex flex-col items-center justify-between bg-black/95 backdrop-blur-md no-print select-none p-4 md:p-8">
+            {/* Backdrop click to close */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 cursor-zoom-out"
+              onClick={() => setIsLightboxOpen(false)}
+            />
+
+            {/* Top Header Controls (Floating overlay) */}
+            <div className="w-full max-w-6xl flex justify-between items-center text-white/90 z-20 shrink-0 py-3 border-b border-white/10">
+              <div className="font-sans text-xs md:text-sm flex items-center gap-1.5 md:gap-2.5">
+                {selectedProduct.brand && (
+                  <span className="text-apple-accent font-extrabold uppercase tracking-widest text-[10px] bg-apple-accent/15 px-2 py-0.5 rounded-full border border-apple-accent/30">
+                    {selectedProduct.brand}
+                  </span>
+                )}
+                <span className="font-extrabold text-white tracking-tight line-clamp-1">{selectedProduct.name}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-xs font-black font-mono tracking-widest bg-white/10 px-3 py-1 rounded-full text-zinc-350 shadow-inner">
+                  {lightboxImageIndex + 1} / {getProductImages(selectedProduct).length}
+                </span>
+                <button 
+                  onClick={() => setIsLightboxOpen(false)}
+                  className="p-2.5 bg-white/10 hover:bg-white/25 text-white rounded-full transition-all cursor-pointer shadow-lg hover:scale-105 active:scale-95 border border-white/10"
+                  title="Cerrar vista previa (Esc)"
+                >
+                  <X size={18} className="stroke-[2.5]" />
+                </button>
+              </div>
+            </div>
+
+            {/* Central Stage: Large Display & Nav Arrows */}
+            <div className="w-full max-w-6xl flex-grow flex items-center justify-between relative min-h-0 my-4">
+              {/* Prev Button */}
+              {getProductImages(selectedProduct).length > 1 && (
+                <div className="absolute left-0 inset-y-0 flex items-center z-20">
+                  <button 
+                    onClick={() => {
+                      const imgs = getProductImages(selectedProduct);
+                      setLightboxImageIndex(prev => (prev - 1 + imgs.length) % imgs.length);
+                    }}
+                    className="w-12 h-12 md:w-14 md:h-14 bg-zinc-900/60 hover:bg-zinc-800/80 hover:scale-105 active:scale-95 text-white rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xl border border-white/10 backdrop-blur-sm"
+                    title="Anterior"
+                  >
+                    <ChevronLeft size={28} className="stroke-[2.5]" />
+                  </button>
+                </div>
+              )}
+
+              {/* Large Image Canvas */}
+              <div className="w-full h-full flex items-center justify-center p-2 z-10">
+                <motion.img 
+                  key={lightboxImageIndex}
+                  initial={{ opacity: 0, scale: 0.94 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.94 }}
+                  transition={{ type: "spring", damping: 30, stiffness: 240 }}
+                  src={getProductImages(selectedProduct)[lightboxImageIndex]} 
+                  alt={`${selectedProduct.name} Zoom`}
+                  className="max-full max-h-[66vh] md:max-h-[72vh] object-contain select-none shadow-[0_24px_50px_rgba(0,0,0,0.8)] rounded-2xl border border-white/10 bg-zinc-950/40 p-2/5 md:p-4"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              {/* Next Button */}
+              {getProductImages(selectedProduct).length > 1 && (
+                <div className="absolute right-0 inset-y-0 flex items-center z-20">
+                  <button 
+                    onClick={() => {
+                      const imgs = getProductImages(selectedProduct);
+                      setLightboxImageIndex(prev => (prev + 1) % imgs.length);
+                    }}
+                    className="w-12 h-12 md:w-14 md:h-14 bg-zinc-900/60 hover:bg-zinc-800/80 hover:scale-105 active:scale-95 text-white rounded-full flex items-center justify-center transition-all cursor-pointer shadow-xl border border-white/10 backdrop-blur-sm"
+                    title="Siguiente"
+                  >
+                    <ChevronRight size={28} className="stroke-[2.5]" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Grid Slider Thumbnail Bar */}
+            {getProductImages(selectedProduct).length > 1 && (
+              <div className="w-full max-w-xl py-3 z-20 shrink-0 flex justify-center gap-3 overflow-x-auto scrollbar-hide border-t border-white/5 pt-5">
+                {getProductImages(selectedProduct).map((url, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setLightboxImageIndex(i)}
+                    className={`relative w-14 h-14 md:w-16 md:h-16 rounded-xl overflow-hidden border-2 transition-all duration-300 transform ${
+                      lightboxImageIndex === i ? 'border-apple-accent scale-105 shadow-xl shadow-apple-accent/30 opacity-100' : 'border-transparent opacity-40 hover:opacity-90'
+                    }`}
+                  >
+                    <img src={url} alt="nav thumb" className="w-full h-full object-cover select-none" referrerPolicy="no-referrer" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </AnimatePresence>
     </div>

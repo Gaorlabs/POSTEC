@@ -1942,6 +1942,12 @@ export default function AdminPanel() {
                 tiktok: formData.get('tiktok'),
                 logo_url: formData.get('logo_url'),
                 slides: (formData.get('slides') as string).split(',').map(s => s.trim()).filter(s => s !== ''),
+                // Promo 1
+                promo1_active: formData.get('promo1_active') === 'true',
+                promo1_product_id: formData.get('promo1_product_id') ? parseInt(formData.get('promo1_product_id') as string) : null,
+                // Promo 2
+                promo2_active: formData.get('promo2_active') === 'true',
+                promo2_product_id: formData.get('promo2_product_id') ? parseInt(formData.get('promo2_product_id') as string) : null,
               };
               
               const { error } = await supabase
@@ -2021,6 +2027,73 @@ export default function AdminPanel() {
                   </label>
                 </div>
               </div>
+              {/* =========================================================================
+                  SECCIÓN: POPUPS DE OFERTAS DIPLOMADOS EN LA PÁGINA PRINCIPAL
+                  ========================================================================= */}
+              <div className="border-t border-zinc-200/60 pt-6 mt-6 space-y-6">
+                <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-150 text-[12px] font-sans font-semibold leading-relaxed text-emerald-900">
+                  🎁 <strong>Fijar Productos para Ofertas Flash:</strong> Seleccione de su catálogo de productos registrados cuáles desea promocionar en las ventanas emergentes automáticas para incentivar la venta directa o rápida.
+                </div>
+
+                {/* PROMO 1 CONFIG CARD */}
+                <div className="p-5 bg-zinc-50 rounded-3xl border border-zinc-200 space-y-4 text-left">
+                  <div className="flex justify-between items-center border-b border-zinc-200/60 pb-3">
+                    <span className="text-[11px] font-black uppercase text-rose-500 tracking-wider">🎯 Oferta Flash 1</span>
+                    <select 
+                      name="promo1_active" 
+                      defaultValue={settings?.promo1_active === false ? 'false' : 'true'}
+                      className="text-xs font-bold border border-zinc-200 bg-white rounded-lg px-2.5 py-1 text-zinc-700 outline-none cursor-pointer"
+                    >
+                      <option value="true">Activo (Mostrar)</option>
+                      <option value="false">Inactivo (Ocultar)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase block">Seleccionar Producto a Promocionar</label>
+                    <select 
+                      name="promo1_product_id"
+                      defaultValue={settings?.promo1_product_id || ""}
+                      className="w-full bg-white border border-zinc-200 px-3 py-3 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                    >
+                      <option value="">-- Seleccionar de Catálogo --</option>
+                      {products.map(p => (
+                        <option key={p.id} value={p.id}>{p.brand ? `[${p.brand}] ` : ''}{p.name} - S/ {p.price}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* PROMO 2 CONFIG CARD */}
+                <div className="p-5 bg-zinc-50 rounded-3xl border border-zinc-200 space-y-4 text-left">
+                  <div className="flex justify-between items-center border-b border-zinc-200/60 pb-3">
+                    <span className="text-[11px] font-black uppercase text-amber-500 tracking-wider">🎯 Oferta Flash 2</span>
+                    <select 
+                      name="promo2_active" 
+                      defaultValue={settings?.promo2_active === false ? 'false' : 'true'}
+                      className="text-xs font-bold border border-zinc-200 bg-white rounded-lg px-2.5 py-1 text-zinc-700 outline-none cursor-pointer"
+                    >
+                      <option value="true">Activo (Mostrar)</option>
+                      <option value="false">Inactivo (Ocultar)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase block">Seleccionar Producto a Promocionar</label>
+                    <select 
+                      name="promo2_product_id"
+                      defaultValue={settings?.promo2_product_id || ""}
+                      className="w-full bg-white border border-zinc-200 px-3 py-3 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                    >
+                      <option value="">-- Seleccionar de Catálogo --</option>
+                      {products.map(p => (
+                        <option key={p.id} value={p.id}>{p.brand ? `[${p.brand}] ` : ''}{p.name} - S/ {p.price}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <button type="submit" className="apple-button w-full py-4 text-lg rounded-2xl shadow-lg shadow-apple-accent/20">
                 Guardar Configuración
               </button>

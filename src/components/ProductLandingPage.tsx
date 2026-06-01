@@ -69,7 +69,21 @@ export default function ProductLandingPage() {
     spec1: "Marca de confianza: POS-STAR (Modelo industrial WP200 de alto rendimiento).",
     spec2: "Tecnología: Térmica Directa (Cero costos en cartuchos de tinta).",
     spec3: "Velocidad Profesional: 230 mm/s con sistema de autocorte garantizado.",
-    spec4: "Interfaces integradas: Entrada USB y puerto telefónico RJ11 para comandar gavetas portamonedas."
+    spec4: "Interfaces integradas: Entrada USB y puerto telefónico RJ11 para comandar gavetas portamonedas.",
+    // Promo 1 (Buy free premium 10 thermal roll rolls combo)
+    promo1_active: true,
+    promo1_title: "🎁 COMBO IMPRESORA + 10 ROLLOS PREMIUM",
+    promo1_desc: "Llévese la ticketera industrial de alta velocidad más un pack de 10 rollos térmicos de 80mm de alta densidad.",
+    promo1_price: 249.00,
+    promo1_image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop",
+    promo1_btn: "¡Comprar Impresora + 10 Rollos!",
+    // Promo 2 (Buy printer + money drawer combo)
+    promo2_active: true,
+    promo2_title: "⚡ COMBO DUO: Impresora + Cajón Monedero",
+    promo2_desc: "Maximiza tu punto de venta. Agrega el cajón monedero POS-STAR de alta resistencia con apertura automática RJ11 por un precio especial.",
+    promo2_price: 349.00,
+    promo2_image: "https://images.unsplash.com/photo-1563013544-824ae1d704d3?q=80&w=1000&auto=format&fit=crop",
+    promo2_btn: "¡Comprar Combo con Cajón!"
   };
 
   const defaultProductImages = [
@@ -105,12 +119,22 @@ export default function ProductLandingPage() {
     }
   ];
 
-  const [productInfo, setProductInfo] = useState(defaultProductInfo);
+  const [productInfo, setProductInfo] = useState<any>(defaultProductInfo);
   const [productImages, setProductImages] = useState(defaultProductImages);
   const [quantity, setQuantity] = useState(1);
   const [isOrdered, setIsOrdered] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  // Catalog products and general settings for promotions lookup
+  const [products, setProducts] = useState<any[]>([]);
+  const [generalSettings, setGeneralSettings] = useState<any>(null);
+
+  // Quick purchase item selection state (null means standard printer)
+  const [selectedLanderItem, setSelectedLanderItem] = useState<{name: string, price: number, isPromo: boolean, image_url?: string} | null>(null);
+
+  // Real-time automatic pop-up promotional campaign states
+  const [isPromoPopupOpen, setIsPromoPopupOpen] = useState(false);
 
   // Direct Live Visual Editor States
   const [isVisualEditorActive, setIsVisualEditorActive] = useState(false);
@@ -119,7 +143,7 @@ export default function ProductLandingPage() {
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [loginError, setLoginError] = useState(false);
   const [isSavingVisual, setIsSavingVisual] = useState(false);
-  const [visualActiveTab, setVisualActiveTab] = useState<'info' | 'specs' | 'images' | 'payment'>('info');
+  const [visualActiveTab, setVisualActiveTab] = useState<'info' | 'specs' | 'images' | 'payment' | 'popups'>('info');
 
   // Logo Click Secret Gesture Tracker (Triple Tap in 2 seconds)
   const [logoClicks, setLogoClicks] = useState<number>(0);
@@ -165,6 +189,25 @@ export default function ProductLandingPage() {
   useEffect(() => {
     async function loadDynamicConfig() {
       try {
+        // Fetch products list
+        const { data: prodData, error: prodError } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!prodError && prodData) {
+          setProducts(prodData);
+        }
+
+        // Fetch general settings for correct promotions mapping
+        const { data: genData, error: genError } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'general')
+          .single();
+        if (!genError && genData) {
+          setGeneralSettings(genData.value);
+        }
+
         const { data, error } = await supabase
           .from('settings')
           .select('value')
@@ -216,6 +259,14 @@ export default function ProductLandingPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isLightboxOpen, productImages]);
+
+  // Auto triggering promotional offer popup immediately on load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsPromoPopupOpen(true);
+    }, 150); // 150ms delay for smooth perception
+    return () => clearTimeout(timer);
+  }, []);
   
   // Virtual Store States
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -253,7 +304,7 @@ export default function ProductLandingPage() {
   const handleDecrement = () => setQuantity(prev => Math.max(1, prev - 1));
 
   // Dynamic calculations
-  const unitPrice = productInfo.price;
+  const unitPrice = selectedLanderItem ? selectedLanderItem.price : (productInfo.price || 0);
   const rawSubtotal = unitPrice * quantity;
   
   // Base landing purchases (S/ 203.00 includes IGV)
@@ -290,19 +341,21 @@ export default function ProductLandingPage() {
     });
 
     const purchaseTotalText = calculatedTotal.toFixed(2);
+    const itemName = selectedLanderItem ? selectedLanderItem.name : `${productInfo.brand} ${productInfo.model || 'WP200'}`;
+    const fullItemName = selectedLanderItem ? selectedLanderItem.name : productInfo.fullName;
     
     // Conciso, preciso y amable conforme al flujo seleccionado
     const yapeMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
                     `*Cliente:* ${clientName} (${clientPhone})\n` +
                     `*Dirección:* ${deliveryAddress}\n` +
-                    `*Detalle:* ${quantity}x ${productInfo.brand} ${productInfo.model || "WP200"} (S/ ${purchaseTotalText})\n` +
+                    `*Detalle:* ${quantity}x ${itemName} (S/ ${purchaseTotalText})\n` +
                     `*Método:* Yape (Op: ${yapeOperationCode})\n\n` +
                     `_¡Hola! Acabo de registrar mi pedido por Yape con el código ingresado. Adjuntaré mi captura de pantalla en breve._`;
 
     const bcpMsg = `*📦 NUEVO PEDIDO - POS-TEC 📦*\n\n` +
                    `*Cliente:* ${clientName} (${clientPhone})\n` +
                    `*Dirección:* ${deliveryAddress}\n` +
-                   `*Detalle:* ${quantity}x ${productInfo.brand} ${productInfo.model || "WP200"} (S/ ${purchaseTotalText})\n` +
+                   `*Detalle:* ${quantity}x ${itemName} (S/ ${purchaseTotalText})\n` +
                    `*Método:* Transferencia BCP\n\n` +
                    `_¡Hola! He registrado mi pedido en su web y realizaré la transferencia bancaria. En breve les envío la captura de la operación por aquí._`;
 
@@ -317,9 +370,9 @@ export default function ProductLandingPage() {
           customer_address: deliveryAddress,
           items: [
             {
-              id: 9999,
-              name: productInfo.fullName,
-              price: productInfo.price,
+              id: selectedLanderItem ? 9998 : 9999,
+              name: fullItemName,
+              price: unitPrice,
               quantity: quantity
             }
           ],
@@ -347,7 +400,7 @@ export default function ProductLandingPage() {
             yapeOperationCode: paymentMethod === 'yape' ? yapeOperationCode : 'bcp_transfer_pending',
             total: purchaseTotalText,
             quantity,
-            product: productInfo.fullName,
+            product: fullItemName,
             date: formattedDate
           })
         });
@@ -919,20 +972,33 @@ export default function ProductLandingPage() {
                   <div className="bg-white border border-zinc-200 rounded-2xl p-4 flex gap-4 items-center">
                     <div className="w-16 h-16 rounded-xl bg-zinc-50 overflow-hidden shrink-0 border border-zinc-200 relative">
                       <img 
-                        src={productImages[0].url} 
-                        alt={productInfo.brand + " " + (productInfo.model || "")} 
+                        src={selectedLanderItem 
+                          ? (selectedLanderItem.image_url || productImages[0].url) 
+                          : productImages[0].url} 
+                        alt={selectedLanderItem ? selectedLanderItem.name : (productInfo.brand + " " + (productInfo.model || ""))} 
                         className="w-full h-full object-cover select-none" 
                         referrerPolicy="no-referrer"
                       />
                     </div>
                     <div className="flex-1 space-y-1">
-                      <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block">{productInfo.brand}</span>
+                      <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest block">
+                        {selectedLanderItem ? '🌟 Oferta Especial' : productInfo.brand}
+                      </span>
                       <h5 className="font-extrabold text-xs text-[#1D1D1F] tracking-tight leading-tight font-sans">
-                        {productInfo.name}
+                        {selectedLanderItem ? selectedLanderItem.name : productInfo.name}
                       </h5>
                       <p className="text-xs font-black text-[#10B981]">
                         S/ {unitPrice.toFixed(2)} <span className="text-[9px] text-[#86868B] font-semibold">(c/u)</span>
                       </p>
+                      {selectedLanderItem && (
+                        <button 
+                          type="button" 
+                          onClick={() => setSelectedLanderItem(null)}
+                          className="text-[10px] text-red-500 hover:text-red-700 font-bold underline transition-colors block cursor-pointer text-left"
+                        >
+                          Quitar oferta (Ver solo impresora)
+                        </button>
+                      )}
                     </div>
 
                     {/* Integrated Counter Inside Product */}
@@ -1444,6 +1510,233 @@ export default function ProductLandingPage() {
         </div>
       </footer>
 
+      {/* Botón flotante para Ofertas Flash en la esquina inferior izquierda */}
+      {(() => {
+        const promoProduct1 = generalSettings?.promo1_product_id ? products.find(p => p.id === parseInt(generalSettings.promo1_product_id)) : null;
+        const promoProduct2 = generalSettings?.promo2_product_id ? products.find(p => p.id === parseInt(generalSettings.promo2_product_id)) : null;
+
+        const hasPromo1 = (generalSettings?.promo1_active !== false) ? (promoProduct1 ? true : (productInfo.promo1_active === true || productInfo.promo1_active === "true")) : false;
+        const hasPromo2 = (generalSettings?.promo2_active !== false) ? (promoProduct2 ? true : (productInfo.promo2_active === true || productInfo.promo2_active === "true")) : false;
+        const totalActivePromos = (hasPromo1 ? 1 : 0) + (hasPromo2 ? 1 : 0);
+
+        if (!hasPromo1 && !hasPromo2) return null;
+
+        const offer1 = promoProduct1 ? {
+          name: promoProduct1.brand ? `[${promoProduct1.brand}] ${promoProduct1.name}` : promoProduct1.name,
+          price: Number(promoProduct1.price),
+          description: promoProduct1.description || "",
+          image_url: promoProduct1.image_url || "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop"
+        } : {
+          name: productInfo.promo1_title || "🎁 COMBO IMPRESORA + 10 ROLLOS PREMIUM",
+          price: Number(productInfo.promo1_price || 249),
+          description: productInfo.promo1_desc || "Llévese la ticketera industrial de alta velocidad más un pack de 10 rollos térmicos de 80mm de alta densidad.",
+          image_url: productInfo.promo1_image || "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop"
+        };
+
+        const offer2 = promoProduct2 ? {
+          name: promoProduct2.brand ? `[${promoProduct2.brand}] ${promoProduct2.name}` : promoProduct2.name,
+          price: Number(promoProduct2.price),
+          description: promoProduct2.description || "",
+          image_url: promoProduct2.image_url || "https://images.unsplash.com/photo-1563013544-824ae1d704d3?q=80&w=1000&auto=format&fit=crop"
+        } : {
+          name: productInfo.promo2_title || "⚡ COMBO DUO: Impresora + Cajón Monedero",
+          price: Number(productInfo.promo2_price || 349),
+          description: productInfo.promo2_desc || "Maximiza tu punto de venta. Agrega el cajón monedero POS-STAR de alta resistencia con apertura automática RJ11 por un precio especial.",
+          image_url: productInfo.promo2_image || "https://images.unsplash.com/photo-1563013544-824ae1d704d3?q=80&w=1000&auto=format&fit=crop"
+        };
+
+        return (
+          <>
+            <div className="fixed bottom-6 left-6 z-40 no-print">
+              <button 
+                onClick={() => setIsPromoPopupOpen(true)}
+                className="bg-apple-accent hover:bg-[#00A844] text-white font-sans font-black py-3 sm:py-3.5 px-4 sm:px-6 rounded-full shadow-2xl flex items-center gap-2 hover:scale-105 active:scale-95 transition-all text-xs tracking-tight border-2 border-white cursor-pointer"
+                title="Ver Ofertas Especiales"
+              >
+                <Sparkles size={14} className="animate-pulse text-yellow-300" />
+                <span>⚡ OFERTAS FLASH ({totalActivePromos})</span>
+                <span className="bg-white text-[#00C853] px-1.5 py-0.2 rounded-full text-[9px] font-black font-mono">{totalActivePromos}</span>
+              </button>
+            </div>
+
+            {/* Dynamic Pop-up Promo Campaign Modal (2 custom deals) */}
+            <AnimatePresence>
+              {isPromoPopupOpen && (
+                <div className="fixed inset-0 z-[1050] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm no-print overflow-y-auto">
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0"
+                    onClick={() => setIsPromoPopupOpen(false)}
+                  />
+
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                    transition={{ type: "spring", damping: 25, stiffness: 180 }}
+                    className="relative w-full max-w-3xl bg-white rounded-[2rem] border border-zinc-200 p-6 md:p-8 shadow-2xl z-10 flex flex-col gap-6 font-sans select-none max-h-[90vh] overflow-y-auto text-left"
+                  >
+                    <button 
+                      onClick={() => setIsPromoPopupOpen(false)}
+                      className="absolute top-5 right-5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 p-1.5 rounded-full cursor-pointer z-20 transition-all"
+                      title="Cerrar oferta"
+                    >
+                      <X size={18} />
+                    </button>
+
+                    <div className="text-center space-y-1">
+                      <span className="inline-flex items-center gap-1 bg-apple-accent/10 text-apple-accent font-black text-[10px] tracking-widest uppercase px-3 py-1 rounded-full animate-bounce">
+                        ⚡ OPORTUNIDAD ÚNICA DE HOY
+                      </span>
+                      <h3 className="text-xl md:text-2xl font-black text-[#1D1D1F] tracking-tight">
+                        ¡Desbloquea Combos Premium con Descuento!
+                      </h3>
+                      <p className="text-xs text-zinc-500 font-medium">
+                        Añade un pack recomendado o complementa tu equipo al instante para envío prioritario gratuito.
+                      </p>
+                    </div>
+
+                    {/* Promo Cards Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                      {/* Promo Card 1 */}
+                      {hasPromo1 && (
+                        <div className="border border-zinc-200 hover:border-apple-accent/40 rounded-2xl p-4 flex flex-col justify-between bg-zinc-50/50 hover:bg-white transition-all shadow-sm group">
+                          <div className="space-y-3">
+                            <div className="aspect-[4/3] w-full rounded-xl overflow-hidden bg-zinc-100 relative shadow-inner">
+                              <img 
+                                src={offer1.image_url} 
+                                alt={offer1.name} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="absolute top-2 right-2 bg-apple-accent text-white font-black text-[10px] px-2.5 py-1 rounded-full">
+                                Recomendado
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-1 text-left">
+                              <h4 className="font-extrabold text-[#1D1D1F] text-xs sm:text-sm tracking-tight leading-snug">
+                                {offer1.name}
+                              </h4>
+                              <p className="text-[11px] text-zinc-500 font-semibold leading-relaxed line-clamp-2">
+                                {offer1.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-4 border-t border-zinc-100 mt-4 space-y-3">
+                            <div className="flex justify-between items-end">
+                              <span className="text-[9px] text-zinc-400 font-black uppercase">Precio Pack:</span>
+                              <div className="text-right">
+                                <span className="text-lg font-black text-apple-accent tracking-tighter block leading-none">
+                                  S/ {Number(offer1.price).toFixed(2)}
+                                </span>
+                                <span className="text-[9px] text-zinc-400 line-through">
+                                  Normal: S/ {Number(offer1.price * 1.35).toFixed(0)}
+                                </span>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                setSelectedLanderItem({
+                                  name: offer1.name,
+                                  price: Number(offer1.price),
+                                  isPromo: true,
+                                  image_url: offer1.image_url
+                                });
+                                setIsPromoPopupOpen(false);
+                                setIsCheckoutOpen(true);
+                                // Scroll smoothly to checkout
+                                setTimeout(() => {
+                                  document.getElementById('checkout-storeflow')?.scrollIntoView({ behavior: 'smooth' });
+                                }, 200);
+                              }}
+                              className="w-full py-2.5 bg-apple-accent hover:bg-[#00A844] text-white font-black text-xs rounded-xl shadow-lg shadow-apple-accent/10 cursor-pointer text-center text-ellipsis overflow-hidden whitespace-nowrap transition-all animate-pulse"
+                            >
+                              ¡Comprar con 1 Clic!
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Promo Card 2 */}
+                      {hasPromo2 && (
+                        <div className="border border-zinc-200 hover:border-apple-accent/40 rounded-2xl p-4 flex flex-col justify-between bg-zinc-50/50 hover:bg-white transition-all shadow-sm group">
+                          <div className="space-y-3">
+                            <div className="aspect-[4/3] w-full rounded-xl overflow-hidden bg-zinc-100 relative shadow-inner">
+                              <img 
+                                src={offer2.image_url} 
+                                alt={offer2.name} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="absolute top-2 right-2 bg-apple-accent text-white font-black text-[10px] px-2.5 py-1 rounded-full">
+                                Tendencia
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-1 text-left">
+                              <h4 className="font-extrabold text-[#1D1D1F] text-xs sm:text-sm tracking-tight leading-snug">
+                                {offer2.name}
+                              </h4>
+                              <p className="text-[11px] text-zinc-500 font-semibold leading-relaxed line-clamp-2">
+                                {offer2.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-4 border-t border-zinc-100 mt-4 space-y-3">
+                            <div className="flex justify-between items-end">
+                              <span className="text-[9px] text-zinc-400 font-black uppercase">Precio Pack:</span>
+                              <div className="text-right">
+                                <span className="text-base sm:text-lg font-black text-apple-accent tracking-tighter block leading-none">
+                                  S/ {Number(offer2.price).toFixed(2)}
+                                </span>
+                                <span className="text-[9px] text-zinc-450 line-through">
+                                  Normal: S/ {Number(offer2.price * 1.35).toFixed(0)}
+                                </span>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                setSelectedLanderItem({
+                                  name: offer2.name,
+                                  price: Number(offer2.price),
+                                  isPromo: true,
+                                  image_url: offer2.image_url
+                                });
+                                setIsPromoPopupOpen(false);
+                                setIsCheckoutOpen(true);
+                                // Scroll smoothly to checkout
+                                setTimeout(() => {
+                                  document.getElementById('checkout-storeflow')?.scrollIntoView({ behavior: 'smooth' });
+                                }, 200);
+                              }}
+                              className="w-full py-2.5 bg-apple-accent hover:bg-[#00A844] text-white font-black text-xs rounded-xl shadow-lg shadow-apple-accent/10 cursor-pointer text-center text-ellipsis overflow-hidden whitespace-nowrap transition-all"
+                            >
+                              ¡Comprar con 1 Clic!
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer text */}
+                    <p className="text-[10px] text-zinc-400 font-semibold leading-relaxed pt-2">
+                      * Las ofertas especiales se envían en una sola encomienda asegurada de alta prioridad. Puedes declinar la promoción y ver el producto inicial únicamente haciendo clic en la X de arriba o en el fondo.
+                    </p>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+          </>
+        );
+      })()}
+
       {/* Botón flotante para el Editor Visual Directo */}
       <div className="fixed bottom-6 right-6 z-50 no-print flex flex-col gap-2 items-end">
         {isVisualEditorActive ? (
@@ -1589,7 +1882,7 @@ export default function ProductLandingPage() {
           </div>
 
           {/* Section Tabs */}
-          <div className="grid grid-cols-4 border-b border-zinc-100 bg-zinc-50 shrink-0 text-[10px] font-black uppercase text-center text-zinc-500">
+          <div className="grid grid-cols-5 border-b border-zinc-100 bg-zinc-50 shrink-0 text-[9px] font-black uppercase text-center text-zinc-500">
             <button 
               type="button" 
               onClick={() => setVisualActiveTab('info')}
@@ -1617,6 +1910,14 @@ export default function ProductLandingPage() {
               className={`py-3 border-b-2 font-mono cursor-pointer ${visualActiveTab === 'payment' ? 'border-[#10B981] text-[#10B981] bg-white' : 'border-transparent hover:bg-zinc-100'}`}
             >
               💰 Pago
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setVisualActiveTab('popups')}
+              className={`py-3 border-b-2 font-mono cursor-pointer ${visualActiveTab === 'popups' ? 'border-[#10B981] text-[#10B981] bg-white' : 'border-transparent hover:bg-zinc-100'}`}
+              title="Configurar Popups de Ofertas"
+            >
+              🎁 Ofertas
             </button>
           </div>
 
@@ -1995,6 +2296,152 @@ export default function ProductLandingPage() {
                       type="text"
                       value={productInfo.manualUrl || ''}
                       onChange={(e) => setProductInfo(prev => ({ ...prev, manualUrl: e.target.value }))}
+                      className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none font-mono text-zinc-600"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {visualActiveTab === 'popups' && (
+              <div className="space-y-6 animate-in fade-in duration-200">
+                <div className="bg-rose-50 p-4 rounded-xl border border-rose-100 text-[11px] font-sans font-semibold leading-relaxed text-rose-900">
+                  ⚡ <strong className="font-extrabold text-rose-700">Popups de Ofertas Flash:</strong> Aquí puede configurar de forma en línea si se muestran los dos combos de alta conversión en los popups, modificar sus precios, títulos y las imágenes respectivas.
+                </div>
+
+                {/* Promo 1 Config Card */}
+                <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-250 space-y-4 text-left">
+                  <div className="flex justify-between items-center border-b border-zinc-200/60 pb-2">
+                    <span className="text-[10px] font-black uppercase text-rose-600">🎯 Popup Oferta 1: Combo Rollos</span>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-black uppercase tracking-wider text-rose-500">
+                      <input 
+                        type="checkbox"
+                        checked={productInfo.promo1_active !== false && productInfo.promo1_active !== "false"}
+                        onChange={(e) => setProductInfo(prev => ({ ...prev, promo1_active: e.target.checked }))}
+                        className="rounded text-rose-500 focus:ring-rose-500 scale-95"
+                      />
+                      Activo
+                    </label>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-500 uppercase block">Título del Producto/Combo</label>
+                    <input 
+                      type="text"
+                      value={productInfo.promo1_title || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, promo1_title: e.target.value }))}
+                      className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-500 uppercase block">Detalles del combo</label>
+                    <textarea 
+                      rows={2}
+                      value={productInfo.promo1_desc || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, promo1_desc: e.target.value }))}
+                      className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none resize-none font-sans"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-zinc-500 uppercase block">Precio S/.</label>
+                      <input 
+                        type="number"
+                        step="0.01"
+                        value={productInfo.promo1_price || 0}
+                        onChange={(e) => setProductInfo(prev => ({ ...prev, promo1_price: parseFloat(e.target.value) || 0 }))}
+                        className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-zinc-500 uppercase block">Botón CTA</label>
+                      <input 
+                        type="text"
+                        value={productInfo.promo1_btn || ''}
+                        onChange={(e) => setProductInfo(prev => ({ ...prev, promo1_btn: e.target.value }))}
+                        className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-500 uppercase block">Imagen del Combo (URL / PostImages)</label>
+                    <input 
+                      type="text"
+                      value={productInfo.promo1_image || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, promo1_image: e.target.value }))}
+                      placeholder="https://postimages.org/..."
+                      className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none font-mono text-zinc-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Promo 2 Config Card */}
+                <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-250 space-y-4 text-left">
+                  <div className="flex justify-between items-center border-b border-zinc-200/60 pb-2">
+                    <span className="text-[10px] font-black uppercase text-amber-600">🎯 Popup Oferta 2: Combo Cajón</span>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-[10px] font-black uppercase tracking-wider text-amber-500">
+                      <input 
+                        type="checkbox"
+                        checked={productInfo.promo2_active !== false && productInfo.promo2_active !== "false"}
+                        onChange={(e) => setProductInfo(prev => ({ ...prev, promo2_active: e.target.checked }))}
+                        className="rounded text-amber-500 focus:ring-amber-500 scale-95"
+                      />
+                      Activo
+                    </label>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-500 uppercase block">Título del Producto/Combo</label>
+                    <input 
+                      type="text"
+                      value={productInfo.promo2_title || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, promo2_title: e.target.value }))}
+                      className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-500 uppercase block">Detalles del combo</label>
+                    <textarea 
+                      rows={2}
+                      value={productInfo.promo2_desc || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, promo2_desc: e.target.value }))}
+                      className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none resize-none font-sans"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-zinc-500 uppercase block">Precio S/.</label>
+                      <input 
+                        type="number"
+                        step="0.01"
+                        value={productInfo.promo2_price || 0}
+                        onChange={(e) => setProductInfo(prev => ({ ...prev, promo2_price: parseFloat(e.target.value) || 0 }))}
+                        className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-zinc-500 uppercase block">Botón CTA</label>
+                      <input 
+                        type="text"
+                        value={productInfo.promo2_btn || ''}
+                        onChange={(e) => setProductInfo(prev => ({ ...prev, promo2_btn: e.target.value }))}
+                        className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-zinc-500 uppercase block">Imagen del Combo (URL / PostImages)</label>
+                    <input 
+                      type="text"
+                      value={productInfo.promo2_image || ''}
+                      onChange={(e) => setProductInfo(prev => ({ ...prev, promo2_image: e.target.value }))}
+                      placeholder="https://postimages.org/..."
                       className="w-full bg-white border border-zinc-200 px-3 py-2 rounded-xl text-xs font-semibold outline-none font-mono text-zinc-600"
                     />
                   </div>
